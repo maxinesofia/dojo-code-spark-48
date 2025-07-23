@@ -9,6 +9,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const fileRoutes = require('./routes/files');
+const executionRoutes = require('./routes/execution');
 
 // Import database
 const sequelize = require('./config/database');
@@ -71,6 +72,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api', fileRoutes);
+app.use('/api/execution', executionRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
