@@ -127,8 +127,9 @@ const Templates = () => {
   };
 
   const handleCreateProject = (templateId: string) => {
-    // Navigate to editor with template
-    navigate(`/editor?template=${templateId}`);
+    // Create project with selected template
+    const projectName = `New ${templates.find(t => t.id === templateId)?.name || 'Project'}`;
+    navigate(`/editor?template=${templateId}&name=${encodeURIComponent(projectName)}`);
   };
 
   return (

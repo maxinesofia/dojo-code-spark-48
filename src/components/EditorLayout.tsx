@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Header } from "./Header";
 import { FileExplorer, FileNode } from "./FileExplorer";
 import { CodeEditor } from "./CodeEditor";
@@ -128,11 +129,102 @@ document.head.appendChild(style);`
   }
 ];
 
+// Template-specific files
+const getTemplateFiles = (templateId: string): FileNode[] => {
+  switch (templateId) {
+    case 'react':
+      return [
+        {
+          id: 'index.html',
+          name: 'index.html',
+          type: 'file',
+          content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React App</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel" src="script.js"></script>
+</body>
+</html>`
+        },
+        {
+          id: 'script.js',
+          name: 'script.js',
+          type: 'file',
+          content: `function App() {
+  const [count, setCount] = React.useState(0);
+
+  return (
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <h1>Welcome to React!</h1>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>
+        Click me
+      </button>
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));`
+        }
+      ];
+    case 'vue':
+      return [
+        {
+          id: 'index.html',
+          name: 'index.html',
+          type: 'file',
+          content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.js App</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">{{ message }}</div>
+    <script src="script.js"></script>
+</body>
+</html>`
+        },
+        {
+          id: 'script.js',
+          name: 'script.js',
+          type: 'file',
+          content: `const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      message: 'Hello Vue.js!'
+    }
+  }
+}).mount('#app');`
+        }
+      ];
+    default:
+      return defaultFiles;
+  }
+};
+
 export function EditorLayout() {
-  const [files] = useState<FileNode[]>(defaultFiles);
-  const [activeFile, setActiveFile] = useState<FileNode | null>(defaultFiles[0]);
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get('template');
+  const projectName = searchParams.get('name') || 'My Awesome Project';
+  
+  const initialFiles = templateId ? getTemplateFiles(templateId) : defaultFiles;
+  const [files] = useState<FileNode[]>(initialFiles);
+  const [activeFile, setActiveFile] = useState<FileNode | null>(initialFiles[0]);
   const [fileContents, setFileContents] = useState<Record<string, string>>(
-    defaultFiles.reduce((acc, file) => {
+    initialFiles.reduce((acc, file) => {
       if (file.content) {
         acc[file.id] = file.content;
       }
@@ -169,11 +261,19 @@ export function EditorLayout() {
   }, [toast]);
 
   const handleShare = useCallback(() => {
-    toast({
-      title: "Share functionality",
-      description: "Coming soon! This will generate a shareable link.",
+    const shareUrl = `${window.location.origin}/editor?template=${templateId || 'vanilla-js'}&name=${encodeURIComponent(projectName)}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        title: "Link copied!",
+        description: "Shareable link has been copied to clipboard.",
+      });
+    }).catch(() => {
+      toast({
+        title: "Share link",
+        description: shareUrl,
+      });
     });
-  }, [toast]);
+  }, [toast, templateId, projectName]);
 
   const handleCreateFile = useCallback(() => {
     toast({
@@ -195,7 +295,7 @@ export function EditorLayout() {
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header 
-        projectName="My Awesome Project"
+        projectName={projectName}
         onSave={handleSave}
         onRun={handleRun}
         onShare={handleShare}
