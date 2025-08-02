@@ -565,7 +565,7 @@ export function EditorLayout() {
   const projectName = searchParams.get('name') || 'My Awesome Project';
   
   const initialFiles = templateId ? getTemplateFiles(templateId) : defaultFiles;
-  const [files] = useState<FileNode[]>(initialFiles);
+  const [files, setFiles] = useState<FileNode[]>(initialFiles);
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFiles[0]);
   const [fileContents, setFileContents] = useState<Record<string, string>>(
     initialFiles.reduce((acc, file) => {
@@ -619,25 +619,74 @@ export function EditorLayout() {
     });
   }, [toast, templateId, projectName]);
 
-  const handleCreateFile = useCallback(() => {
-    const fileName = prompt('Enter file name (e.g., component.js, style.css):');
+  const handleCreateFile = useCallback((fileName: string, fileType: string) => {
     if (fileName && fileName.trim()) {
+      // Get default content based on file type
+      const getDefaultContent = (name: string, type: string) => {
+        switch (type) {
+          case 'javascript':
+            return `// ${name}\nconsole.log("Hello from ${name}");`;
+          case 'typescript':
+            return `// ${name}\nconst message: string = "Hello from ${name}";\nconsole.log(message);`;
+          case 'react-js':
+            return `import React from 'react';\n\nfunction ${name.replace(/\.[^/.]+$/, "")} () {\n  return (\n    <div>\n      <h1>Hello from ${name}</h1>\n    </div>\n  );\n}\n\nexport default ${name.replace(/\.[^/.]+$/, "")};`;
+          case 'react-ts':
+            return `import React from 'react';\n\ninterface ${name.replace(/\.[^/.]+$/, "")}Props {\n  // Define props here\n}\n\nconst ${name.replace(/\.[^/.]+$/, "")}: React.FC<${name.replace(/\.[^/.]+$/, "")}Props> = () => {\n  return (\n    <div>\n      <h1>Hello from ${name}</h1>\n    </div>\n  );\n};\n\nexport default ${name.replace(/\.[^/.]+$/, "")};`;
+          case 'html':
+            return `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>${name.replace(/\.[^/.]+$/, "")}</title>\n</head>\n<body>\n    <h1>Hello from ${name}</h1>\n</body>\n</html>`;
+          case 'css':
+            return `/* ${name} */\n\n/* Add your styles here */\n.container {\n  padding: 20px;\n}`;
+          case 'json':
+            return `{\n  "name": "${name.replace(/\.[^/.]+$/, "")}",\n  "version": "1.0.0"\n}`;
+          case 'text':
+            return `${name}\n\nAdd your content here...`;
+          default:
+            return `// ${name}\n`;
+        }
+      };
+
       const newFile: FileNode = {
-        id: fileName,
-        name: fileName,
+        id: fileName.trim(),
+        name: fileName.trim(),
         type: 'file',
-        content: '// New file\n'
+        content: getDefaultContent(fileName.trim(), fileType)
       };
       
-      // Add to files state (simplified - in real app, you'd manage this properly)
+      // Add to files array
+      setFiles(prev => [...prev, newFile]);
+      
+      // Add to file contents
       setFileContents(prev => ({
         ...prev,
-        [fileName]: '// New file\n'
+        [fileName.trim()]: getDefaultContent(fileName.trim(), fileType)
       }));
+
+      // Set as active file
+      setActiveFile(newFile);
       
       toast({
         title: "File created!",
         description: `${fileName} has been created successfully.`,
+      });
+    }
+  }, [toast]);
+
+  const handleCreateFolder = useCallback(() => {
+    const folderName = prompt('Enter folder name:');
+    if (folderName && folderName.trim()) {
+      const newFolder: FileNode = {
+        id: folderName.trim(),
+        name: folderName.trim(),
+        type: 'folder',
+        children: [],
+        isOpen: true
+      };
+      
+      setFiles(prev => [...prev, newFolder]);
+      
+      toast({
+        title: "Folder created!",
+        description: `${folderName} folder has been created successfully.`,
       });
     }
   }, [toast]);
@@ -667,7 +716,7 @@ export function EditorLayout() {
           activeFile={activeFile?.id || null}
           onFileSelect={handleFileSelect}
           onCreateFile={handleCreateFile}
-          onCreateFolder={handleCreateFile}
+          onCreateFolder={handleCreateFolder}
         />
         
         <CodeEditor

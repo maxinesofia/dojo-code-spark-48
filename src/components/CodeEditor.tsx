@@ -60,7 +60,7 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
             automaticLayout: true,
             tabSize: 2,
             wordWrap: 'on',
-            theme: theme === 'dark' ? 'vs-dark' : 'vs-light',
+            theme: theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'vs-dark' : 'vs-light',
             fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
             renderLineHighlight: 'line',
             selectOnLineNumbers: true,

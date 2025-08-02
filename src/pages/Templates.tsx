@@ -127,9 +127,13 @@ const Templates = () => {
   };
 
   const handleCreateProject = (templateId: string) => {
-    // Create project with selected template
-    const projectName = `New ${templates.find(t => t.id === templateId)?.name || 'Project'}`;
+    const template = templates.find(t => t.id === templateId);
+    const projectName = `New ${template?.name || 'Project'}`;
     navigate(`/editor?template=${templateId}&name=${encodeURIComponent(projectName)}`);
+  };
+
+  const handleBackToEditor = () => {
+    navigate('/editor');
   };
 
   return (
@@ -142,7 +146,7 @@ const Templates = () => {
               <h1 className="text-3xl font-bold text-foreground">Tutorials Dojo templates</h1>
               <p className="text-muted-foreground mt-2">Start your new project with one of our official templates.</p>
             </div>
-            <Button onClick={() => navigate("/")} variant="outline">
+            <Button onClick={handleBackToEditor} variant="outline">
               Back to Editor
             </Button>
           </div>

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, File, Folder, Plus, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FileCreateDialog } from "./FileCreateDialog";
 
 export interface FileNode {
   id: string;
@@ -16,7 +17,7 @@ interface FileExplorerProps {
   files: FileNode[];
   activeFile: string | null;
   onFileSelect: (file: FileNode) => void;
-  onCreateFile: () => void;
+  onCreateFile: (fileName: string, fileType: string) => void;
   onCreateFolder: () => void;
 }
 
@@ -101,6 +102,11 @@ export function FileExplorer({
 }: FileExplorerProps) {
   const [fileTree, setFileTree] = useState<FileNode[]>(files);
 
+  // Update file tree when files prop changes
+  useEffect(() => {
+    setFileTree(files);
+  }, [files]);
+
   const handleToggle = (id: string) => {
     const updateNodes = (nodes: FileNode[]): FileNode[] => {
       return nodes.map(node => {
@@ -121,9 +127,7 @@ export function FileExplorer({
       <div className="h-12 border-b border-editor-border flex items-center justify-between px-3">
         <span className="text-sm font-medium text-foreground">Explorer</span>
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onCreateFile}>
-            <Plus className="w-3 h-3" />
-          </Button>
+          <FileCreateDialog onCreateFile={onCreateFile} />
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
             <MoreHorizontal className="w-3 h-3" />
           </Button>
