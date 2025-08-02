@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, param } = require('express-validator');
 const executionController = require('../controllers/executionController');
+const gcpExecutionController = require('../controllers/gcpExecutionController');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -38,6 +39,43 @@ router.get('/active',
   authenticateToken,
   // Add admin check middleware here if needed
   executionController.listActiveExecutions
+);
+
+// GCP Firecracker routes
+router.post('/:projectId/gcp/start',
+  authenticateToken,
+  param('projectId').isUUID().withMessage('Invalid project ID'),
+  gcpExecutionController.startExecution
+);
+
+router.post('/:projectId/gcp/stop',
+  authenticateToken,
+  param('projectId').isUUID().withMessage('Invalid project ID'),
+  gcpExecutionController.stopExecution
+);
+
+router.get('/:projectId/gcp/status',
+  authenticateToken,
+  param('projectId').isUUID().withMessage('Invalid project ID'),
+  gcpExecutionController.getExecutionStatus
+);
+
+router.put('/:projectId/gcp/update',
+  authenticateToken,
+  param('projectId').isUUID().withMessage('Invalid project ID'),
+  gcpExecutionController.updateExecution
+);
+
+router.post('/:projectId/gcp/clone',
+  authenticateToken,
+  param('projectId').isUUID().withMessage('Invalid project ID'),
+  body('sourceVmId').notEmpty().withMessage('Source VM ID is required'),
+  gcpExecutionController.cloneExecution
+);
+
+router.get('/gcp/active',
+  authenticateToken,
+  gcpExecutionController.listActiveExecutions
 );
 
 module.exports = router;

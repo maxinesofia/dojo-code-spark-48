@@ -133,7 +133,7 @@ const Templates = () => {
   };
 
   const handleBackToEditor = () => {
-    navigate('/editor');
+    navigate(-1); // Go back to previous page instead of fresh editor
   };
 
   return (

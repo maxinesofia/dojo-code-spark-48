@@ -62,9 +62,6 @@ export function Header({ projectName, onSave, onRun, onShare }: HeaderProps) {
         <Button variant="ghost" size="sm">
           <Settings className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm">
-          <User className="w-4 h-4" />
-        </Button>
       </div>
     </header>
   );
