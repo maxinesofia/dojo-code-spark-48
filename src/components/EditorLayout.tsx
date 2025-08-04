@@ -4,7 +4,6 @@ import { Header } from "./Header";
 import { FileExplorer, FileNode } from "./FileExplorer";
 import { CodeEditor } from "./CodeEditor";
 import { Preview } from "./Preview";
-import { ExecutionPanel } from "./ExecutionPanel";
 import { useToast } from "@/hooks/use-toast";
 
 // Default project files
@@ -564,7 +563,6 @@ export function EditorLayout() {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get('template');
   const projectName = searchParams.get('name') || 'My Awesome Project';
-  const [viewMode, setViewMode] = useState<'preview' | 'execution'>('preview');
   
   const initialFiles = templateId ? getTemplateFiles(templateId) : defaultFiles;
   const [files, setFiles] = useState<FileNode[]>(initialFiles);
@@ -600,10 +598,9 @@ export function EditorLayout() {
   }, [toast]);
 
   const handleRun = useCallback(() => {
-    setViewMode('execution');
     toast({
-      title: "Switching to execution mode...",
-      description: "Ready to run your code in Firecracker VM.",
+      title: "Running project...",
+      description: "Preview has been updated with your latest changes.",
     });
   }, [toast]);
 
@@ -729,44 +726,11 @@ export function EditorLayout() {
           fileName={activeFile?.name}
         />
         
-        {viewMode === 'preview' ? (
-          <Preview
-            htmlContent={processedHtml}
-            cssContent={cssContent}
-            jsContent={jsContent}
-          />
-        ) : (
-          <ExecutionPanel
-            files={fileContents}
-            selectedFile={activeFile?.name || ''}
-          />
-        )}
-      </div>
-      
-      {/* View Mode Toggle */}
-      <div className="absolute top-16 right-4 z-10">
-        <div className="flex bg-background border border-border rounded-lg p-1">
-          <button
-            onClick={() => setViewMode('preview')}
-            className={`px-3 py-1 text-xs rounded ${
-              viewMode === 'preview'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Preview
-          </button>
-          <button
-            onClick={() => setViewMode('execution')}
-            className={`px-3 py-1 text-xs rounded ${
-              viewMode === 'execution'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Firecracker
-          </button>
-        </div>
+        <Preview
+          htmlContent={processedHtml}
+          cssContent={cssContent}
+          jsContent={jsContent}
+        />
       </div>
     </div>
   );
