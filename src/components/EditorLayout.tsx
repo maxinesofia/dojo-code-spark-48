@@ -690,6 +690,68 @@ export function EditorLayout() {
     }
   }, [toast]);
 
+  const handleMoveFile = useCallback((fileId: string, targetFolderId: string | null) => {
+    setFiles(prevFiles => {
+      // Find and remove the file from its current location
+      const removeFileFromTree = (nodes: FileNode[]): { updatedNodes: FileNode[], removedFile: FileNode | null } => {
+        for (let i = 0; i < nodes.length; i++) {
+          if (nodes[i].id === fileId) {
+            const removedFile = nodes[i];
+            const updatedNodes = [...nodes.slice(0, i), ...nodes.slice(i + 1)];
+            return { updatedNodes, removedFile };
+          }
+          if (nodes[i].children) {
+            const result = removeFileFromTree(nodes[i].children);
+            if (result.removedFile) {
+              return {
+                updatedNodes: nodes.map((node, index) => 
+                  index === i ? { ...node, children: result.updatedNodes } : node
+                ),
+                removedFile: result.removedFile
+              };
+            }
+          }
+        }
+        return { updatedNodes: nodes, removedFile: null };
+      };
+
+      // Add file to target folder
+      const addFileToFolder = (nodes: FileNode[], file: FileNode, folderId: string | null): FileNode[] => {
+        if (folderId === null) {
+          // Add to root
+          return [...nodes, file];
+        }
+        
+        return nodes.map(node => {
+          if (node.id === folderId && node.type === 'folder') {
+            return {
+              ...node,
+              children: [...(node.children || []), file],
+              isOpen: true
+            };
+          }
+          if (node.children) {
+            return {
+              ...node,
+              children: addFileToFolder(node.children, file, folderId)
+            };
+          }
+          return node;
+        });
+      };
+
+      const { updatedNodes, removedFile } = removeFileFromTree(prevFiles);
+      if (removedFile) {
+        const finalNodes = addFileToFolder(updatedNodes, removedFile, targetFolderId);
+        toast({
+          title: "File moved!",
+          description: `${removedFile.name} has been moved successfully.`,
+        });
+        return finalNodes;
+      }
+      return prevFiles;
+    });
+  }, [toast]);
   const htmlContent = fileContents['index.html'] || '';
   const cssContent = fileContents['styles.css'] || '';
   const jsContent = fileContents['script.js'] || '';
@@ -716,6 +778,7 @@ export function EditorLayout() {
           onFileSelect={handleFileSelect}
           onCreateFile={handleCreateFile}
           onCreateFolder={handleCreateFolder}
+          onMoveFile={handleMoveFile}
         />
         
         <CodeEditor

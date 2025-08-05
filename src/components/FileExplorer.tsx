@@ -19,6 +19,7 @@ interface FileExplorerProps {
   onFileSelect: (file: FileNode) => void;
   onCreateFile: (fileName: string, fileType: string) => void;
   onCreateFolder: (folderName: string) => void;
+  onMoveFile: (fileId: string, targetFolderId: string | null) => void;
 }
 
 function FileTreeItem({ 
@@ -26,25 +27,67 @@ function FileTreeItem({
   level = 0, 
   activeFile, 
   onFileSelect, 
-  onToggle 
+  onToggle,
+  onMoveFile
 }: {
   node: FileNode;
   level?: number;
   activeFile: string | null;
   onFileSelect: (file: FileNode) => void;
   onToggle: (id: string) => void;
+  onMoveFile: (fileId: string, targetFolderId: string | null) => void;
 }) {
+  const [dragOver, setDragOver] = useState(false);
   const isActive = activeFile === node.id;
   const paddingLeft = level * 16 + 8;
+
+  const handleDragStart = (e: React.DragEvent) => {
+    if (node.type === 'file') {
+      e.dataTransfer.setData('text/plain', node.id);
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (node.type === 'folder') {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (node.type === 'folder') {
+      setDragOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    if (node.type === 'folder') {
+      e.preventDefault();
+      const fileId = e.dataTransfer.getData('text/plain');
+      if (fileId && fileId !== node.id) {
+        onMoveFile(fileId, node.id);
+      }
+      setDragOver(false);
+    }
+  };
 
   return (
     <div>
       <div
         className={cn(
           "flex items-center h-8 cursor-pointer hover:bg-muted/50 transition-colors",
-          isActive && "bg-primary-light border-r-2 border-primary"
+          isActive && "bg-primary-light border-r-2 border-primary",
+          dragOver && node.type === 'folder' && "bg-primary/10 border-primary",
+          node.type === 'file' && "select-none"
         )}
         style={{ paddingLeft }}
+        draggable={node.type === 'file'}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         onClick={() => {
           if (node.type === 'folder') {
             onToggle(node.id);
@@ -85,6 +128,7 @@ function FileTreeItem({
               activeFile={activeFile}
               onFileSelect={onFileSelect}
               onToggle={onToggle}
+              onMoveFile={onMoveFile}
             />
           ))}
         </div>
@@ -98,7 +142,8 @@ export function FileExplorer({
   activeFile, 
   onFileSelect, 
   onCreateFile, 
-  onCreateFolder 
+  onCreateFolder,
+  onMoveFile
 }: FileExplorerProps) {
   const [fileTree, setFileTree] = useState<FileNode[]>(files);
 
@@ -142,6 +187,7 @@ export function FileExplorer({
             activeFile={activeFile}
             onFileSelect={onFileSelect}
             onToggle={handleToggle}
+            onMoveFile={onMoveFile}
           />
         ))}
       </div>
