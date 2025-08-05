@@ -690,7 +690,7 @@ export function EditorLayout() {
     }
   }, [toast]);
 
-  const handleMoveFile = useCallback((fileId: string, targetFolderId: string | null) => {
+  const handleMoveFile = useCallback((fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => {
     setFiles(prevFiles => {
       // Find and remove the file from its current location
       const removeFileFromTree = (nodes: FileNode[]): { updatedNodes: FileNode[], removedFile: FileNode | null } => {
@@ -715,34 +715,63 @@ export function EditorLayout() {
         return { updatedNodes: nodes, removedFile: null };
       };
 
-      // Add file to target folder
-      const addFileToFolder = (nodes: FileNode[], file: FileNode, folderId: string | null): FileNode[] => {
-        if (folderId === null) {
+      // Add file to target location with positioning
+      const addFileToLocation = (nodes: FileNode[], file: FileNode, folderId: string | null, position?: 'before' | 'after', targetFileId?: string): FileNode[] => {
+        if (folderId === null && !targetFileId) {
           // Add to root
           return [...nodes, file];
         }
         
-        return nodes.map(node => {
-          if (node.id === folderId && node.type === 'folder') {
-            return {
-              ...node,
-              children: [...(node.children || []), file],
-              isOpen: true
-            };
+        if (folderId !== null) {
+          // Add to specific folder
+          return nodes.map(node => {
+            if (node.id === folderId && node.type === 'folder') {
+              return {
+                ...node,
+                children: [...(node.children || []), file],
+                isOpen: true
+              };
+            }
+            if (node.children) {
+              return {
+                ...node,
+                children: addFileToLocation(node.children, file, folderId, position, targetFileId)
+              };
+            }
+            return node;
+          });
+        }
+        
+        if (targetFileId && position) {
+          // Add relative to specific file
+          const targetIndex = nodes.findIndex(node => node.id === targetFileId);
+          if (targetIndex !== -1) {
+            const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+            return [
+              ...nodes.slice(0, insertIndex),
+              file,
+              ...nodes.slice(insertIndex)
+            ];
           }
-          if (node.children) {
-            return {
-              ...node,
-              children: addFileToFolder(node.children, file, folderId)
-            };
-          }
-          return node;
-        });
+          
+          // If not found at this level, search in children
+          return nodes.map(node => {
+            if (node.children) {
+              return {
+                ...node,
+                children: addFileToLocation(node.children, file, folderId, position, targetFileId)
+              };
+            }
+            return node;
+          });
+        }
+        
+        return nodes;
       };
 
       const { updatedNodes, removedFile } = removeFileFromTree(prevFiles);
       if (removedFile) {
-        const finalNodes = addFileToFolder(updatedNodes, removedFile, targetFolderId);
+        const finalNodes = addFileToLocation(updatedNodes, removedFile, targetFolderId, position, targetFileId);
         toast({
           title: "File moved!",
           description: `${removedFile.name} has been moved successfully.`,
