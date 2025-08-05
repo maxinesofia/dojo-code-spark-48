@@ -18,7 +18,7 @@ interface FileExplorerProps {
   activeFile: string | null;
   onFileSelect: (file: FileNode) => void;
   onCreateFile: (fileName: string, fileType: string) => void;
-  onCreateFolder: () => void;
+  onCreateFolder: (folderName: string) => void;
 }
 
 function FileTreeItem({ 
@@ -127,7 +127,7 @@ export function FileExplorer({
       <div className="h-12 border-b border-editor-border flex items-center justify-between px-3">
         <span className="text-sm font-medium text-foreground">Explorer</span>
         <div className="flex gap-1">
-          <FileCreateDialog onCreateFile={onCreateFile} />
+          <FileCreateDialog onCreateFile={onCreateFile} onCreateFolder={onCreateFolder} />
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
             <MoreHorizontal className="w-3 h-3" />
           </Button>

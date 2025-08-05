@@ -671,8 +671,7 @@ export function EditorLayout() {
     }
   }, [toast]);
 
-  const handleCreateFolder = useCallback(() => {
-    const folderName = prompt('Enter folder name:');
+  const handleCreateFolder = useCallback((folderName: string) => {
     if (folderName && folderName.trim()) {
       const newFolder: FileNode = {
         id: folderName.trim(),
