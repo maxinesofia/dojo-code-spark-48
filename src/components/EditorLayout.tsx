@@ -707,6 +707,60 @@ export function EditorLayout() {
     });
   }, []);
 
+  const handleDeleteFile = useCallback((fileId: string) => {
+    setFiles(prevFiles => {
+      const deleteFromNodes = (nodes: FileNode[]): FileNode[] => {
+        return nodes.filter(node => {
+          if (node.id === fileId) {
+            return false;
+          }
+          if (node.children) {
+            node.children = deleteFromNodes(node.children);
+          }
+          return true;
+        });
+      };
+      return deleteFromNodes(prevFiles);
+    });
+
+    // If the deleted file was active, clear it
+    if (activeFile?.id === fileId) {
+      setActiveFile(null);
+      setFileContents(prev => {
+        const updated = { ...prev };
+        delete updated[fileId];
+        return updated;
+      });
+    }
+
+    toast({
+      title: "File deleted",
+      description: "The file has been successfully deleted.",
+    });
+  }, [activeFile, toast]);
+
+  const handleRenameFile = useCallback((fileId: string, newName: string) => {
+    setFiles(prevFiles => {
+      const renameInNodes = (nodes: FileNode[]): FileNode[] => {
+        return nodes.map(node => {
+          if (node.id === fileId) {
+            return { ...node, name: newName };
+          }
+          if (node.children) {
+            return { ...node, children: renameInNodes(node.children) };
+          }
+          return node;
+        });
+      };
+      return renameInNodes(prevFiles);
+    });
+
+    toast({
+      title: "File renamed",
+      description: `File renamed to "${newName}".`,
+    });
+  }, [toast]);
+
   const handleMoveFile = useCallback((fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => {
     setFiles(prevFiles => {
       // Find and remove the file from its current location
@@ -826,6 +880,8 @@ export function EditorLayout() {
           onCreateFolder={handleCreateFolder}
           onMoveFile={handleMoveFile}
           onToggleFolder={handleToggleFolder}
+          onDeleteFile={handleDeleteFile}
+          onRenameFile={handleRenameFile}
         />
         
         <CodeEditor

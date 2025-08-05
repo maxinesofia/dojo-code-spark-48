@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, File, Folder, Plus, MoreHorizontal } from "l
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FileCreateDialog } from "./FileCreateDialog";
+import { FileContextMenu } from "./FileContextMenu";
 
 export interface FileNode {
   id: string;
@@ -21,6 +22,8 @@ interface FileExplorerProps {
   onCreateFolder: (folderName: string) => void;
   onMoveFile: (fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => void;
   onToggleFolder: (folderId: string) => void;
+  onDeleteFile: (fileId: string) => void;
+  onRenameFile: (fileId: string, newName: string) => void;
 }
 
 function FileTreeItem({ 
@@ -29,7 +32,11 @@ function FileTreeItem({
   activeFile, 
   onFileSelect, 
   onToggle,
-  onMoveFile
+  onMoveFile,
+  onDeleteFile,
+  onRenameFile,
+  onCreateFile,
+  onCreateFolder
 }: {
   node: FileNode;
   level?: number;
@@ -37,6 +44,10 @@ function FileTreeItem({
   onFileSelect: (file: FileNode) => void;
   onToggle: (id: string) => void;
   onMoveFile: (fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => void;
+  onDeleteFile: (fileId: string) => void;
+  onRenameFile: (fileId: string, newName: string) => void;
+  onCreateFile: (fileName: string, fileType: string) => void;
+  onCreateFolder: (folderName: string) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | 'inside' | null>(null);
@@ -105,48 +116,56 @@ function FileTreeItem({
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary z-10" style={{ marginLeft: paddingLeft }} />
       )}
       
-      <div
-        className={cn(
-          "flex items-center h-8 cursor-pointer hover:bg-muted/50 transition-colors relative",
-          isActive && "bg-primary-light border-r-2 border-primary",
-          dragOver && dropPosition === 'inside' && node.type === 'folder' && "bg-primary/10 border-l-2 border-primary",
-          node.type === 'file' && "select-none"
-        )}
-        style={{ paddingLeft }}
-        draggable={node.type === 'file'}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => {
-          if (node.type === 'folder') {
-            onToggle(node.id);
-          } else {
-            onFileSelect(node);
-          }
-        }}
+      <FileContextMenu
+        node={node}
+        onDelete={onDeleteFile}
+        onRename={onRenameFile}
+        onCreateFile={onCreateFile}
+        onCreateFolder={onCreateFolder}
       >
-        {node.type === 'folder' && (
-          <div className="w-4 h-4 mr-1">
-            {node.isOpen ? (
-              <ChevronDown className="w-3 h-3" />
-            ) : (
-              <ChevronRight className="w-3 h-3" />
-            )}
-          </div>
-        )}
-        {node.type === 'folder' ? (
-          <Folder className="w-4 h-4 mr-2 text-primary" />
-        ) : (
-          <File className="w-4 h-4 mr-2 text-muted-foreground" />
-        )}
-        <span className={cn(
-          "text-sm flex-1",
-          isActive ? "text-primary font-medium" : "text-foreground"
-        )}>
-          {node.name}
-        </span>
-      </div>
+        <div
+          className={cn(
+            "flex items-center h-8 cursor-pointer hover:bg-muted/50 transition-colors relative",
+            isActive && "bg-primary-light border-r-2 border-primary",
+            dragOver && dropPosition === 'inside' && node.type === 'folder' && "bg-primary/10 border-l-2 border-primary",
+            node.type === 'file' && "select-none"
+          )}
+          style={{ paddingLeft }}
+          draggable={node.type === 'file'}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => {
+            if (node.type === 'folder') {
+              onToggle(node.id);
+            } else {
+              onFileSelect(node);
+            }
+          }}
+        >
+          {node.type === 'folder' && (
+            <div className="w-4 h-4 mr-1">
+              {node.isOpen ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+            </div>
+          )}
+          {node.type === 'folder' ? (
+            <Folder className="w-4 h-4 mr-2 text-primary" />
+          ) : (
+            <File className="w-4 h-4 mr-2 text-muted-foreground" />
+          )}
+          <span className={cn(
+            "text-sm flex-1",
+            isActive ? "text-primary font-medium" : "text-foreground"
+          )}>
+            {node.name}
+          </span>
+        </div>
+      </FileContextMenu>
 
       {/* Drop indicator */}
       {dragOver && dropPosition === 'after' && (
@@ -164,6 +183,10 @@ function FileTreeItem({
               onFileSelect={onFileSelect}
               onToggle={onToggle}
               onMoveFile={onMoveFile}
+              onDeleteFile={onDeleteFile}
+              onRenameFile={onRenameFile}
+              onCreateFile={onCreateFile}
+              onCreateFolder={onCreateFolder}
             />
           ))}
         </div>
@@ -180,6 +203,8 @@ interface FileExplorerProps {
   onCreateFolder: (folderName: string) => void;
   onMoveFile: (fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => void;
   onToggleFolder: (folderId: string) => void;
+  onDeleteFile: (fileId: string) => void;
+  onRenameFile: (fileId: string, newName: string) => void;
 }
 
 export function FileExplorer({ 
@@ -189,7 +214,9 @@ export function FileExplorer({
   onCreateFile, 
   onCreateFolder,
   onMoveFile,
-  onToggleFolder
+  onToggleFolder,
+  onDeleteFile,
+  onRenameFile
 }: FileExplorerProps) {
   const [rootDropZone, setRootDropZone] = useState(false);
 
@@ -251,6 +278,10 @@ export function FileExplorer({
             onFileSelect={onFileSelect}
             onToggle={handleToggle}
             onMoveFile={onMoveFile}
+            onDeleteFile={onDeleteFile}
+            onRenameFile={onRenameFile}
+            onCreateFile={onCreateFile}
+            onCreateFolder={onCreateFolder}
           />
         ))}
         {rootDropZone && (
