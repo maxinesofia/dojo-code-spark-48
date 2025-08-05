@@ -690,6 +690,23 @@ export function EditorLayout() {
     }
   }, [toast]);
 
+  const handleToggleFolder = useCallback((folderId: string) => {
+    setFiles(prevFiles => {
+      const toggleFolder = (nodes: FileNode[]): FileNode[] => {
+        return nodes.map(node => {
+          if (node.id === folderId && node.type === 'folder') {
+            return { ...node, isOpen: !node.isOpen };
+          }
+          if (node.children) {
+            return { ...node, children: toggleFolder(node.children) };
+          }
+          return node;
+        });
+      };
+      return toggleFolder(prevFiles);
+    });
+  }, []);
+
   const handleMoveFile = useCallback((fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => {
     setFiles(prevFiles => {
       // Find and remove the file from its current location
@@ -808,6 +825,7 @@ export function EditorLayout() {
           onCreateFile={handleCreateFile}
           onCreateFolder={handleCreateFolder}
           onMoveFile={handleMoveFile}
+          onToggleFolder={handleToggleFolder}
         />
         
         <CodeEditor

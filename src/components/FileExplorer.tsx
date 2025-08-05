@@ -20,6 +20,7 @@ interface FileExplorerProps {
   onCreateFile: (fileName: string, fileType: string) => void;
   onCreateFolder: (folderName: string) => void;
   onMoveFile: (fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => void;
+  onToggleFolder: (folderId: string) => void;
 }
 
 function FileTreeItem({ 
@@ -171,35 +172,29 @@ function FileTreeItem({
   );
 }
 
+interface FileExplorerProps {
+  files: FileNode[];
+  activeFile: string | null;
+  onFileSelect: (file: FileNode) => void;
+  onCreateFile: (fileName: string, fileType: string) => void;
+  onCreateFolder: (folderName: string) => void;
+  onMoveFile: (fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => void;
+  onToggleFolder: (folderId: string) => void;
+}
+
 export function FileExplorer({ 
   files, 
   activeFile, 
   onFileSelect, 
   onCreateFile, 
   onCreateFolder,
-  onMoveFile
+  onMoveFile,
+  onToggleFolder
 }: FileExplorerProps) {
-  const [fileTree, setFileTree] = useState<FileNode[]>(files);
   const [rootDropZone, setRootDropZone] = useState(false);
 
-  // Update file tree when files prop changes
-  useEffect(() => {
-    setFileTree(files);
-  }, [files]);
-
   const handleToggle = (id: string) => {
-    const updateNodes = (nodes: FileNode[]): FileNode[] => {
-      return nodes.map(node => {
-        if (node.id === id) {
-          return { ...node, isOpen: !node.isOpen };
-        }
-        if (node.children) {
-          return { ...node, children: updateNodes(node.children) };
-        }
-        return node;
-      });
-    };
-    setFileTree(updateNodes(fileTree));
+    onToggleFolder(id);
   };
 
   const handleRootDragOver = (e: React.DragEvent) => {
@@ -248,7 +243,7 @@ export function FileExplorer({
         onDragLeave={handleRootDragLeave}
         onDrop={handleRootDrop}
       >
-        {fileTree.map((node) => (
+        {files.map((node) => (
           <FileTreeItem
             key={node.id}
             node={node}
