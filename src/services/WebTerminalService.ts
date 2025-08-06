@@ -50,14 +50,20 @@ export class WebTerminalService {
     this.vfs.directories.clear();
     this.vfs.directories.add('/');
     
-    const processNode = (node: FileNode, parentPath: string = '/') => {
-      const fullPath = parentPath === '/' ? `/${node.name}` : `${parentPath}/${node.name}`;
+    const processNode = (node: FileNode, parentPath: string = '') => {
+      const fullPath = parentPath === '' ? `/${node.name}` : `${parentPath}/${node.name}`;
       
       if (node.type === 'file') {
         this.vfs.files.set(fullPath, {
           content: node.content || '',
           mimeType: node.mimeType
         });
+        
+        // Ensure parent directory exists
+        const dirPath = fullPath.substring(0, fullPath.lastIndexOf('/')) || '/';
+        if (dirPath !== '/' && !this.vfs.directories.has(dirPath)) {
+          this.vfs.directories.add(dirPath);
+        }
       } else if (node.type === 'folder') {
         this.vfs.directories.add(fullPath);
         if (node.children) {
@@ -67,6 +73,12 @@ export class WebTerminalService {
     };
     
     files.forEach(file => processNode(file));
+    
+    // Debug: Log current file system state
+    console.log('Virtual FS updated:', {
+      directories: Array.from(this.vfs.directories),
+      files: Array.from(this.vfs.files.keys())
+    });
   }
 
   async executeCommand(command: string): Promise<string> {
@@ -134,6 +146,11 @@ export class WebTerminalService {
           break;
         case 'touch':
           terminalCommand.output = await this.handleTouch(args);
+          break;
+        case 'nano':
+        case 'vim':
+        case 'edit':
+          terminalCommand.output = this.handleEdit(args);
           break;
         case 'cp':
           terminalCommand.output = await this.handleCp(args);
@@ -412,6 +429,8 @@ export class WebTerminalService {
 \x1b[32mrm\x1b[0m [options] <file>      Remove files/directories
 \x1b[32mcat\x1b[0m <file>               Display file contents
 \x1b[32mtouch\x1b[0m <file>             Create empty file
+\x1b[32medit\x1b[0m <file>              View file content
+\x1b[32mnano\x1b[0m, \x1b[32mvim\x1b[0m <file>        View file content
 \x1b[32mcp\x1b[0m <src> <dest>          Copy files
 \x1b[32mmv\x1b[0m <src> <dest>          Move/rename files
 \x1b[32mfind\x1b[0m <path> <name>       Find files
@@ -573,10 +592,29 @@ Date:   ${new Date().toLocaleDateString()}
       const path = this.resolvePath(arg);
       if (!this.vfs.files.has(path)) {
         this.vfs.files.set(path, { content: '' });
+        console.log(`Created new file: ${path}`);
+      } else {
+        console.log(`File already exists: ${path}`);
       }
     }
 
     return '';
+  }
+
+  private handleEdit(args: string[]): string {
+    if (args.length === 0) {
+      return 'Usage: edit <filename>\nNote: This will show file content. Use the code editor to make changes.';
+    }
+    
+    const filename = args[0];
+    const path = this.resolvePath(filename);
+    const file = this.vfs.files.get(path);
+    
+    if (!file) {
+      return `edit: ${filename}: No such file or directory`;
+    }
+    
+    return `Opening ${filename} in editor...\n\nCurrent content:\n${file.content}\n\n✓ Use the code editor panel to modify this file.`;
   }
 
   private async handleCp(args: string[]): Promise<string> {

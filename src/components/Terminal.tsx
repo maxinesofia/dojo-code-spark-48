@@ -221,7 +221,8 @@ export function Terminal({ files, onCommandExecuted, className = '' }: TerminalP
 
   // Update file system when files change
   useEffect(() => {
-    if (terminalServiceRef.current) {
+    if (terminalServiceRef.current && files.length > 0) {
+      console.log('Updating terminal file system with files:', files.map(f => f.name));
       terminalServiceRef.current.setupVirtualFS(files);
     }
   }, [files]);
