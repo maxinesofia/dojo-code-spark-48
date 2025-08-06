@@ -29,7 +29,6 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
   const [error, setError] = useState<string | null>(null);
   const [isVirtual, setIsVirtual] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
 
   const setupVirtualTerminal = useCallback(() => {
     if (!xtermRef.current || isInitializedRef.current) return;
@@ -225,43 +224,18 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
         fitAddonRef.current?.fit();
       }, 300); // Wait for animation to complete
     }
-  }, [isExpanded, isMinimized]);
+  }, [isExpanded]);
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
-    setIsMinimized(false);
   };
-
-  const toggleMinimized = () => {
-    setIsMinimized(!isMinimized);
-    setIsExpanded(false);
-  };
-
-  if (isMinimized) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          onClick={toggleMinimized}
-          variant="outline"
-          size="sm"
-          className="bg-background/95 backdrop-blur-sm border shadow-lg hover:scale-105 transition-transform"
-        >
-          <span className="mr-2">💻</span>
-          Terminal
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div 
       className={`
-        ${isExpanded 
-          ? 'fixed inset-4 z-40 shadow-2xl' 
-          : 'relative h-full'
-        } 
-        bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
+        relative bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
         transition-all duration-300 ease-out
+        ${isExpanded ? 'h-96' : 'h-64'}
         ${className}
       `}
     >
@@ -300,15 +274,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
             </div>
           )}
           
-          {/* Control buttons */}
-          <Button
-            onClick={toggleMinimized}
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-          >
-            <Minimize2 className="h-3 w-3" />
-          </Button>
+          {/* Expand/collapse button */}
           <Button
             onClick={toggleExpanded}
             variant="ghost"
@@ -323,10 +289,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
       {/* Terminal Content */}
       <div 
         ref={terminalRef} 
-        className={`
-          ${isExpanded ? 'h-[calc(100%-3rem)]' : 'h-[calc(100%-3rem)]'} 
-          p-2 overflow-hidden
-        `}
+        className="h-[calc(100%-3rem)] p-2 overflow-hidden"
         style={{ 
           fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
         }}
