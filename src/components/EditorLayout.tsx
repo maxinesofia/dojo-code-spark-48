@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "./Header";
-import { EnhancedFileExplorer, FileNode } from "./EnhancedFileExplorer";
+import { EnhancedFileExplorer } from "./EnhancedFileExplorer";
+import { FileNode } from "../types/FileTypes";
 import { CodeEditor } from "./CodeEditor";
 import { DynamicPreview } from "./DynamicPreview";
 import { PackageManager } from "./PackageManager";
+import { Terminal } from "./Terminal";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
@@ -622,6 +624,8 @@ export function EditorLayout() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [showPackageManager, setShowPackageManager] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
 
   // Save project state to localStorage whenever it changes
   useEffect(() => {
@@ -973,6 +977,8 @@ export function EditorLayout() {
         onSave={handleSave}
         onRun={handleRun}
         onShare={handleShare}
+        onTogglePackageManager={() => setShowPackageManager(!showPackageManager)}
+        onToggleTerminal={() => setShowTerminal(!showTerminal)}
         isSaving={isSaving}
         lastSaved={lastSaved}
         onProjectNameChange={handleProjectNameChange}
@@ -994,19 +1000,44 @@ export function EditorLayout() {
           }}
         />
         
-        <CodeEditor
-          value={activeFile ? (fileContents[activeFile.id] || '') : ''}
-          language="javascript"
-          onChange={handleCodeChange}
-          fileName={activeFile?.name}
-        />
-        
-        <DynamicPreview
-          files={files.map(f => ({
-            ...f,
-            content: fileContents[f.id] || f.content
-          }))}
-        />
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex">
+            <CodeEditor
+              value={activeFile ? (fileContents[activeFile.id] || '') : ''}
+              language="javascript"
+              onChange={handleCodeChange}
+              fileName={activeFile?.name}
+            />
+            
+            <DynamicPreview
+              files={files.map(f => ({
+                ...f,
+                content: fileContents[f.id] || f.content
+              }))}
+            />
+          </div>
+          
+          {showTerminal && (
+            <div className="h-64 border-t border-border">
+              <Terminal
+                files={files.map(f => ({
+                  ...f,
+                  content: fileContents[f.id] || f.content
+                }))}
+                onCommandExecuted={(command, output) => {
+                  console.log('Terminal command executed:', command, output);
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {showPackageManager && (
+          <PackageManager 
+            isOpen={showPackageManager}
+            onClose={() => setShowPackageManager(false)} 
+          />
+        )}
       </div>
     </div>
   );
