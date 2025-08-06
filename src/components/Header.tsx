@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Save, Share, Play, Settings, User, FileText, Moon, Sun, Clock, CheckCircle, Edit3, Trash2 } from "lucide-react";
+import { Save, Share, Play, Settings, User, FileText, Moon, Sun, Clock, CheckCircle, Edit3, Trash2, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useState, useEffect } from "react";
@@ -14,12 +14,13 @@ interface HeaderProps {
   onSave: () => void;
   onRun: () => void;
   onShare: () => void;
+  onTogglePackageManager?: () => void;
   isSaving?: boolean;
   lastSaved?: string;
   onProjectNameChange?: (name: string) => void;
 }
 
-export function Header({ projectName, onSave, onRun, onShare, isSaving, lastSaved, onProjectNameChange }: HeaderProps) {
+export function Header({ projectName, onSave, onRun, onShare, onTogglePackageManager, isSaving, lastSaved, onProjectNameChange }: HeaderProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -218,6 +219,12 @@ export function Header({ projectName, onSave, onRun, onShare, isSaving, lastSave
           <Share className="w-4 h-4 mr-2" />
           Share
         </Button>
+        {onTogglePackageManager && (
+          <Button variant="outline" size="sm" onClick={onTogglePackageManager}>
+            <Package className="w-4 h-4 mr-2" />
+            Packages
+          </Button>
+        )}
         <div className="w-px h-6 bg-border mx-2" />
         <Button 
           variant="ghost" 

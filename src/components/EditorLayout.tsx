@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "./Header";
-import { FileExplorer, FileNode } from "./FileExplorer";
+import { EnhancedFileExplorer, FileNode } from "./EnhancedFileExplorer";
 import { CodeEditor } from "./CodeEditor";
-import { Preview } from "./Preview";
+import { DynamicPreview } from "./DynamicPreview";
+import { PackageManager } from "./PackageManager";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
@@ -978,7 +979,7 @@ export function EditorLayout() {
       />
       
       <div className="flex-1 flex overflow-hidden">
-        <FileExplorer
+        <EnhancedFileExplorer
           files={files}
           activeFile={activeFile?.id || null}
           onFileSelect={handleFileSelect}
@@ -988,6 +989,9 @@ export function EditorLayout() {
           onToggleFolder={handleToggleFolder}
           onDeleteFile={handleDeleteFile}
           onRenameFile={handleRenameFile}
+          onUpdateFile={(fileId, content) => {
+            setFileContents(prev => ({ ...prev, [fileId]: content }));
+          }}
         />
         
         <CodeEditor
@@ -997,10 +1001,11 @@ export function EditorLayout() {
           fileName={activeFile?.name}
         />
         
-        <Preview
-          htmlContent={processedHtml}
-          cssContent={cssContent}
-          jsContent={jsContent}
+        <DynamicPreview
+          files={files.map(f => ({
+            ...f,
+            content: fileContents[f.id] || f.content
+          }))}
         />
       </div>
     </div>
