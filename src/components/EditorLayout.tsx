@@ -1043,6 +1043,7 @@ export function EditorLayout() {
                   });
                   setFiles(updatedFiles);
                 }}
+                onClose={() => setShowTerminal(false)}
                 className="h-full"
               />
             </div>

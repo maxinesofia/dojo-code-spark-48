@@ -13,10 +13,11 @@ interface TerminalProps {
   files: FileNode[];
   onCommandExecuted?: (command: string, output: string) => void;
   onFileSystemChange?: (newFiles: FileNode[]) => void;
+  onClose?: () => void;
   className?: string;
 }
 
-export function Terminal({ files, onCommandExecuted, onFileSystemChange, className = '' }: TerminalProps) {
+export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose, className = '' }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -231,7 +232,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
   };
 
   const handleClose = () => {
-    setIsMinimized(true);
+    onClose?.();
   };
 
   if (isMinimized) {
@@ -254,7 +255,8 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
     <div 
       className={`
         relative bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
-        transition-all duration-300 ease-out h-full
+        transition-all duration-300 ease-out
+        ${isMinimized ? 'h-10' : 'h-full'}
         ${className}
       `}
     >
@@ -307,13 +309,15 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
       </div>
 
       {/* Terminal Content */}
-      <div 
-        ref={terminalRef} 
-        className="h-[calc(100%-2.5rem)] p-2 overflow-hidden"
-        style={{ 
-          fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
-        }}
-      />
+      {!isMinimized && (
+        <div 
+          ref={terminalRef} 
+          className="h-[calc(100%-2.5rem)] p-2 overflow-hidden"
+          style={{ 
+            fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
+          }}
+        />
+      )}
     </div>
   );
 }
