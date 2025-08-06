@@ -1021,7 +1021,10 @@ export function EditorLayout() {
           </div>
           
           {showTerminal && (
-            <div className="h-64 border-t border-border">
+            <div className="h-80 border-t-2 border-primary bg-background">
+              <div className="p-2 text-sm text-muted-foreground border-b border-border">
+                Terminal
+              </div>
               <Terminal
                 files={files.map(f => ({
                   ...f,
@@ -1030,6 +1033,7 @@ export function EditorLayout() {
                 onCommandExecuted={(command, output) => {
                   console.log('Terminal command executed:', command, output);
                 }}
+                className="h-full"
               />
             </div>
           )}
