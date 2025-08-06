@@ -6,7 +6,7 @@ import { TerminalWebSocketService } from '../services/TerminalWebSocketService';
 import { WebTerminalService } from '../services/WebTerminalService';
 import { FileNode } from '../types/FileTypes';
 import { Button } from './ui/button';
-import { Maximize2, Minimize2, X } from 'lucide-react';
+import { Minimize2, X } from 'lucide-react';
 import 'xterm/css/xterm.css';
 
 interface TerminalProps {
@@ -28,7 +28,6 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isVirtual, setIsVirtual] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
   const setupVirtualTerminal = useCallback(() => {
@@ -218,25 +217,20 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
     };
   }, [setupVirtualTerminal]);
 
-  // Trigger resize when expansion state changes
+  // Trigger resize when minimized state changes
   useEffect(() => {
     if (fitAddonRef.current) {
       setTimeout(() => {
         fitAddonRef.current?.fit();
-      }, 300); // Wait for animation to complete
+      }, 300);
     }
-  }, [isExpanded, isMinimized]);
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
+  }, [isMinimized]);
 
   const toggleMinimized = () => {
     setIsMinimized(!isMinimized);
   };
 
   const handleClose = () => {
-    // For now, just minimize - you can add actual close logic later
     setIsMinimized(true);
   };
 
@@ -260,8 +254,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
     <div 
       className={`
         relative bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
-        transition-all duration-300 ease-out
-        ${isExpanded ? 'h-96' : 'h-64'}
+        transition-all duration-300 ease-out h-full
         ${className}
       `}
     >
@@ -301,14 +294,6 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
             className="h-6 w-6 p-0 hover:bg-muted"
           >
             <Minimize2 className="h-3 w-3" />
-          </Button>
-          <Button
-            onClick={toggleExpanded}
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-          >
-            {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
           </Button>
           <Button
             onClick={handleClose}
