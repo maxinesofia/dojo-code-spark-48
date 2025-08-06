@@ -978,7 +978,10 @@ export function EditorLayout() {
         onRun={handleRun}
         onShare={handleShare}
         onTogglePackageManager={() => setShowPackageManager(!showPackageManager)}
-        onToggleTerminal={() => setShowTerminal(!showTerminal)}
+        onToggleTerminal={() => {
+          console.log('Terminal toggle clicked, current state:', showTerminal);
+          setShowTerminal(!showTerminal);
+        }}
         isSaving={isSaving}
         lastSaved={lastSaved}
         onProjectNameChange={handleProjectNameChange}
