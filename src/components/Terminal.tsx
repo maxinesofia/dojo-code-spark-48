@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
-import { WebTerminalService } from '../services/WebTerminalService';
+import { TerminalWebSocketService } from '../services/TerminalWebSocketService';
 import { FileNode } from '../types/FileTypes';
 import 'xterm/css/xterm.css';
 
@@ -17,10 +17,10 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const terminalServiceRef = useRef<WebTerminalService | null>(null);
-  const [currentLine, setCurrentLine] = useState('');
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const terminalServiceRef = useRef<TerminalWebSocketService | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -70,165 +70,92 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
     terminal.open(terminalRef.current);
     fitAddon.fit();
 
-    // Initialize terminal service with callback for file system changes
-    const terminalService = new WebTerminalService((newFiles: FileNode[]) => {
-      onFileSystemChange?.(newFiles);
-    });
-    terminalService.setupVirtualFS(files);
-
     xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
+
+    // Initialize real terminal service
+    const terminalService = new TerminalWebSocketService();
     terminalServiceRef.current = terminalService;
 
-    // Print welcome message
-    terminal.writeln('\x1b[32mWelcome to Tutorials Dojo Terminal\x1b[0m');
-    terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
-    terminal.writeln('');
-    
-    const prompt = () => {
-      const cwd = terminalService.getCurrentDirectory();
-      const user = terminalService.getEnvironment('USER') || 'developer';
-      terminal.write(`\x1b[32m${user}\x1b[0m:\x1b[34m${cwd}\x1b[0m$ `);
-    };
+    // Setup event handlers
+    terminalService.onConnected((sessionId) => {
+      setSessionId(sessionId);
+      setIsConnected(true);
+      setError(null);
+      
+      terminal.writeln('\x1b[32m🚀 Connecting to Firecracker VM...\x1b[0m');
+      
+      // Start terminal with current project (you'll need to pass projectId and userId)
+      const projectId = 'current-project-id'; // Get from props or context
+      const userId = 'current-user-id'; // Get from auth context
+      
+      terminalService.startTerminal(projectId, userId);
+    });
 
-    prompt();
+    terminalService.onOutput((data) => {
+      terminal.write(data);
+    });
+
+    terminalService.onError((error) => {
+      setError(error);
+      terminal.writeln(`\r\n\x1b[31mError: ${error}\x1b[0m\r\n`);
+    });
+
+    terminalService.onDisconnected(() => {
+      setIsConnected(false);
+      setSessionId(null);
+      terminal.writeln('\r\n\x1b[33mTerminal disconnected. Trying to reconnect...\x1b[0m\r\n');
+    });
 
     // Handle user input
-    let currentInput = '';
-    let commandHistory: string[] = [];
-    let historyIdx = -1;
+    let currentCommand = '';
 
-    terminal.onData(async (data) => {
+    terminal.onData((data) => {
       const code = data.charCodeAt(0);
-
+      
       if (code === 13) { // Enter
-        terminal.writeln('');
-        
-        if (currentInput.trim()) {
-          commandHistory.unshift(currentInput);
-          if (commandHistory.length > 100) {
-            commandHistory = commandHistory.slice(0, 100);
-          }
-          
-          try {
-            const output = await terminalService.executeCommand(currentInput);
-            if (output) {
-              // Handle clear command specially
-              if (currentInput.trim() === 'clear') {
-                terminal.clear();
-                terminal.writeln('\x1b[32mWelcome to Tutorials Dojo Terminal\x1b[0m');
-                terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
-                terminal.writeln('');
-              } else {
-                // Split output by lines and write each line separately to ensure proper rendering
-                const lines = output.split('\n');
-                lines.forEach((line, index) => {
-                  if (index === lines.length - 1 && line === '') return; // Skip empty last line
-                  terminal.writeln(line);
-                });
-              }
-            }
-            onCommandExecuted?.(currentInput, output);
-          } catch (error) {
-            terminal.writeln(`\x1b[31mError: ${error instanceof Error ? error.message : 'Unknown error'}\x1b[0m`);
-          }
+        if (currentCommand.trim()) {
+          // Send command to real terminal
+          terminalService.executeCommand(currentCommand);
+          onCommandExecuted?.(currentCommand, ''); // We'll get output via WebSocket
+        } else {
+          terminalService.executeCommand('');
         }
-        
-        currentInput = '';
-        historyIdx = -1;
-        prompt();
+        currentCommand = '';
       } else if (code === 127) { // Backspace
-        if (currentInput.length > 0) {
-          currentInput = currentInput.slice(0, -1);
+        if (currentCommand.length > 0) {
+          currentCommand = currentCommand.slice(0, -1);
           terminal.write('\b \b');
         }
-      } else if (code === 27) { // Escape sequences (arrows)
-        // Handle arrow keys for command history
-        terminal.onData((escData) => {
-          if (escData === '[A') { // Up arrow
-            if (historyIdx < commandHistory.length - 1) {
-              historyIdx++;
-              // Clear current line
-              terminal.write('\r\x1b[K');
-              const cwd = terminalService.getCurrentDirectory();
-              const user = terminalService.getEnvironment('USER') || 'developer';
-              terminal.write(`\x1b[32m${user}\x1b[0m:\x1b[34m${cwd}\x1b[0m$ `);
-              
-              currentInput = commandHistory[historyIdx];
-              terminal.write(currentInput);
-            }
-          } else if (escData === '[B') { // Down arrow
-            if (historyIdx > 0) {
-              historyIdx--;
-              // Clear current line
-              terminal.write('\r\x1b[K');
-              const cwd = terminalService.getCurrentDirectory();
-              const user = terminalService.getEnvironment('USER') || 'developer';
-              terminal.write(`\x1b[32m${user}\x1b[0m:\x1b[34m${cwd}\x1b[0m$ `);
-              
-              currentInput = commandHistory[historyIdx];
-              terminal.write(currentInput);
-            } else if (historyIdx === 0) {
-              historyIdx = -1;
-              // Clear current line
-              terminal.write('\r\x1b[K');
-              const cwd = terminalService.getCurrentDirectory();
-              const user = terminalService.getEnvironment('USER') || 'developer';
-              terminal.write(`\x1b[32m${user}\x1b[0m:\x1b[34m${cwd}\x1b[0m$ `);
-              
-              currentInput = '';
-            }
-          }
-        });
-      } else if (code === 9) { // Tab (auto-completion)
-        const suggestions = terminalService.getAutoComplete(currentInput);
-        if (suggestions.length === 1) {
-          const completion = suggestions[0].substring(currentInput.length);
-          currentInput += completion;
-          terminal.write(completion);
-        } else if (suggestions.length > 1) {
-          terminal.writeln('');
-          terminal.writeln(suggestions.join('  '));
-          prompt();
-          terminal.write(currentInput);
-        }
       } else if (code === 3) { // Ctrl+C
-        terminal.writeln('^C');
-        currentInput = '';
-        historyIdx = -1;
-        prompt();
+        terminalService.executeCommand('\x03'); // Send Ctrl+C to terminal
+        currentCommand = '';
       } else if (code === 12) { // Ctrl+L
         terminal.clear();
-        terminal.writeln('\x1b[32mWelcome to Tutorials Dojo Terminal\x1b[0m');
-        terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
-        terminal.writeln('');
-        prompt();
       } else if (code >= 32 && code <= 126) { // Printable characters
-        currentInput += data;
+        currentCommand += data;
         terminal.write(data);
       }
     });
 
-    // Handle window resize
+    // Handle terminal resize
     const handleResize = () => {
-      fitAddon.fit();
+      if (fitAddon) {
+        fitAddon.fit();
+        if (terminalService.isConnected()) {
+          terminalService.resizeTerminal(terminal.cols, terminal.rows);
+        }
+      }
     };
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      terminalService.disconnect();
       terminal.dispose();
     };
-  }, [files, onCommandExecuted]);
-
-  // Update file system when files change
-  useEffect(() => {
-    if (terminalServiceRef.current && files.length > 0) {
-      console.log('Updating terminal file system with files:', files.map(f => f.name));
-      terminalServiceRef.current.setupVirtualFS(files);
-    }
-  }, [files]);
+  }, [onCommandExecuted]);
 
   const handleClear = () => {
     if (xtermRef.current) {
@@ -240,12 +167,34 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
     if (fitAddonRef.current) {
       setTimeout(() => {
         fitAddonRef.current?.fit();
+        if (terminalServiceRef.current?.isConnected()) {
+          const terminal = xtermRef.current;
+          if (terminal) {
+            terminalServiceRef.current.resizeTerminal(terminal.cols, terminal.rows);
+          }
+        }
       }, 100);
     }
   };
 
   return (
     <div className={`relative h-full bg-[#1e1e1e] ${className}`}>
+      {error && (
+        <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-sm z-10">
+          {error}
+        </div>
+      )}
+      {!isConnected && (
+        <div className="absolute top-2 left-2 bg-yellow-600 text-white px-3 py-1 rounded text-sm z-10 flex items-center gap-2">
+          <div className="animate-spin h-3 w-3 border border-white border-t-transparent rounded-full"></div>
+          Connecting to terminal...
+        </div>
+      )}
+      {isConnected && sessionId && (
+        <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded text-sm z-10">
+          Connected: {sessionId.slice(0, 8)}
+        </div>
+      )}
       <div 
         ref={terminalRef} 
         className="h-full p-2 overflow-hidden"
