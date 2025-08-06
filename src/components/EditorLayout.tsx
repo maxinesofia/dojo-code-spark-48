@@ -6,6 +6,8 @@ import { CodeEditor } from "./CodeEditor";
 import { Preview } from "./Preview";
 import { useToast } from "@/hooks/use-toast";
 
+const STORAGE_KEY = 'tutorials-dojo-project-state';
+
 // Default project files
 const defaultFiles: FileNode[] = [
   {
@@ -559,23 +561,81 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 };
 
+// Load project state from localStorage
+const loadProjectState = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        files: parsed.files || defaultFiles,
+        fileContents: parsed.fileContents || {},
+        activeFileId: parsed.activeFileId || null
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load project state:', error);
+  }
+  return null;
+};
+
 export function EditorLayout() {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get('template');
   const projectName = searchParams.get('name') || 'My Awesome Project';
   
+  // Initialize state from localStorage or template/default
   const initialFiles = templateId ? getTemplateFiles(templateId) : defaultFiles;
-  const [files, setFiles] = useState<FileNode[]>(initialFiles);
-  const [activeFile, setActiveFile] = useState<FileNode | null>(initialFiles[0]);
-  const [fileContents, setFileContents] = useState<Record<string, string>>(
-    initialFiles.reduce((acc, file) => {
+  const savedState = !templateId ? loadProjectState() : null;
+  
+  const [files, setFiles] = useState<FileNode[]>(savedState?.files || initialFiles);
+  const [activeFile, setActiveFile] = useState<FileNode | null>(() => {
+    if (savedState?.activeFileId) {
+      const findFileById = (nodes: FileNode[], id: string): FileNode | null => {
+        for (const node of nodes) {
+          if (node.id === id) return node;
+          if (node.children) {
+            const found = findFileById(node.children, id);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      return findFileById(savedState.files, savedState.activeFileId);
+    }
+    return initialFiles[0];
+  });
+  
+  const [fileContents, setFileContents] = useState<Record<string, string>>(() => {
+    if (savedState?.fileContents && Object.keys(savedState.fileContents).length > 0) {
+      return savedState.fileContents;
+    }
+    return initialFiles.reduce((acc, file) => {
       if (file.content) {
         acc[file.id] = file.content;
       }
       return acc;
-    }, {} as Record<string, string>)
-  );
+    }, {} as Record<string, string>);
+  });
+  
   const { toast } = useToast();
+
+  // Save project state to localStorage whenever it changes
+  useEffect(() => {
+    if (!templateId) { // Only save if not using a template (preserves user work)
+      try {
+        const stateToSave = {
+          files,
+          fileContents,
+          activeFileId: activeFile?.id || null,
+          lastSaved: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+      } catch (error) {
+        console.error('Failed to save project state:', error);
+      }
+    }
+  }, [files, fileContents, activeFile, templateId]);
 
   const handleFileSelect = useCallback((file: FileNode) => {
     setActiveFile(file);
