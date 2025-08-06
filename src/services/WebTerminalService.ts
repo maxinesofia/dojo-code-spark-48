@@ -1,24 +1,24 @@
 import { FileNode } from '../types/FileTypes';
 
-export interface TerminalCommand {
+interface TerminalCommand {
   command: string;
   args: string[];
-  timestamp: Date;
   output: string;
   exitCode: number;
+  timestamp: Date;
 }
 
-export interface VirtualFileSystem {
+interface VirtualFileSystem {
   currentDirectory: string;
-  files: Map<string, FileNode>;
+  files: Map<string, { content: string; mimeType?: string }>;
   directories: Set<string>;
 }
 
 export class WebTerminalService {
-  private history: TerminalCommand[] = [];
   private vfs: VirtualFileSystem;
-  private environment: Map<string, string> = new Map();
-  private aliases: Map<string, string> = new Map();
+  private environment: Map<string, string>;
+  private commandHistory: TerminalCommand[];
+  private aliases: Map<string, string>;
 
   constructor() {
     this.vfs = {
@@ -27,79 +27,64 @@ export class WebTerminalService {
       directories: new Set(['/'])
     };
     
-    this.setupDefaultEnvironment();
-    this.setupDefaultAliases();
+    this.environment = new Map([
+      ['HOME', '/'],
+      ['PWD', '/'],
+      ['USER', 'developer'],
+      ['SHELL', '/bin/bash'],
+      ['PATH', '/usr/bin:/bin:/usr/local/bin']
+    ]);
+    
+    this.commandHistory = [];
+    
+    this.aliases = new Map([
+      ['ll', 'ls -la'],
+      ['la', 'ls -la'],
+      ['..', 'cd ..'],
+      ['cls', 'clear']
+    ]);
   }
 
-  private setupDefaultEnvironment(): void {
-    this.environment.set('PWD', '/');
-    this.environment.set('HOME', '/');
-    this.environment.set('USER', 'developer');
-    this.environment.set('SHELL', '/bin/bash');
-    this.environment.set('TERM', 'xterm-256color');
-    this.environment.set('PATH', '/bin:/usr/bin:/usr/local/bin:/node_modules/.bin');
-  }
-
-  private setupDefaultAliases(): void {
-    this.aliases.set('ll', 'ls -la');
-    this.aliases.set('la', 'ls -la');
-    this.aliases.set('..', 'cd ..');
-    this.aliases.set('...', 'cd ../..');
-    this.aliases.set('cls', 'clear');
-  }
-
-  setupVirtualFS(files: FileNode[]): void {
+  setupVirtualFS(files: FileNode[]) {
     this.vfs.files.clear();
     this.vfs.directories.clear();
     this.vfs.directories.add('/');
-
-    this.processFileNodes(files, '/');
-  }
-
-  private processFileNodes(nodes: FileNode[], currentPath: string): void {
-    nodes.forEach(node => {
-      const fullPath = currentPath === '/' ? `/${node.name}` : `${currentPath}/${node.name}`;
+    
+    const processNode = (node: FileNode, parentPath: string = '/') => {
+      const fullPath = parentPath === '/' ? `/${node.name}` : `${parentPath}/${node.name}`;
       
-      if (node.type === 'folder') {
+      if (node.type === 'file') {
+        this.vfs.files.set(fullPath, {
+          content: node.content || '',
+          mimeType: node.mimeType
+        });
+      } else if (node.type === 'folder') {
         this.vfs.directories.add(fullPath);
         if (node.children) {
-          this.processFileNodes(node.children, fullPath);
-        }
-      } else {
-        this.vfs.files.set(fullPath, node);
-        // Also add parent directories
-        const parentPath = fullPath.substring(0, fullPath.lastIndexOf('/')) || '/';
-        if (parentPath !== '/') {
-          this.vfs.directories.add(parentPath);
+          node.children.forEach(child => processNode(child, fullPath));
         }
       }
-    });
+    };
+    
+    files.forEach(file => processNode(file));
   }
 
   async executeCommand(command: string): Promise<string> {
-    const trimmedCommand = command.trim();
-    if (!trimmedCommand) return '';
-
-    // Expand aliases
-    const expandedCommand = this.expandAliases(trimmedCommand);
+    const expandedCommand = this.expandAliases(command);
+    const [cmd, ...args] = this.parseCommand(expandedCommand);
     
-    // Parse command and arguments
-    const parts = this.parseCommand(expandedCommand);
-    const cmd = parts[0];
-    const args = parts.slice(1);
-
     const terminalCommand: TerminalCommand = {
-      command: trimmedCommand,
+      command: cmd,
       args,
-      timestamp: new Date(),
       output: '',
-      exitCode: 0
+      exitCode: 0,
+      timestamp: new Date()
     };
 
     try {
-      switch (cmd) {
+      switch (cmd.toLowerCase()) {
         case 'ls':
-          terminalCommand.output = await this.handleLs(args);
+          terminalCommand.output = this.handleLs(args);
           break;
         case 'cd':
           terminalCommand.output = await this.handleCd(args);
@@ -116,32 +101,33 @@ export class WebTerminalService {
         case 'cat':
           terminalCommand.output = await this.handleCat(args);
           break;
-        case 'grep':
-          terminalCommand.output = await this.handleGrep(args);
-          break;
         case 'echo':
           terminalCommand.output = args.join(' ');
           break;
         case 'env':
-          terminalCommand.output = this.handleEnv();
+          terminalCommand.output = Array.from(this.environment.entries())
+            .map(([key, value]) => `${key}=${value}`)
+            .join('\n');
           break;
         case 'export':
           terminalCommand.output = this.handleExport(args);
           break;
         case 'history':
-          terminalCommand.output = this.handleHistory();
+          terminalCommand.output = this.commandHistory
+            .map((cmd, index) => `${index + 1}  ${cmd.command} ${cmd.args.join(' ')}`)
+            .join('\n');
           break;
         case 'clear':
           terminalCommand.output = '\x1b[2J\x1b[H';
           break;
         case 'npm':
-          terminalCommand.output = await this.handleNpmCommands(args);
+          terminalCommand.output = this.handleNpmCommands(args);
           break;
         case 'node':
           terminalCommand.output = await this.handleNodeCommand(args);
           break;
         case 'git':
-          terminalCommand.output = await this.handleGitCommands(args);
+          terminalCommand.output = this.handleGitCommands(args);
           break;
         case 'code':
           terminalCommand.output = this.handleCodeCommand(args);
@@ -156,13 +142,10 @@ export class WebTerminalService {
           terminalCommand.output = await this.handleMv(args);
           break;
         case 'find':
-          terminalCommand.output = await this.handleFind(args);
+          terminalCommand.output = this.handleFind(args);
           break;
-        case 'ps':
-          terminalCommand.output = this.handlePs();
-          break;
-        case 'which':
-          terminalCommand.output = this.handleWhich(args);
+        case 'grep':
+          terminalCommand.output = await this.handleGrep(args);
           break;
         case 'tree':
           terminalCommand.output = this.handleTree(args);
@@ -172,6 +155,12 @@ export class WebTerminalService {
           break;
         case 'wget':
           terminalCommand.output = await this.handleWget(args);
+          break;
+        case 'ps':
+          terminalCommand.output = this.handlePs();
+          break;
+        case 'which':
+          terminalCommand.output = this.handleWhich(args);
           break;
         case 'help':
           terminalCommand.output = this.handleHelp();
@@ -185,39 +174,38 @@ export class WebTerminalService {
       terminalCommand.exitCode = 1;
     }
 
-    this.history.push(terminalCommand);
+    this.commandHistory.push(terminalCommand);
     return terminalCommand.output;
   }
 
   private expandAliases(command: string): string {
-    const parts = command.split(' ');
-    const cmd = parts[0];
-    
-    if (this.aliases.has(cmd)) {
-      const aliasValue = this.aliases.get(cmd)!;
-      return aliasValue + ' ' + parts.slice(1).join(' ');
-    }
-    
-    return command;
+    const [cmd, ...args] = command.trim().split(/\s+/);
+    const expanded = this.aliases.get(cmd);
+    return expanded ? `${expanded} ${args.join(' ')}`.trim() : command;
   }
 
   private parseCommand(command: string): string[] {
-    // Simple command parsing (doesn't handle complex shell features)
-    return command.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+    return command.trim().split(/\s+/).filter(arg => arg.length > 0);
   }
 
-  private async handleLs(args: string[]): Promise<string> {
-    let path = this.vfs.currentDirectory;
+  getCurrentDirectory(): string {
+    return this.vfs.currentDirectory;
+  }
+
+  getEnvironment(key: string): string | undefined {
+    return this.environment.get(key);
+  }
+
+  private handleLs(args: string[]): string {
     let showHidden = false;
     let longFormat = false;
-    let showAll = false;
+    let path = this.vfs.currentDirectory;
 
-    // Parse flags
+    // Parse arguments
     for (const arg of args) {
       if (arg.startsWith('-')) {
-        if (arg.includes('a')) showAll = true;
+        if (arg.includes('a')) showHidden = true;
         if (arg.includes('l')) longFormat = true;
-        if (arg.includes('h')) showHidden = true;
       } else {
         path = this.resolvePath(arg);
       }
@@ -228,27 +216,28 @@ export class WebTerminalService {
     // Add directories
     for (const dir of this.vfs.directories) {
       if (this.isInDirectory(dir, path) && dir !== path) {
-        const name = dir.substring(path.length + (path === '/' ? 0 : 1));
-        if (name && !name.includes('/')) {
-          if (showAll || !name.startsWith('.')) {
-            items.push(longFormat ? `drwxr-xr-x  2 developer developer  4096 ${new Date().toDateString()} ${name}/` : `${name}/`);
+        const name = dir.substring(path.length + 1);
+        if (!name.includes('/') && (showHidden || !name.startsWith('.'))) {
+          if (longFormat) {
+            items.push(`drwxr-xr-x 2 developer developer 4096 ${new Date().toLocaleDateString()} ${name}/`);
+          } else {
+            items.push(name + '/');
           }
         }
       }
     }
 
     // Add files
-    for (const [filePath, file] of this.vfs.files) {
+    for (const [filePath] of this.vfs.files) {
       if (this.isInDirectory(filePath, path)) {
-        const name = filePath.substring(path.length + (path === '/' ? 0 : 1));
-        if (name && !name.includes('/')) {
-          if (showAll || !name.startsWith('.')) {
-            if (longFormat) {
-              const size = file.content?.length || 0;
-              items.push(`-rw-r--r--  1 developer developer  ${size.toString().padStart(6)} ${new Date().toDateString()} ${name}`);
-            } else {
-              items.push(name);
-            }
+        const name = filePath.substring(path.length + 1);
+        if (!name.includes('/') && (showHidden || !name.startsWith('.'))) {
+          if (longFormat) {
+            const file = this.vfs.files.get(filePath);
+            const size = file?.content?.length || 0;
+            items.push(`-rw-r--r-- 1 developer developer ${size} ${new Date().toLocaleDateString()} ${name}`);
+          } else {
+            items.push(name);
           }
         }
       }
@@ -349,42 +338,16 @@ export class WebTerminalService {
     return outputs.join('\n');
   }
 
-  private async handleGrep(args: string[]): Promise<string> {
-    if (args.length < 2) {
-      throw new Error('grep: missing pattern or file');
-    }
-
-    const pattern = args[0];
-    const file = args[1];
-    const path = this.resolvePath(file);
-    const fileNode = this.vfs.files.get(path);
-
-    if (!fileNode) {
-      throw new Error(`grep: ${file}: No such file or directory`);
-    }
-
-    const lines = (fileNode.content || '').split('\n');
-    const matches = lines.filter(line => line.includes(pattern));
-    
-    return matches.join('\n');
-  }
-
-  private handleEnv(): string {
-    const envVars: string[] = [];
-    for (const [key, value] of this.environment) {
-      envVars.push(`${key}=${value}`);
-    }
-    return envVars.sort().join('\n');
-  }
-
   private handleExport(args: string[]): string {
     if (args.length === 0) {
-      return this.handleEnv();
+      return Array.from(this.environment.entries())
+        .map(([key, value]) => `declare -x ${key}="${value}"`)
+        .join('\n');
     }
 
     for (const arg of args) {
-      const [key, value] = arg.split('=', 2);
-      if (value !== undefined) {
+      const [key, value] = arg.split('=');
+      if (key && value !== undefined) {
         this.environment.set(key, value);
       }
     }
@@ -392,71 +355,35 @@ export class WebTerminalService {
     return '';
   }
 
-  private handleHistory(): string {
-    return this.history
-      .map((cmd, index) => `${index + 1}  ${cmd.command}`)
-      .join('\n');
-  }
-
-  private async handleNpmCommands(args: string[]): Promise<string> {
-    if (args.length === 0) {
-      return 'npm <command>\n\nUsage:\n  npm install\n  npm run <script>\n  npm test\n  npm start\n  npm build';
-    }
-
-    const subcommand = args[0];
-
-    switch (subcommand) {
+  private handleNpmCommands(args: string[]): string {
+    const [subCommand] = args;
+    
+    switch (subCommand) {
+      case 'init':
+        return 'Initialized a new npm project!\n✓ package.json created';
       case 'install':
       case 'i':
-        return this.handleNpmInstall(args.slice(1));
-      case 'run':
-        return this.handleNpmRun(args.slice(1));
-      case 'test':
-        return 'Running tests...\n✓ All tests passed!';
+        const packageName = args[1] || 'dependencies';
+        return `Installing ${packageName}...\n✓ Package installed successfully!`;
       case 'start':
-        return 'Starting development server...\n✓ Server running on http://localhost:3000';
+        return '🚀 Starting development server...\n✓ Server running on http://localhost:3000';
       case 'build':
-        return 'Building project...\n✓ Build completed successfully!';
+        return '📦 Building project...\n✓ Build completed successfully!';
+      case 'test':
+        return '🧪 Running tests...\n✓ All tests passed!';
       case 'version':
-        return 'npm: 9.0.0\nnode: 18.0.0';
+        return 'npm v9.8.1';
+      case 'list':
+      case 'ls':
+        return 'project@1.0.0\n├── react@18.2.0\n├── typescript@5.1.0\n└── vite@4.4.0';
       default:
-        return `npm: '${subcommand}' is not a npm command. See 'npm help'.`;
-    }
-  }
-
-  private handleNpmInstall(packages: string[]): string {
-    if (packages.length === 0) {
-      return 'Installing dependencies...\n✓ Dependencies installed successfully!';
-    }
-
-    return `Installing ${packages.join(', ')}...\n✓ Packages installed successfully!`;
-  }
-
-  private handleNpmRun(args: string[]): string {
-    if (args.length === 0) {
-      return 'Available scripts:\n  dev: vite\n  build: vite build\n  preview: vite preview';
-    }
-
-    const script = args[0];
-    switch (script) {
-      case 'dev':
-        return 'Starting development server...\n✓ Server running on http://localhost:3000';
-      case 'build':
-        return 'Building project...\n✓ Build completed successfully!';
-      case 'preview':
-        return 'Starting preview server...\n✓ Preview server running on http://localhost:4173';
-      default:
-        return `Error: Missing script: "${script}"`;
+        return `npm ${subCommand || ''}\nUsage: npm <command>\n\nCommands:\n  init     Initialize a new project\n  install  Install dependencies\n  start    Start development server\n  build    Build for production\n  test     Run tests`;
     }
   }
 
   private async handleNodeCommand(args: string[]): Promise<string> {
     if (args.length === 0) {
-      return 'Node.js v18.0.0\nType ".help" for more information.';
-    }
-
-    if (args[0] === '--version' || args[0] === '-v') {
-      return 'v18.0.0';
+      return 'Node.js v18.17.0\nWelcome to Node.js REPL (simulated)';
     }
 
     const filename = args[0];
@@ -471,145 +398,166 @@ export class WebTerminalService {
   }
 
   private handleHelp(): string {
-    return `Available commands:
-  ls [options] [path]     - List directory contents
-  cd [path]              - Change directory
-  pwd                    - Print working directory
-  mkdir <name>           - Create directory
-  rm [options] <file>    - Remove files/directories
-  cat <file>             - Display file contents
-  grep <pattern> <file>  - Search for pattern in file
-  echo <text>            - Display text
-  env                    - Show environment variables
-  export <var>=<value>   - Set environment variable
-  history                - Show command history
-  clear                  - Clear terminal
-  npm <command>          - NPM package manager
-  node [file]            - Run Node.js
-  help                   - Show this help
+    return `\x1b[1m\x1b[36mTutorials Dojo Terminal - Available Commands\x1b[0m
 
-Shortcuts:
-  ll, la                 - ls -la
-  ..                     - cd ..
-  cls                    - clear`;
+\x1b[1m\x1b[33mFile System:\x1b[0m
+  \x1b[32mls\x1b[0m [options] [path]      List directory contents
+  \x1b[32mcd\x1b[0m [path]               Change directory  
+  \x1b[32mpwd\x1b[0m                      Print working directory
+  \x1b[32mmkdir\x1b[0m <name>             Create directory
+  \x1b[32mrm\x1b[0m [options] <file>      Remove files/directories
+  \x1b[32mcat\x1b[0m <file>               Display file contents
+  \x1b[32mtouch\x1b[0m <file>             Create empty file
+  \x1b[32mcp\x1b[0m <src> <dest>          Copy files
+  \x1b[32mmv\x1b[0m <src> <dest>          Move/rename files
+  \x1b[32mfind\x1b[0m <path> <name>       Find files
+  \x1b[32mtree\x1b[0m [path]              Display directory tree
+
+\x1b[1m\x1b[33mText Processing:\x1b[0m
+  \x1b[32mgrep\x1b[0m <pattern> <file>    Search for pattern in file
+  \x1b[32mecho\x1b[0m <text>              Display text
+
+\x1b[1m\x1b[33mSystem:\x1b[0m
+  \x1b[32menv\x1b[0m                      Show environment variables
+  \x1b[32mexport\x1b[0m <var>=<value>     Set environment variable
+  \x1b[32mhistory\x1b[0m                  Show command history
+  \x1b[32mclear\x1b[0m                    Clear terminal
+  \x1b[32mps\x1b[0m                       List running processes
+  \x1b[32mwhich\x1b[0m <command>          Show command location
+
+\x1b[1m\x1b[33mDevelopment:\x1b[0m
+  \x1b[32mnpm\x1b[0m <command>            NPM package manager
+  \x1b[32mnode\x1b[0m <file>              Run Node.js script
+  \x1b[32mgit\x1b[0m <command>            Git version control
+  \x1b[32mcode\x1b[0m <file>              Open file in editor
+
+\x1b[1m\x1b[33mNetwork:\x1b[0m
+  \x1b[32mcurl\x1b[0m <url>               Download from URL
+  \x1b[32mwget\x1b[0m <url>               Download file
+
+\x1b[1m\x1b[33mShortcuts:\x1b[0m
+  \x1b[32mll\x1b[0m, \x1b[32mla\x1b[0m                  ls -la
+  \x1b[32m..\x1b[0m                       cd ..
+  \x1b[32mcls\x1b[0m                      clear
+
+\x1b[1m\x1b[33mHelp:\x1b[0m
+  \x1b[32mhelp\x1b[0m                     Show this help message
+
+\x1b[90mTip: Use \x1b[33mTab\x1b[90m for auto-completion and \x1b[33m↑/↓\x1b[90m for command history\x1b[0m`;
   }
 
   private resolvePath(path: string): string {
     if (path.startsWith('/')) {
       return path === '/' ? '/' : path.replace(/\/$/, '');
     }
-
-    let resolved = this.vfs.currentDirectory;
-    const parts = path.split('/');
-
-    for (const part of parts) {
-      if (part === '' || part === '.') {
-        continue;
-      } else if (part === '..') {
-        if (resolved !== '/') {
-          resolved = resolved.substring(0, resolved.lastIndexOf('/')) || '/';
-        }
-      } else {
-        resolved = resolved === '/' ? `/${part}` : `${resolved}/${part}`;
-      }
+    
+    if (path === '.') {
+      return this.vfs.currentDirectory;
     }
-
-    return resolved;
+    
+    if (path === '..') {
+      if (this.vfs.currentDirectory === '/') return '/';
+      const parts = this.vfs.currentDirectory.split('/').filter(p => p);
+      parts.pop();
+      return parts.length === 0 ? '/' : '/' + parts.join('/');
+    }
+    
+    const base = this.vfs.currentDirectory === '/' ? '' : this.vfs.currentDirectory;
+    return `${base}/${path}`.replace(/\/+/g, '/');
   }
 
   private isInDirectory(filePath: string, dirPath: string): boolean {
     if (dirPath === '/') {
-      return true;
+      return filePath.startsWith('/') && filePath !== '/';
     }
     return filePath.startsWith(dirPath + '/');
   }
 
-  showCommandHistory(): string[] {
-    return this.history.map(cmd => cmd.command);
-  }
-
-  getEnvironment(key: string): string | undefined {
-    return this.environment.get(key);
-  }
-
-  setEnvironment(key: string, value: string): void {
-    this.environment.set(key, value);
-  }
-
-  getCurrentDirectory(): string {
-    return this.vfs.currentDirectory;
-  }
-
   getAutoComplete(partial: string): string[] {
     const suggestions: string[] = [];
+    const parts = partial.split(' ');
+    const lastPart = parts[parts.length - 1];
     
-    // Command suggestions
-    const commands = ['ls', 'cd', 'pwd', 'mkdir', 'rm', 'cat', 'grep', 'echo', 'env', 'export', 'history', 'clear', 'npm', 'node', 'git', 'code', 'touch', 'cp', 'mv', 'find', 'ps', 'which', 'tree', 'curl', 'wget', 'help'];
-    suggestions.push(...commands.filter(cmd => cmd.startsWith(partial)));
-
-    // File/directory suggestions for current directory
-    const currentDir = this.vfs.currentDirectory;
-    
-    // Add directories
-    for (const dir of this.vfs.directories) {
-      if (this.isInDirectory(dir, currentDir) && dir !== currentDir) {
-        const name = dir.substring(currentDir.length + (currentDir === '/' ? 0 : 1));
-        if (name && !name.includes('/') && name.startsWith(partial)) {
-          suggestions.push(name + '/');
+    if (parts.length === 1) {
+      // Command completion
+      const commands = ['ls', 'cd', 'pwd', 'mkdir', 'rm', 'cat', 'grep', 'echo', 'env', 'export', 'history', 'clear', 'npm', 'node', 'git', 'code', 'touch', 'cp', 'mv', 'find', 'ps', 'which', 'tree', 'curl', 'wget', 'help'];
+      commands.forEach(cmd => {
+        if (cmd.startsWith(lastPart)) {
+          suggestions.push(cmd);
+        }
+      });
+    } else {
+      // File/directory completion
+      const currentDir = this.vfs.currentDirectory;
+      
+      for (const dir of this.vfs.directories) {
+        if (this.isInDirectory(dir, currentDir) && dir !== currentDir) {
+          const name = dir.substring(currentDir.length + 1);
+          if (!name.includes('/') && name.startsWith(lastPart)) {
+            suggestions.push(name + '/');
+          }
+        }
+      }
+      
+      for (const [filePath] of this.vfs.files) {
+        if (this.isInDirectory(filePath, currentDir)) {
+          const name = filePath.substring(currentDir.length + 1);
+          if (!name.includes('/') && name.startsWith(lastPart)) {
+            suggestions.push(name);
+          }
         }
       }
     }
-
-    // Add files
-    for (const [filePath] of this.vfs.files) {
-      if (this.isInDirectory(filePath, currentDir)) {
-        const name = filePath.substring(currentDir.length + (currentDir === '/' ? 0 : 1));
-        if (name && !name.includes('/') && name.startsWith(partial)) {
-          suggestions.push(name);
-        }
-      }
-    }
-
+    
     return suggestions.sort();
   }
 
-  private async handleGitCommands(args: string[]): Promise<string> {
-    if (args.length === 0) {
-      return 'git version 2.34.1\nUsage: git <command> [options]';
-    }
-
-    const subcommand = args[0];
-    switch (subcommand) {
-      case 'status':
-        return 'On branch main\nnothing to commit, working tree clean';
+  private handleGitCommands(args: string[]): string {
+    const [subCommand] = args;
+    
+    switch (subCommand) {
       case 'init':
-        return 'Initialized empty Git repository in ' + this.vfs.currentDirectory;
+        return 'Initialized empty Git repository in /project/.git/';
+      case 'status':
+        return `On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   src/App.js
+
+no changes added to commit (use "git add" to stage them)`;
       case 'add':
-        return args.length > 1 ? `Added ${args.slice(1).join(', ')} to staging area` : 'Nothing specified, nothing added.';
+        const files = args.slice(1);
+        return files.length > 0 ? `Added ${files.join(', ')} to staging area` : 'Nothing specified, nothing added.';
       case 'commit':
-        return 'Changes committed successfully';
+        return 'Committed changes to local repository\n✓ 1 file changed, 5 insertions(+), 2 deletions(-)';
       case 'push':
-        return 'Everything up-to-date';
+        return 'Pushing to origin main...\n✓ Successfully pushed changes';
       case 'pull':
-        return 'Already up to date.';
-      case 'clone':
-        return args.length > 1 ? `Cloning into '${args[1]}'...` : 'You must specify a repository to clone.';
+        return 'Pulling from origin main...\n✓ Already up to date';
       case 'branch':
-        return '* main';
-      case 'checkout':
-        return args.length > 1 ? `Switched to branch '${args[1]}'` : 'You must specify a branch to checkout.';
+        return '* main\n  feature/new-component';
       case 'log':
-        return 'commit abc123 (HEAD -> main)\nAuthor: Developer <dev@example.com>\nDate: ' + new Date().toDateString() + '\n\n    Initial commit';
+        return `commit abc123def456 (HEAD -> main)
+Author: Developer <dev@example.com>
+Date:   ${new Date().toLocaleDateString()}
+
+    Add new features and improvements`;
       default:
-        return `git: '${subcommand}' is not a git command. See 'git --help'.`;
+        return `git ${subCommand || ''}\nUsage: git <command> [<args>]\n\nCommands:\n  init     Initialize repository\n  status   Show working tree status\n  add      Add file contents to index\n  commit   Record changes to repository\n  push     Update remote refs\n  pull     Fetch and integrate changes\n  branch   List branches\n  log      Show commit logs`;
     }
   }
 
   private handleCodeCommand(args: string[]): string {
     if (args.length === 0) {
-      return 'Opening current directory in code editor...';
+      return 'Opening VS Code...\n✓ Code editor launched';
     }
-    return `Opening ${args[0]} in code editor...`;
+    
+    const filename = args[0];
+    return `Opening ${filename} in VS Code...\n✓ File opened in editor`;
   }
 
   private async handleTouch(args: string[]): Promise<string> {
@@ -620,14 +568,10 @@ Shortcuts:
     for (const arg of args) {
       const path = this.resolvePath(arg);
       if (!this.vfs.files.has(path)) {
-        this.vfs.files.set(path, {
-          id: Date.now().toString(),
-          name: arg.split('/').pop() || arg,
-          type: 'file',
-          content: ''
-        });
+        this.vfs.files.set(path, { content: '' });
       }
     }
+
     return '';
   }
 
@@ -636,20 +580,16 @@ Shortcuts:
       throw new Error('cp: missing destination file operand');
     }
 
-    const source = this.resolvePath(args[0]);
-    const dest = this.resolvePath(args[1]);
-    const sourceFile = this.vfs.files.get(source);
-
+    const [source, destination] = args;
+    const sourcePath = this.resolvePath(source);
+    const destPath = this.resolvePath(destination);
+    
+    const sourceFile = this.vfs.files.get(sourcePath);
     if (!sourceFile) {
-      throw new Error(`cp: cannot stat '${args[0]}': No such file or directory`);
+      throw new Error(`cp: cannot stat '${source}': No such file or directory`);
     }
 
-    this.vfs.files.set(dest, {
-      ...sourceFile,
-      id: Date.now().toString(),
-      name: dest.split('/').pop() || dest
-    });
-
+    this.vfs.files.set(destPath, { ...sourceFile });
     return '';
   }
 
@@ -658,24 +598,43 @@ Shortcuts:
       throw new Error('mv: missing destination file operand');
     }
 
-    const source = this.resolvePath(args[0]);
-    const dest = this.resolvePath(args[1]);
-    const sourceFile = this.vfs.files.get(source);
-
+    const [source, destination] = args;
+    const sourcePath = this.resolvePath(source);
+    const destPath = this.resolvePath(destination);
+    
+    const sourceFile = this.vfs.files.get(sourcePath);
     if (!sourceFile) {
-      throw new Error(`mv: cannot stat '${args[0]}': No such file or directory`);
+      throw new Error(`mv: cannot stat '${source}': No such file or directory`);
     }
 
-    this.vfs.files.set(dest, {
-      ...sourceFile,
-      name: dest.split('/').pop() || dest
-    });
-
-    this.vfs.files.delete(source);
+    this.vfs.files.set(destPath, sourceFile);
+    this.vfs.files.delete(sourcePath);
     return '';
   }
 
-  private async handleFind(args: string[]): Promise<string> {
+  private async handleGrep(args: string[]): Promise<string> {
+    if (args.length < 2) {
+      throw new Error('grep: missing pattern or file');
+    }
+
+    const [pattern, filename] = args;
+    const path = this.resolvePath(filename);
+    const file = this.vfs.files.get(path);
+    
+    if (!file) {
+      throw new Error(`grep: ${filename}: No such file or directory`);
+    }
+
+    const lines = file.content.split('\n');
+    const matches = lines
+      .map((line, index) => ({ line, number: index + 1 }))
+      .filter(({ line }) => line.includes(pattern))
+      .map(({ line, number }) => `${number}:${line}`);
+
+    return matches.length > 0 ? matches.join('\n') : '';
+  }
+
+  private handleFind(args: string[]): string {
     const startPath = args[0] || this.vfs.currentDirectory;
     const resolvedPath = this.resolvePath(startPath);
     const results: string[] = [];
