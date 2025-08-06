@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText } from "lucide-react";
+import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText, Clock, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Template {
@@ -106,6 +106,24 @@ const Templates = () => {
   const [selectedCategory, setSelectedCategory] = useState("Popular");
   const navigate = useNavigate();
 
+  const getSavedProject = () => {
+    try {
+      const saved = localStorage.getItem('tutorials-dojo-project-state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.lastSaved ? {
+          lastSaved: parsed.lastSaved,
+          hasContent: Object.keys(parsed.fileContents || {}).length > 0 || parsed.files?.length > 0
+        } : null;
+      }
+    } catch (error) {
+      console.error('Failed to load saved project:', error);
+    }
+    return null;
+  };
+
+  const savedProject = getSavedProject();
+
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -147,14 +165,49 @@ const Templates = () => {
               <h1 className="text-3xl font-bold text-foreground">Tutorials Dojo templates</h1>
               <p className="text-muted-foreground mt-2">Start your new project with one of our official templates.</p>
             </div>
-            <Button onClick={handleBackToEditor} variant="outline">
-              Back to Editor
-            </Button>
+            <div className="flex items-center gap-4">
+              {savedProject?.hasContent && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-card border rounded-lg px-3 py-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Progress saved {new Date(savedProject.lastSaved).toLocaleString()}</span>
+                </div>
+              )}
+              <Button onClick={handleBackToEditor} variant="outline">
+                Back to Editor
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Saved Progress Section */}
+        {savedProject?.hasContent && (
+          <div className="mb-8">
+            <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-green-600" />
+                  <div>
+                    <CardTitle className="text-lg text-green-800 dark:text-green-200">Continue Your Work</CardTitle>
+                    <CardDescription className="text-green-600 dark:text-green-400">
+                      You have unsaved progress from {new Date(savedProject.lastSaved).toLocaleString()}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate('/editor')}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Continue Editing
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Categories and Search */}
         <div className="flex flex-col lg:flex-row gap-6 mb-8">
           <div className="flex flex-wrap gap-2">
