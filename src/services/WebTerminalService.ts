@@ -118,7 +118,7 @@ export class WebTerminalService {
             .join('\n');
           break;
         case 'clear':
-          terminalCommand.output = '\x1b[2J\x1b[H';
+          terminalCommand.output = '';
           break;
         case 'npm':
           terminalCommand.output = this.handleNpmCommands(args);
@@ -194,6 +194,10 @@ export class WebTerminalService {
 
   getEnvironment(key: string): string | undefined {
     return this.environment.get(key);
+  }
+
+  clearTerminal(): void {
+    // This method can be called by the clear command
   }
 
   private handleLs(args: string[]): string {

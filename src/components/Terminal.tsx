@@ -55,7 +55,9 @@ export function Terminal({ files, onCommandExecuted, className = '' }: TerminalP
       cursorStyle: 'block',
       scrollback: 1000,
       cols: 80,
-      rows: 24
+      rows: 24,
+      allowProposedApi: true,
+      convertEol: true
     });
 
     const fitAddon = new FitAddon();
@@ -108,7 +110,20 @@ export function Terminal({ files, onCommandExecuted, className = '' }: TerminalP
           try {
             const output = await terminalService.executeCommand(currentInput);
             if (output) {
-              terminal.writeln(output);
+              // Handle clear command specially
+              if (currentInput.trim() === 'clear') {
+                terminal.clear();
+                terminal.writeln('\x1b[32mWelcome to Tutorials Dojo Terminal\x1b[0m');
+                terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
+                terminal.writeln('');
+              } else {
+                // Split output by lines and write each line separately to ensure proper rendering
+                const lines = output.split('\n');
+                lines.forEach((line, index) => {
+                  if (index === lines.length - 1 && line === '') return; // Skip empty last line
+                  terminal.writeln(line);
+                });
+              }
             }
             onCommandExecuted?.(currentInput, output);
           } catch (error) {
@@ -181,6 +196,9 @@ export function Terminal({ files, onCommandExecuted, className = '' }: TerminalP
         prompt();
       } else if (code === 12) { // Ctrl+L
         terminal.clear();
+        terminal.writeln('\x1b[32mWelcome to Tutorials Dojo Terminal\x1b[0m');
+        terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
+        terminal.writeln('');
         prompt();
       } else if (code >= 32 && code <= 126) { // Printable characters
         currentInput += data;
