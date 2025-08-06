@@ -240,56 +240,47 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
       `}
     >
       {/* Terminal Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border">
+      <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-          </div>
           <span className="text-sm font-medium text-foreground">Terminal</span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Status indicators */}
-          {error && !isVirtual && (
-            <div className="bg-red-600 text-white px-2 py-1 rounded text-xs">
-              {error}
-            </div>
-          )}
-          {!isConnected && !isVirtual && (
-            <div className="bg-yellow-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-              <div className="animate-spin h-2 w-2 border border-white border-t-transparent rounded-full"></div>
-              Connecting...
-            </div>
+          
+          {/* Status indicator */}
+          {isVirtual && (
+            <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+              Virtual
+            </span>
           )}
           {isConnected && !isVirtual && sessionId && (
-            <div className="bg-green-600 text-white px-2 py-1 rounded text-xs">
-              🚀 Real: {sessionId.slice(0, 8)}
-            </div>
+            <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">
+              Connected
+            </span>
           )}
-          {isVirtual && (
-            <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
-              💻 Virtual
-            </div>
+          {!isConnected && !isVirtual && (
+            <span className="bg-yellow-600 text-white px-2 py-1 rounded text-xs">
+              Connecting...
+            </span>
           )}
-          
-          {/* Expand/collapse button */}
-          <Button
-            onClick={toggleExpanded}
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-          >
-            {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-          </Button>
+          {error && !isVirtual && (
+            <span className="bg-red-600 text-white px-2 py-1 rounded text-xs">
+              Error
+            </span>
+          )}
         </div>
+        
+        <Button
+          onClick={toggleExpanded}
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 hover:bg-muted"
+        >
+          {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+        </Button>
       </div>
 
       {/* Terminal Content */}
       <div 
         ref={terminalRef} 
-        className="h-[calc(100%-3rem)] p-2 overflow-hidden"
+        className="h-[calc(100%-2.5rem)] p-2 overflow-hidden"
         style={{ 
           fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
         }}
