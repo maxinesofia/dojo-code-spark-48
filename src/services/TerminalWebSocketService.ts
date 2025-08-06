@@ -23,12 +23,16 @@ export class TerminalWebSocketService {
   private onErrorCallback?: (error: string) => void;
   private onConnectedCallback?: (sessionId: string) => void;
   private onDisconnectedCallback?: () => void;
+  private onConnectionFailedCallback?: () => void;
 
   constructor() {
-    this.connect();
+    // Don't auto-connect - let the component decide
   }
 
-  private connect() {
+  public connect() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      return; // Already connected
+    }
     try {
       // In production, this would be your backend WebSocket URL
       const wsUrl = process.env.NODE_ENV === 'production' 
@@ -61,11 +65,15 @@ export class TerminalWebSocketService {
       this.ws.onerror = (error) => {
         console.error('Terminal WebSocket error:', error);
         this.onErrorCallback?.('WebSocket connection error');
+        // Notify that connection failed so we can fallback to virtual terminal
+        this.onConnectionFailedCallback?.();
       };
 
     } catch (error) {
       console.error('Failed to connect to terminal WebSocket:', error);
       this.onErrorCallback?.('Failed to connect to terminal service');
+      // Notify connection failure for fallback
+      this.onConnectionFailedCallback?.();
     }
   }
 
@@ -119,7 +127,8 @@ export class TerminalWebSocketService {
       }, this.reconnectDelay * this.reconnectAttempts);
     } else {
       console.error('Max reconnection attempts reached');
-      this.onErrorCallback?.('Connection lost. Please refresh the page.');
+      this.onErrorCallback?.('Connection lost. Falling back to virtual terminal.');
+      this.onConnectionFailedCallback?.();
     }
   }
 
@@ -188,6 +197,10 @@ export class TerminalWebSocketService {
 
   public onDisconnected(callback: () => void) {
     this.onDisconnectedCallback = callback;
+  }
+
+  public onConnectionFailed(callback: () => void) {
+    this.onConnectionFailedCallback = callback;
   }
 
   public getSession() {
