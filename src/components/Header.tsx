@@ -54,6 +54,16 @@ export function Header({ projectName, onSave, onRun, onShare, isSaving, lastSave
         <Button 
           variant="ghost" 
           size="sm"
+          onClick={() => navigate('/projects')}
+          className="flex items-center gap-2"
+        >
+          <User className="w-4 h-4" />
+          My Projects
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm"
           onClick={() => setShowRecentProjects(!showRecentProjects)}
           className="flex items-center gap-2 relative"
         >
