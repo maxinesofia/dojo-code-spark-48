@@ -619,21 +619,32 @@ export function EditorLayout() {
   });
   
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   // Save project state to localStorage whenever it changes
   useEffect(() => {
     if (!templateId) { // Only save if not using a template (preserves user work)
-      try {
-        const stateToSave = {
-          files,
-          fileContents,
-          activeFileId: activeFile?.id || null,
-          lastSaved: new Date().toISOString()
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-      } catch (error) {
-        console.error('Failed to save project state:', error);
-      }
+      setIsSaving(true);
+      const saveTimeout = setTimeout(() => {
+        try {
+          const now = new Date().toISOString();
+          const stateToSave = {
+            files,
+            fileContents,
+            activeFileId: activeFile?.id || null,
+            lastSaved: now
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+          setLastSaved(now);
+        } catch (error) {
+          console.error('Failed to save project state:', error);
+        } finally {
+          setIsSaving(false);
+        }
+      }, 500); // Debounce saves by 500ms
+
+      return () => clearTimeout(saveTimeout);
     }
   }, [files, fileContents, activeFile, templateId]);
 
@@ -924,11 +935,13 @@ export function EditorLayout() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header 
+      <Header
         projectName={projectName}
         onSave={handleSave}
         onRun={handleRun}
         onShare={handleShare}
+        isSaving={isSaving}
+        lastSaved={lastSaved}
       />
       
       <div className="flex-1 flex overflow-hidden">
