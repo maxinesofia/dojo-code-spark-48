@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Save, Share, Play, Settings, User, FileText, Moon, Sun, Clock, CheckCircle, Edit3, Trash2, Package } from "lucide-react";
+import { Save, Share, Play, Settings, User, FileText, Moon, Sun, CheckCircle, Edit3, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useState, useEffect } from "react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
-  const [showRecentProjects, setShowRecentProjects] = useState(false);
+  
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(projectName);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -33,50 +33,44 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
     setEditedName(projectName);
   }, [projectName]);
   
-  const getRecentProjects = () => {
-    const saved = localStorage.getItem('tutorials-dojo-projects');
-    if (saved) {
-      try {
-        const projects = JSON.parse(saved);
-        return projects.slice(0, 5); // Show last 5 projects
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  };
-
   const handleProjectNameSubmit = () => {
     if (editedName.trim() && editedName !== projectName) {
       onProjectNameChange?.(editedName.trim());
+      
+      // Update current project state
+      const currentState = localStorage.getItem('tutorials-dojo-project-state');
+      if (currentState) {
+        try {
+          const state = JSON.parse(currentState);
+          state.projectName = editedName.trim();
+          localStorage.setItem('tutorials-dojo-project-state', JSON.stringify(state));
+        } catch (error) {
+          console.error('Error updating project name:', error);
+        }
+      }
+      
+      // Update projects list if this is the current project
+      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+      if (savedProjects) {
+        try {
+          const projects = JSON.parse(savedProjects);
+          const updatedProjects = projects.map((project: any) => 
+            project.id === 'current' 
+              ? { ...project, name: editedName.trim(), lastModified: new Date().toISOString() }
+              : project
+          );
+          localStorage.setItem('tutorials-dojo-projects', JSON.stringify(updatedProjects));
+        } catch (error) {
+          console.error('Error updating projects list:', error);
+        }
+      }
+      
       toast({
         title: "Success",
         description: "Project renamed successfully!"
       });
     }
     setIsEditingName(false);
-  };
-
-  const openRecentProject = (projectId: string) => {
-    navigate(`/?project=${projectId}`);
-  };
-
-  const deleteRecentProject = (projectId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const saved = localStorage.getItem('tutorials-dojo-projects');
-    if (saved) {
-      try {
-        const projects = JSON.parse(saved);
-        const updated = projects.filter((p: any) => p.id !== projectId);
-        localStorage.setItem('tutorials-dojo-projects', JSON.stringify(updated));
-        toast({
-          title: "Success",
-          description: "Project deleted from recent list"
-        });
-      } catch (error) {
-        console.error('Error deleting project:', error);
-      }
-    }
   };
   
   return (
@@ -108,57 +102,6 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           <User className="w-4 h-4" />
           My Projects
         </Button>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="flex items-center gap-2 relative"
-            >
-              <Clock className="w-4 h-4" />
-              Recent
-              {getRecentProjects().length > 0 && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
-            {getRecentProjects().length === 0 ? (
-              <DropdownMenuItem disabled>
-                No recent projects
-              </DropdownMenuItem>
-            ) : (
-              getRecentProjects().map((project: any) => (
-                <DropdownMenuItem 
-                  key={project.id}
-                  className="flex items-center justify-between cursor-pointer"
-                  onClick={() => openRecentProject(project.id)}
-                >
-                  <div className="flex-1">
-                    <div className="font-medium">{project.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(project.lastModified).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => deleteRecentProject(project.id, e)}
-                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuItem>
-              ))
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/projects')}>
-              <User className="w-4 h-4 mr-2" />
-              View All Projects
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
         
         
         <div className="text-muted-foreground">|</div>
