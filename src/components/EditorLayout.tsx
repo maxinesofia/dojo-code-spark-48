@@ -1,9 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "./Header";
-import { FileExplorer, FileNode } from "./FileExplorer";
+import { FileNode } from "./FileExplorer";
+import { EnhancedFileExplorer } from "./EnhancedFileExplorer";
 import { CodeEditor } from "./CodeEditor";
-import { Preview } from "./Preview";
+import { DynamicPreview } from "./DynamicPreview";
+import { PackageManager } from "./PackageManager";
+import { PackageManagerService } from "@/services/PackageManagerService";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
@@ -581,8 +584,12 @@ const loadProjectState = () => {
 
 export function EditorLayout() {
   const [searchParams] = useSearchParams();
-  const templateId = searchParams.get('template');
+  const [files, setFiles] = useState<FileNode[]>([]);
+  const [activeFile, setActiveFile] = useState<FileNode | null>(null);
   const [projectName, setProjectName] = useState("My Awesome Project");
+  const [showPackageManager, setShowPackageManager] = useState(false);
+  const [packageService] = useState(() => new PackageManagerService());
+  const { toast } = useToast();
   
   // Initialize state from localStorage or template/default
   const initialFiles = templateId ? getTemplateFiles(templateId) : defaultFiles;
@@ -978,29 +985,29 @@ export function EditorLayout() {
       />
       
       <div className="flex-1 flex overflow-hidden">
-        <FileExplorer
+        <EnhancedFileExplorer
           files={files}
           activeFile={activeFile?.id || null}
-          onFileSelect={handleFileSelect}
-          onCreateFile={handleCreateFile}
-          onCreateFolder={handleCreateFolder}
-          onMoveFile={handleMoveFile}
-          onToggleFolder={handleToggleFolder}
-          onDeleteFile={handleDeleteFile}
-          onRenameFile={handleRenameFile}
+          onFileSelect={setActiveFile}
+          onCreateFile={() => {}}
+          onCreateFolder={() => {}}
+          onMoveFile={() => {}}
+          onToggleFolder={() => {}}
+          onDeleteFile={() => {}}
+          onRenameFile={() => {}}
+          onUpdateFile={() => {}}
+          onAddFiles={() => {}}
         />
         
         <CodeEditor
-          value={activeFile ? (fileContents[activeFile.id] || '') : ''}
-          language="javascript"
-          onChange={handleCodeChange}
-          fileName={activeFile?.name}
+          file={activeFile}
+          onContentChange={() => {}}
         />
         
-        <Preview
-          htmlContent={processedHtml}
-          cssContent={cssContent}
-          jsContent={jsContent}
+        <DynamicPreview
+          files={files}
+          activeFile={activeFile?.id || null}
+          packageService={packageService}
         />
       </div>
     </div>
