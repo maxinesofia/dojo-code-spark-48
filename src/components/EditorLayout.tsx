@@ -1022,61 +1022,29 @@ export function EditorLayout() {
           </div>
           
           {showTerminal && (
-            <div className="fixed bottom-0 left-0 right-0 h-96 bg-gradient-to-b from-gray-900 to-black border-t border-primary/30 shadow-2xl z-50 backdrop-blur-sm flex flex-col">
-              <div className="px-4 py-2 bg-gradient-to-r from-gray-800 to-gray-700 border-b border-primary/20 flex justify-between items-center flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-300">Terminal</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setShowTerminal(false)}
-                    className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-gray-600"
-                    aria-label="Minimize"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                    </svg>
-                  </button>
-                  <button 
-                    onClick={() => setShowTerminal(false)}
-                    className="text-gray-400 hover:text-red-400 transition-colors p-1 rounded hover:bg-gray-600"
-                    aria-label="Close"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 min-h-0">
-                <Terminal
-                  files={files.map(f => ({
-                    ...f,
-                    content: fileContents[f.id] || f.content
-                  }))}
-                  onCommandExecuted={(command, output) => {
-                    console.log('Terminal command executed:', command, output);
-                  }}
-                  onFileSystemChange={(newFiles) => {
-                    console.log('File system changed:', newFiles);
-                    // Merge new files with existing files
-                    const updatedFiles = [...files];
-                    newFiles.forEach(newFile => {
-                      const existingIndex = updatedFiles.findIndex(f => f.id === newFile.id);
-                      if (existingIndex === -1) {
-                        updatedFiles.push(newFile);
-                      }
-                    });
-                    setFiles(updatedFiles);
-                  }}
-                  className="h-full"
-                />
-              </div>
+            <div className="fixed bottom-0 left-0 right-0 h-96 bg-[#1e1e1e] border-t border-border z-50">
+              <Terminal
+                files={files.map(f => ({
+                  ...f,
+                  content: fileContents[f.id] || f.content
+                }))}
+                onCommandExecuted={(command, output) => {
+                  console.log('Terminal command executed:', command, output);
+                }}
+                onFileSystemChange={(newFiles) => {
+                  console.log('File system changed:', newFiles);
+                  // Merge new files with existing files
+                  const updatedFiles = [...files];
+                  newFiles.forEach(newFile => {
+                    const existingIndex = updatedFiles.findIndex(f => f.id === newFile.id);
+                    if (existingIndex === -1) {
+                      updatedFiles.push(newFile);
+                    }
+                  });
+                  setFiles(updatedFiles);
+                }}
+                className="h-full"
+              />
             </div>
           )}
         </div>
