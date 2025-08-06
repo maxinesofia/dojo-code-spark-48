@@ -582,7 +582,7 @@ const loadProjectState = () => {
 export function EditorLayout() {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get('template');
-  const projectName = searchParams.get('name') || 'My Awesome Project';
+  const [projectName, setProjectName] = useState("My Awesome Project");
   
   // Initialize state from localStorage or template/default
   const initialFiles = templateId ? getTemplateFiles(templateId) : defaultFiles;
@@ -647,6 +647,38 @@ export function EditorLayout() {
       return () => clearTimeout(saveTimeout);
     }
   }, [files, fileContents, activeFile, templateId]);
+
+  const handleProjectNameChange = useCallback((newName: string) => {
+    setProjectName(newName);
+  }, []);
+
+  const saveToLocalStorage = useCallback(() => {
+    const state = {
+      files,
+      fileContents,
+      activeFileId: activeFile?.id || null,
+      lastSaved: new Date().toISOString(),
+      projectName,
+      template: searchParams.get('template') || 'vanilla'
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setLastSaved(state.lastSaved);
+  }, [files, fileContents, activeFile, projectName, searchParams]);
+
+  // Load saved project name on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        if (state.projectName) {
+          setProjectName(state.projectName);
+        }
+      } catch (error) {
+        console.error('Error loading project name:', error);
+      }
+    }
+  }, []);
 
   const handleFileSelect = useCallback((file: FileNode) => {
     setActiveFile(file);
@@ -935,13 +967,14 @@ export function EditorLayout() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      <Header
+      <Header 
         projectName={projectName}
         onSave={handleSave}
         onRun={handleRun}
         onShare={handleShare}
         isSaving={isSaving}
         lastSaved={lastSaved}
+        onProjectNameChange={handleProjectNameChange}
       />
       
       <div className="flex-1 flex overflow-hidden">
