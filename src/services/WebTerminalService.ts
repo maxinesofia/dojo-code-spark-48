@@ -401,47 +401,47 @@ export class WebTerminalService {
     return `\x1b[1m\x1b[36mTutorials Dojo Terminal - Available Commands\x1b[0m
 
 \x1b[1m\x1b[33mFile System:\x1b[0m
-  \x1b[32mls\x1b[0m [options] [path]      List directory contents
-  \x1b[32mcd\x1b[0m [path]               Change directory  
-  \x1b[32mpwd\x1b[0m                      Print working directory
-  \x1b[32mmkdir\x1b[0m <name>             Create directory
-  \x1b[32mrm\x1b[0m [options] <file>      Remove files/directories
-  \x1b[32mcat\x1b[0m <file>               Display file contents
-  \x1b[32mtouch\x1b[0m <file>             Create empty file
-  \x1b[32mcp\x1b[0m <src> <dest>          Copy files
-  \x1b[32mmv\x1b[0m <src> <dest>          Move/rename files
-  \x1b[32mfind\x1b[0m <path> <name>       Find files
-  \x1b[32mtree\x1b[0m [path]              Display directory tree
+\x1b[32mls\x1b[0m [options] [path]      List directory contents
+\x1b[32mcd\x1b[0m [path]               Change directory  
+\x1b[32mpwd\x1b[0m                      Print working directory
+\x1b[32mmkdir\x1b[0m <name>             Create directory
+\x1b[32mrm\x1b[0m [options] <file>      Remove files/directories
+\x1b[32mcat\x1b[0m <file>               Display file contents
+\x1b[32mtouch\x1b[0m <file>             Create empty file
+\x1b[32mcp\x1b[0m <src> <dest>          Copy files
+\x1b[32mmv\x1b[0m <src> <dest>          Move/rename files
+\x1b[32mfind\x1b[0m <path> <name>       Find files
+\x1b[32mtree\x1b[0m [path]              Display directory tree
 
 \x1b[1m\x1b[33mText Processing:\x1b[0m
-  \x1b[32mgrep\x1b[0m <pattern> <file>    Search for pattern in file
-  \x1b[32mecho\x1b[0m <text>              Display text
+\x1b[32mgrep\x1b[0m <pattern> <file>    Search for pattern in file
+\x1b[32mecho\x1b[0m <text>              Display text
 
 \x1b[1m\x1b[33mSystem:\x1b[0m
-  \x1b[32menv\x1b[0m                      Show environment variables
-  \x1b[32mexport\x1b[0m <var>=<value>     Set environment variable
-  \x1b[32mhistory\x1b[0m                  Show command history
-  \x1b[32mclear\x1b[0m                    Clear terminal
-  \x1b[32mps\x1b[0m                       List running processes
-  \x1b[32mwhich\x1b[0m <command>          Show command location
+\x1b[32menv\x1b[0m                      Show environment variables
+\x1b[32mexport\x1b[0m <var>=<value>     Set environment variable
+\x1b[32mhistory\x1b[0m                  Show command history
+\x1b[32mclear\x1b[0m                    Clear terminal
+\x1b[32mps\x1b[0m                       List running processes
+\x1b[32mwhich\x1b[0m <command>          Show command location
 
 \x1b[1m\x1b[33mDevelopment:\x1b[0m
-  \x1b[32mnpm\x1b[0m <command>            NPM package manager
-  \x1b[32mnode\x1b[0m <file>              Run Node.js script
-  \x1b[32mgit\x1b[0m <command>            Git version control
-  \x1b[32mcode\x1b[0m <file>              Open file in editor
+\x1b[32mnpm\x1b[0m <command>            NPM package manager
+\x1b[32mnode\x1b[0m <file>              Run Node.js script
+\x1b[32mgit\x1b[0m <command>            Git version control
+\x1b[32mcode\x1b[0m <file>              Open file in editor
 
 \x1b[1m\x1b[33mNetwork:\x1b[0m
-  \x1b[32mcurl\x1b[0m <url>               Download from URL
-  \x1b[32mwget\x1b[0m <url>               Download file
+\x1b[32mcurl\x1b[0m <url>               Download from URL
+\x1b[32mwget\x1b[0m <url>               Download file
 
 \x1b[1m\x1b[33mShortcuts:\x1b[0m
-  \x1b[32mll\x1b[0m, \x1b[32mla\x1b[0m                  ls -la
-  \x1b[32m..\x1b[0m                       cd ..
-  \x1b[32mcls\x1b[0m                      clear
+\x1b[32mll\x1b[0m, \x1b[32mla\x1b[0m                  ls -la
+\x1b[32m..\x1b[0m                       cd ..
+\x1b[32mcls\x1b[0m                      clear
 
 \x1b[1m\x1b[33mHelp:\x1b[0m
-  \x1b[32mhelp\x1b[0m                     Show this help message
+\x1b[32mhelp\x1b[0m                     Show this help message
 
 \x1b[90mTip: Use \x1b[33mTab\x1b[90m for auto-completion and \x1b[33m↑/↓\x1b[90m for command history\x1b[0m`;
   }
