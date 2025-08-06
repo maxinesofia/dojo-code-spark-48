@@ -27,6 +27,11 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
   useEffect(() => {
     if (!terminalRef.current) return;
 
+    // Clean up any existing terminal
+    if (xtermRef.current) {
+      xtermRef.current.dispose();
+    }
+
     // Initialize terminal
     const terminal = new XTerm({
       theme: {
@@ -74,6 +79,11 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
 
     xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
+
+    // Clean up any existing service
+    if (terminalServiceRef.current && 'disconnect' in terminalServiceRef.current) {
+      (terminalServiceRef.current as TerminalWebSocketService).disconnect();
+    }
 
     // Try to connect to real terminal first, fallback to virtual
     const tryRealTerminal = () => {
@@ -158,7 +168,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
 
       prompt();
 
-      // Handle virtual terminal input
+      // Handle virtual terminal input - ensure single event handler
       let currentInput = '';
       let commandHistory: string[] = [];
       let historyIdx = -1;
@@ -222,6 +232,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
         }
       };
 
+      // Remove any existing data handlers before adding new one
       terminal.onData(dataHandler);
     };
 
