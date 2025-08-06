@@ -1062,6 +1062,18 @@ export function EditorLayout() {
                   onCommandExecuted={(command, output) => {
                     console.log('Terminal command executed:', command, output);
                   }}
+                  onFileSystemChange={(newFiles) => {
+                    console.log('File system changed:', newFiles);
+                    // Merge new files with existing files
+                    const updatedFiles = [...files];
+                    newFiles.forEach(newFile => {
+                      const existingIndex = updatedFiles.findIndex(f => f.id === newFile.id);
+                      if (existingIndex === -1) {
+                        updatedFiles.push(newFile);
+                      }
+                    });
+                    setFiles(updatedFiles);
+                  }}
                   className="h-full"
                 />
               </div>

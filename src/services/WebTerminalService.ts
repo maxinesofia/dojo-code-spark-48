@@ -19,8 +19,10 @@ export class WebTerminalService {
   private environment: Map<string, string>;
   private commandHistory: TerminalCommand[];
   private aliases: Map<string, string>;
+  private onFileSystemChange?: (files: FileNode[]) => void;
 
-  constructor() {
+  constructor(onFileSystemChange?: (files: FileNode[]) => void) {
+    this.onFileSystemChange = onFileSystemChange;
     this.vfs = {
       currentDirectory: '/',
       files: new Map(),
@@ -264,7 +266,7 @@ export class WebTerminalService {
       }
     }
 
-    return items.sort().join('\n');
+    return items.sort().join('  '); // Use consistent spacing to prevent character cutoff
   }
 
   private async handleCd(args: string[]): Promise<string> {
@@ -288,8 +290,11 @@ export class WebTerminalService {
     for (const arg of args) {
       const path = this.resolvePath(arg);
       this.vfs.directories.add(path);
+      console.log(`Created directory: ${path}`);
     }
 
+    // Notify about file system change
+    this.notifyFileSystemChange();
     return '';
   }
 
@@ -598,6 +603,8 @@ Date:   ${new Date().toLocaleDateString()}
       }
     }
 
+    // Notify about file system change
+    this.notifyFileSystemChange();
     return '';
   }
 
@@ -758,5 +765,49 @@ Date:   ${new Date().toLocaleDateString()}
     }
     
     return `--2024-01-01 12:00:00--  ${args[0]}\nResolving host... done.\nConnecting... connected.\nHTTP request sent, awaiting response... 200 OK\nLength: unspecified [text/html]\nSaving to: 'index.html'\n\n100%[===================>] downloaded`;
+  }
+
+  private notifyFileSystemChange(): void {
+    if (this.onFileSystemChange) {
+      // Convert the virtual file system back to FileNode format
+      const files: FileNode[] = [];
+      
+      // Convert files
+      for (const [filePath, fileData] of this.vfs.files) {
+        if (filePath !== '/') {
+          const pathParts = filePath.substring(1).split('/');
+          const fileName = pathParts[pathParts.length - 1];
+          
+          files.push({
+            id: filePath,
+            name: fileName,
+            type: 'file',
+            content: fileData.content,
+            mimeType: fileData.mimeType
+          });
+        }
+      }
+      
+      // Convert directories
+      for (const dirPath of this.vfs.directories) {
+        if (dirPath !== '/') {
+          const pathParts = dirPath.substring(1).split('/');
+          const dirName = pathParts[pathParts.length - 1];
+          
+          // Only add if not already represented as a parent directory
+          const isRepresented = files.some(f => f.name === dirName || dirPath.startsWith(`/${f.name}/`));
+          if (!isRepresented) {
+            files.push({
+              id: dirPath,
+              name: dirName,
+              type: 'folder',
+              children: []
+            });
+          }
+        }
+      }
+      
+      this.onFileSystemChange(files);
+    }
   }
 }

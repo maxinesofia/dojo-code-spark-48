@@ -9,10 +9,11 @@ import 'xterm/css/xterm.css';
 interface TerminalProps {
   files: FileNode[];
   onCommandExecuted?: (command: string, output: string) => void;
+  onFileSystemChange?: (newFiles: FileNode[]) => void;
   className?: string;
 }
 
-export function Terminal({ files, onCommandExecuted, className = '' }: TerminalProps) {
+export function Terminal({ files, onCommandExecuted, onFileSystemChange, className = '' }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -69,8 +70,10 @@ export function Terminal({ files, onCommandExecuted, className = '' }: TerminalP
     terminal.open(terminalRef.current);
     fitAddon.fit();
 
-    // Initialize terminal service
-    const terminalService = new WebTerminalService();
+    // Initialize terminal service with callback for file system changes
+    const terminalService = new WebTerminalService((newFiles: FileNode[]) => {
+      onFileSystemChange?.(newFiles);
+    });
     terminalService.setupVirtualFS(files);
 
     xtermRef.current = terminal;
