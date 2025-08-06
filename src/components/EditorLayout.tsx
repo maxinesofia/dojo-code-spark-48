@@ -1021,9 +1021,15 @@ export function EditorLayout() {
           </div>
           
           {showTerminal && (
-            <div className="h-80 border-t-2 border-primary bg-background">
-              <div className="p-2 text-sm text-muted-foreground border-b border-border">
-                Terminal
+            <div className="fixed bottom-0 left-0 right-0 h-96 bg-black border-t-4 border-green-500 z-50">
+              <div className="p-3 text-white bg-gray-800 border-b border-gray-600 flex justify-between items-center">
+                <span className="font-bold">Terminal</span>
+                <button 
+                  onClick={() => setShowTerminal(false)}
+                  className="text-white hover:text-red-400 text-xl"
+                >
+                  ×
+                </button>
               </div>
               <Terminal
                 files={files.map(f => ({
