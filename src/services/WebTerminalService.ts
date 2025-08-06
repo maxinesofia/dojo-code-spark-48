@@ -140,6 +140,39 @@ export class WebTerminalService {
         case 'node':
           terminalCommand.output = await this.handleNodeCommand(args);
           break;
+        case 'git':
+          terminalCommand.output = await this.handleGitCommands(args);
+          break;
+        case 'code':
+          terminalCommand.output = this.handleCodeCommand(args);
+          break;
+        case 'touch':
+          terminalCommand.output = await this.handleTouch(args);
+          break;
+        case 'cp':
+          terminalCommand.output = await this.handleCp(args);
+          break;
+        case 'mv':
+          terminalCommand.output = await this.handleMv(args);
+          break;
+        case 'find':
+          terminalCommand.output = await this.handleFind(args);
+          break;
+        case 'ps':
+          terminalCommand.output = this.handlePs();
+          break;
+        case 'which':
+          terminalCommand.output = this.handleWhich(args);
+          break;
+        case 'tree':
+          terminalCommand.output = this.handleTree(args);
+          break;
+        case 'curl':
+          terminalCommand.output = await this.handleCurl(args);
+          break;
+        case 'wget':
+          terminalCommand.output = await this.handleWget(args);
+          break;
         case 'help':
           terminalCommand.output = this.handleHelp();
           break;
@@ -511,7 +544,7 @@ Shortcuts:
     const suggestions: string[] = [];
     
     // Command suggestions
-    const commands = ['ls', 'cd', 'pwd', 'mkdir', 'rm', 'cat', 'grep', 'echo', 'env', 'export', 'history', 'clear', 'npm', 'node', 'help'];
+    const commands = ['ls', 'cd', 'pwd', 'mkdir', 'rm', 'cat', 'grep', 'echo', 'env', 'export', 'history', 'clear', 'npm', 'node', 'git', 'code', 'touch', 'cp', 'mv', 'find', 'ps', 'which', 'tree', 'curl', 'wget', 'help'];
     suggestions.push(...commands.filter(cmd => cmd.startsWith(partial)));
 
     // File/directory suggestions for current directory
@@ -538,5 +571,191 @@ Shortcuts:
     }
 
     return suggestions.sort();
+  }
+
+  private async handleGitCommands(args: string[]): Promise<string> {
+    if (args.length === 0) {
+      return 'git version 2.34.1\nUsage: git <command> [options]';
+    }
+
+    const subcommand = args[0];
+    switch (subcommand) {
+      case 'status':
+        return 'On branch main\nnothing to commit, working tree clean';
+      case 'init':
+        return 'Initialized empty Git repository in ' + this.vfs.currentDirectory;
+      case 'add':
+        return args.length > 1 ? `Added ${args.slice(1).join(', ')} to staging area` : 'Nothing specified, nothing added.';
+      case 'commit':
+        return 'Changes committed successfully';
+      case 'push':
+        return 'Everything up-to-date';
+      case 'pull':
+        return 'Already up to date.';
+      case 'clone':
+        return args.length > 1 ? `Cloning into '${args[1]}'...` : 'You must specify a repository to clone.';
+      case 'branch':
+        return '* main';
+      case 'checkout':
+        return args.length > 1 ? `Switched to branch '${args[1]}'` : 'You must specify a branch to checkout.';
+      case 'log':
+        return 'commit abc123 (HEAD -> main)\nAuthor: Developer <dev@example.com>\nDate: ' + new Date().toDateString() + '\n\n    Initial commit';
+      default:
+        return `git: '${subcommand}' is not a git command. See 'git --help'.`;
+    }
+  }
+
+  private handleCodeCommand(args: string[]): string {
+    if (args.length === 0) {
+      return 'Opening current directory in code editor...';
+    }
+    return `Opening ${args[0]} in code editor...`;
+  }
+
+  private async handleTouch(args: string[]): Promise<string> {
+    if (args.length === 0) {
+      throw new Error('touch: missing file operand');
+    }
+
+    for (const arg of args) {
+      const path = this.resolvePath(arg);
+      if (!this.vfs.files.has(path)) {
+        this.vfs.files.set(path, {
+          id: Date.now().toString(),
+          name: arg.split('/').pop() || arg,
+          type: 'file',
+          content: ''
+        });
+      }
+    }
+    return '';
+  }
+
+  private async handleCp(args: string[]): Promise<string> {
+    if (args.length < 2) {
+      throw new Error('cp: missing destination file operand');
+    }
+
+    const source = this.resolvePath(args[0]);
+    const dest = this.resolvePath(args[1]);
+    const sourceFile = this.vfs.files.get(source);
+
+    if (!sourceFile) {
+      throw new Error(`cp: cannot stat '${args[0]}': No such file or directory`);
+    }
+
+    this.vfs.files.set(dest, {
+      ...sourceFile,
+      id: Date.now().toString(),
+      name: dest.split('/').pop() || dest
+    });
+
+    return '';
+  }
+
+  private async handleMv(args: string[]): Promise<string> {
+    if (args.length < 2) {
+      throw new Error('mv: missing destination file operand');
+    }
+
+    const source = this.resolvePath(args[0]);
+    const dest = this.resolvePath(args[1]);
+    const sourceFile = this.vfs.files.get(source);
+
+    if (!sourceFile) {
+      throw new Error(`mv: cannot stat '${args[0]}': No such file or directory`);
+    }
+
+    this.vfs.files.set(dest, {
+      ...sourceFile,
+      name: dest.split('/').pop() || dest
+    });
+
+    this.vfs.files.delete(source);
+    return '';
+  }
+
+  private async handleFind(args: string[]): Promise<string> {
+    const startPath = args[0] || this.vfs.currentDirectory;
+    const resolvedPath = this.resolvePath(startPath);
+    const results: string[] = [];
+
+    for (const [filePath] of this.vfs.files) {
+      if (filePath.startsWith(resolvedPath)) {
+        results.push(filePath);
+      }
+    }
+
+    for (const dirPath of this.vfs.directories) {
+      if (dirPath.startsWith(resolvedPath)) {
+        results.push(dirPath);
+      }
+    }
+
+    return results.sort().join('\n');
+  }
+
+  private handlePs(): string {
+    return 'PID TTY          TIME CMD\n  1 pts/0    00:00:00 bash\n  2 pts/0    00:00:00 node\n  3 pts/0    00:00:00 ps';
+  }
+
+  private handleWhich(args: string[]): string {
+    if (args.length === 0) {
+      return 'which: missing operand';
+    }
+
+    const command = args[0];
+    const commands = ['ls', 'cd', 'pwd', 'mkdir', 'rm', 'cat', 'grep', 'echo', 'env', 'export', 'history', 'clear', 'npm', 'node', 'git', 'code', 'touch', 'cp', 'mv', 'find', 'ps', 'which', 'tree', 'curl', 'wget'];
+    
+    if (commands.includes(command)) {
+      return `/usr/bin/${command}`;
+    }
+    
+    return `which: no ${command} in (/usr/bin:/bin:/usr/local/bin)`;
+  }
+
+  private handleTree(args: string[]): string {
+    const startPath = args[0] || this.vfs.currentDirectory;
+    const resolvedPath = this.resolvePath(startPath);
+    
+    let output = resolvedPath + '\n';
+    const items: string[] = [];
+
+    for (const dir of this.vfs.directories) {
+      if (this.isInDirectory(dir, resolvedPath) && dir !== resolvedPath) {
+        const relativePath = dir.substring(resolvedPath.length + 1);
+        if (!relativePath.includes('/')) {
+          items.push(`├── ${relativePath}/`);
+        }
+      }
+    }
+
+    for (const [filePath] of this.vfs.files) {
+      if (this.isInDirectory(filePath, resolvedPath)) {
+        const relativePath = filePath.substring(resolvedPath.length + 1);
+        if (!relativePath.includes('/')) {
+          items.push(`├── ${relativePath}`);
+        }
+      }
+    }
+
+    output += items.join('\n');
+    return output;
+  }
+
+  private async handleCurl(args: string[]): Promise<string> {
+    if (args.length === 0) {
+      return 'curl: try \'curl --help\' for more information';
+    }
+    
+    return `Downloading ${args[0]}...\n✓ Download completed`;
+  }
+
+  private async handleWget(args: string[]): Promise<string> {
+    if (args.length === 0) {
+      return 'wget: missing URL';
+    }
+    
+    return `--2024-01-01 12:00:00--  ${args[0]}\nResolving host... done.\nConnecting... connected.\nHTTP request sent, awaiting response... 200 OK\nLength: unspecified [text/html]\nSaving to: 'index.html'\n\n100%[===================>] downloaded`;
   }
 }
