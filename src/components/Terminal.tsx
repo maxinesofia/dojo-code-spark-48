@@ -5,6 +5,8 @@ import { WebLinksAddon } from 'xterm-addon-web-links';
 import { TerminalWebSocketService } from '../services/TerminalWebSocketService';
 import { WebTerminalService } from '../services/WebTerminalService';
 import { FileNode } from '../types/FileTypes';
+import { Button } from './ui/button';
+import { Maximize2, Minimize2, X } from 'lucide-react';
 import 'xterm/css/xterm.css';
 
 interface TerminalProps {
@@ -26,6 +28,8 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isVirtual, setIsVirtual] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const setupVirtualTerminal = useCallback(() => {
     if (!xtermRef.current || isInitializedRef.current) return;
@@ -186,10 +190,12 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
       setupVirtualTerminal();
     }, 100);
 
-    // Handle terminal resize
+    // Handle terminal resize when expanded/collapsed
     const handleResize = () => {
       if (fitAddon) {
-        fitAddon.fit();
+        setTimeout(() => {
+          fitAddon.fit();
+        }, 100);
       }
     };
 
@@ -200,7 +206,6 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
       window.removeEventListener('resize', handleResize);
       
       if (dataHandlerRef.current && terminal) {
-        // Remove the specific data handler
         terminal.dispose();
       }
       
@@ -213,52 +218,115 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
     };
   }, [setupVirtualTerminal]);
 
-  const handleClear = () => {
-    if (xtermRef.current) {
-      xtermRef.current.clear();
-    }
-  };
-
-  const handleResize = () => {
+  // Trigger resize when expansion state changes
+  useEffect(() => {
     if (fitAddonRef.current) {
       setTimeout(() => {
         fitAddonRef.current?.fit();
-        if (terminalServiceRef.current && 'resizeTerminal' in terminalServiceRef.current && !isVirtual) {
-          const terminal = xtermRef.current;
-          if (terminal) {
-            (terminalServiceRef.current as TerminalWebSocketService).resizeTerminal(terminal.cols, terminal.rows);
-          }
-        }
-      }, 100);
+      }, 300); // Wait for animation to complete
     }
+  }, [isExpanded, isMinimized]);
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+    setIsMinimized(false);
   };
 
+  const toggleMinimized = () => {
+    setIsMinimized(!isMinimized);
+    setIsExpanded(false);
+  };
+
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={toggleMinimized}
+          variant="outline"
+          size="sm"
+          className="bg-background/95 backdrop-blur-sm border shadow-lg hover:scale-105 transition-transform"
+        >
+          <span className="mr-2">💻</span>
+          Terminal
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className={`relative h-full bg-[#1e1e1e] ${className}`}>
-      {error && !isVirtual && (
-        <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-sm z-10">
-          {error}
+    <div 
+      className={`
+        ${isExpanded 
+          ? 'fixed inset-4 z-40 shadow-2xl' 
+          : 'relative h-full'
+        } 
+        bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
+        transition-all duration-300 ease-out
+        ${className}
+      `}
+    >
+      {/* Terminal Header */}
+      <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          </div>
+          <span className="text-sm font-medium text-foreground">Terminal</span>
         </div>
-      )}
-      {!isConnected && !isVirtual && (
-        <div className="absolute top-2 left-2 bg-yellow-600 text-white px-3 py-1 rounded text-sm z-10 flex items-center gap-2">
-          <div className="animate-spin h-3 w-3 border border-white border-t-transparent rounded-full"></div>
-          Connecting to terminal...
+        
+        <div className="flex items-center gap-2">
+          {/* Status indicators */}
+          {error && !isVirtual && (
+            <div className="bg-red-600 text-white px-2 py-1 rounded text-xs">
+              {error}
+            </div>
+          )}
+          {!isConnected && !isVirtual && (
+            <div className="bg-yellow-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+              <div className="animate-spin h-2 w-2 border border-white border-t-transparent rounded-full"></div>
+              Connecting...
+            </div>
+          )}
+          {isConnected && !isVirtual && sessionId && (
+            <div className="bg-green-600 text-white px-2 py-1 rounded text-xs">
+              🚀 Real: {sessionId.slice(0, 8)}
+            </div>
+          )}
+          {isVirtual && (
+            <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+              💻 Virtual
+            </div>
+          )}
+          
+          {/* Control buttons */}
+          <Button
+            onClick={toggleMinimized}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted"
+          >
+            <Minimize2 className="h-3 w-3" />
+          </Button>
+          <Button
+            onClick={toggleExpanded}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted"
+          >
+            {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+          </Button>
         </div>
-      )}
-      {isConnected && !isVirtual && sessionId && (
-        <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded text-sm z-10">
-          🚀 Real Terminal: {sessionId.slice(0, 8)}
-        </div>
-      )}
-      {isVirtual && (
-        <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded text-sm z-10">
-          💻 Virtual Terminal
-        </div>
-      )}
+      </div>
+
+      {/* Terminal Content */}
       <div 
         ref={terminalRef} 
-        className="h-full p-2 overflow-hidden"
+        className={`
+          ${isExpanded ? 'h-[calc(100%-3rem)]' : 'h-[calc(100%-3rem)]'} 
+          p-2 overflow-hidden
+        `}
         style={{ 
           fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
         }}
