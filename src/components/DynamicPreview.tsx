@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { CodeExecutionService, ExecutionResult } from "@/services/CodeExecutionService";
-import { FileNode } from "./FileExplorer";
+import { FileNode } from "@/types/FileTypes";
 
 interface DynamicPreviewProps {
   files: FileNode[];

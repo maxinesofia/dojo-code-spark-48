@@ -1,4 +1,4 @@
-import { FileNode } from '@/components/FileExplorer';
+import { FileNode } from '@/types/FileTypes';
 
 export interface ExecutionResult {
   success: boolean;
