@@ -29,6 +29,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
   const [error, setError] = useState<string | null>(null);
   const [isVirtual, setIsVirtual] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const setupVirtualTerminal = useCallback(() => {
     if (!xtermRef.current || isInitializedRef.current) return;
@@ -224,11 +225,36 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
         fitAddonRef.current?.fit();
       }, 300); // Wait for animation to complete
     }
-  }, [isExpanded]);
+  }, [isExpanded, isMinimized]);
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
   };
+
+  const toggleMinimized = () => {
+    setIsMinimized(!isMinimized);
+  };
+
+  const handleClose = () => {
+    // For now, just minimize - you can add actual close logic later
+    setIsMinimized(true);
+  };
+
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={toggleMinimized}
+          variant="outline"
+          size="sm"
+          className="bg-background/95 backdrop-blur-sm border shadow-lg hover:scale-105 transition-transform"
+        >
+          <span className="mr-2">💻</span>
+          Terminal
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -267,14 +293,32 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, classNa
           )}
         </div>
         
-        <Button
-          onClick={toggleExpanded}
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 hover:bg-muted"
-        >
-          {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            onClick={toggleMinimized}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted"
+          >
+            <Minimize2 className="h-3 w-3" />
+          </Button>
+          <Button
+            onClick={toggleExpanded}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted"
+          >
+            {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+          </Button>
+          <Button
+            onClick={handleClose}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted hover:bg-red-500/20"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
 
       {/* Terminal Content */}
