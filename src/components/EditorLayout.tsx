@@ -1044,9 +1044,6 @@ export function EditorLayout() {
                   setFiles(updatedFiles);
                 }}
                 onClose={() => setShowTerminal(false)}
-                onResize={(height) => {
-                  // Terminal height is managed internally
-                }}
                 className="h-full"
               />
             </div>

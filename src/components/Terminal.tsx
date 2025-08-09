@@ -6,7 +6,7 @@ import { TerminalWebSocketService } from '../services/TerminalWebSocketService';
 import { WebTerminalService } from '../services/WebTerminalService';
 import { FileNode } from '../types/FileTypes';
 import { Button } from './ui/button';
-import { Minimize2, X, GripHorizontal } from 'lucide-react';
+import { Minimize2, X } from 'lucide-react';
 import 'xterm/css/xterm.css';
 
 interface TerminalProps {
@@ -14,26 +14,22 @@ interface TerminalProps {
   onCommandExecuted?: (command: string, output: string) => void;
   onFileSystemChange?: (newFiles: FileNode[]) => void;
   onClose?: () => void;
-  onResize?: (height: number) => void;
   className?: string;
 }
 
-export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose, onResize, className = '' }: TerminalProps) {
+export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose, className = '' }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const terminalServiceRef = useRef<TerminalWebSocketService | WebTerminalService | null>(null);
   const isInitializedRef = useRef(false);
   const dataHandlerRef = useRef<((data: string) => void) | null>(null);
-  const resizeHandleRef = useRef<HTMLDivElement>(null);
   
   const [isConnected, setIsConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isVirtual, setIsVirtual] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [terminalHeight, setTerminalHeight] = useState(300);
-  const [isResizing, setIsResizing] = useState(false);
 
   const setupVirtualTerminal = useCallback(() => {
     if (!xtermRef.current || isInitializedRef.current) return;
@@ -222,44 +218,14 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
     };
   }, [setupVirtualTerminal]);
 
-  // Trigger resize when minimized state changes or height changes
+  // Trigger resize when minimized state changes
   useEffect(() => {
-    if (fitAddonRef.current && !isMinimized) {
+    if (fitAddonRef.current) {
       setTimeout(() => {
         fitAddonRef.current?.fit();
       }, 300);
     }
-  }, [isMinimized, terminalHeight]);
-
-  // Handle resize functionality
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      e.preventDefault();
-      
-      const newHeight = Math.max(150, Math.min(800, window.innerHeight - e.clientY));
-      setTerminalHeight(newHeight);
-      onResize?.(newHeight);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    if (isResizing) {
-      document.body.style.cursor = 'ns-resize';
-      document.body.style.userSelect = 'none';
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing, onResize]);
+  }, [isMinimized]);
 
   const toggleMinimized = () => {
     setIsMinimized(!isMinimized);
@@ -287,91 +253,71 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
 
   return (
     <div 
-      className="relative flex flex-col"
-      style={{ height: isMinimized ? '40px' : `${terminalHeight}px` }}
+      className={`
+        relative bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
+        transition-all duration-300 ease-out
+        ${isMinimized ? 'h-10' : 'h-full'}
+        ${className}
+      `}
     >
-      {/* Resize Handle */}
-      {!isMinimized && (
-        <div
-          ref={resizeHandleRef}
-          className="absolute -top-1 left-0 right-0 h-2 cursor-ns-resize z-10 group"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            setIsResizing(true);
-          }}
-        >
-          <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <GripHorizontal className="h-3 w-3 text-muted-foreground" />
-          </div>
-        </div>
-      )}
-
-      <div 
-        className={`
-          relative bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
-          transition-all duration-300 ease-out flex flex-col h-full
-          ${className}
-        `}
-      >
-        {/* Terminal Header */}
-        <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">Terminal</span>
-            
-            {/* Status indicator */}
-            {isVirtual && (
-              <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
-                Virtual
-              </span>
-            )}
-            {isConnected && !isVirtual && sessionId && (
-              <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">
-                Connected
-              </span>
-            )}
-            {!isConnected && !isVirtual && (
-              <span className="bg-yellow-600 text-white px-2 py-1 rounded text-xs">
-                Connecting...
-              </span>
-            )}
-            {error && !isVirtual && (
-              <span className="bg-red-600 text-white px-2 py-1 rounded text-xs">
-                Error
-              </span>
-            )}
-          </div>
+      {/* Terminal Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">Terminal</span>
           
-          <div className="flex items-center gap-1">
-            <Button
-              onClick={toggleMinimized}
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted"
-            >
-              <Minimize2 className="h-3 w-3" />
-            </Button>
-            <Button
-              onClick={handleClose}
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-muted hover:bg-red-500/20"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
+          {/* Status indicator */}
+          {isVirtual && (
+            <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+              Virtual
+            </span>
+          )}
+          {isConnected && !isVirtual && sessionId && (
+            <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">
+              Connected
+            </span>
+          )}
+          {!isConnected && !isVirtual && (
+            <span className="bg-yellow-600 text-white px-2 py-1 rounded text-xs">
+              Connecting...
+            </span>
+          )}
+          {error && !isVirtual && (
+            <span className="bg-red-600 text-white px-2 py-1 rounded text-xs">
+              Error
+            </span>
+          )}
         </div>
-
-        {/* Terminal Content */}
-        {!isMinimized && (
-          <div 
-            ref={terminalRef} 
-            className="flex-1 p-2 overflow-hidden"
-            style={{ 
-              fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
-            }}
-          />
-        )}
+        
+        <div className="flex items-center gap-1">
+          <Button
+            onClick={toggleMinimized}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted"
+          >
+            <Minimize2 className="h-3 w-3" />
+          </Button>
+          <Button
+            onClick={handleClose}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted hover:bg-red-500/20"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
+
+      {/* Terminal Content */}
+      {!isMinimized && (
+        <div 
+          ref={terminalRef} 
+          className="h-[calc(100%-2.5rem)] p-2 overflow-hidden"
+          style={{ 
+            fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
+          }}
+        />
+      )}
     </div>
   );
 }
