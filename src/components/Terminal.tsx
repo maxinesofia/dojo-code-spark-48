@@ -31,8 +31,77 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
   const [isVirtual, setIsVirtual] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
-  const setupVirtualTerminal = useCallback(() => {
+  const setupRealTerminal = useCallback(() => {
     if (!xtermRef.current || isInitializedRef.current) return;
+    
+    const terminal = xtermRef.current;
+    
+    console.log('Attempting to connect to real terminal backend');
+    setError(null);
+    setIsVirtual(false);
+    
+    const wsService = new TerminalWebSocketService();
+    terminalServiceRef.current = wsService;
+    
+    // Set up event handlers
+    wsService.onConnected(() => {
+      console.log('Connected to real terminal');
+      setIsConnected(true);
+      setError(null);
+      isInitializedRef.current = true;
+      
+      // Start terminal session with placeholder IDs
+      wsService.startTerminal('project-1', 'user-1');
+    });
+    
+    wsService.onOutput((data: string) => {
+      terminal.write(data);
+    });
+    
+    wsService.onError((error: string) => {
+      console.error('Terminal error:', error);
+      setError(error);
+      // Fall back to virtual terminal
+      setTimeout(() => {
+        setupVirtualTerminal();
+      }, 1000);
+    });
+    
+    wsService.onConnectionFailed(() => {
+      console.log('Failed to connect to real terminal, falling back to virtual');
+      setError('Connection failed');
+      // Fall back to virtual terminal
+      setTimeout(() => {
+        setupVirtualTerminal();
+      }, 1000);
+    });
+    
+    wsService.onDisconnected(() => {
+      console.log('Disconnected from real terminal');
+      setIsConnected(false);
+    });
+    
+    // Handle user input - send raw input to terminal
+    const dataHandler = (data: string) => {
+      if (wsService.isConnected()) {
+        wsService.executeCommand(data);
+      }
+    };
+    
+    dataHandlerRef.current = dataHandler;
+    terminal.onData(dataHandler);
+    
+    // Connect to WebSocket
+    wsService.connect();
+  }, []);
+
+  const setupVirtualTerminal = useCallback(() => {
+    if (!xtermRef.current) return;
+    
+    // Clear any existing handlers
+    if (terminalServiceRef.current && 'disconnect' in terminalServiceRef.current) {
+      (terminalServiceRef.current as TerminalWebSocketService).disconnect();
+    }
     
     const terminal = xtermRef.current;
     
@@ -185,9 +254,9 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
     xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Immediately setup virtual terminal (no real terminal attempt for now)
+    // Try to connect to real terminal first, fall back to virtual
     setTimeout(() => {
-      setupVirtualTerminal();
+      setupRealTerminal();
     }, 100);
 
     // Handle terminal resize when expanded/collapsed
@@ -216,7 +285,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
       isInitializedRef.current = false;
       dataHandlerRef.current = null;
     };
-  }, [setupVirtualTerminal]);
+  }, [setupRealTerminal]);
 
   // Trigger resize when minimized state changes
   useEffect(() => {
