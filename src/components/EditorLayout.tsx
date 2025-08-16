@@ -316,6 +316,346 @@ ReactDOM.render(<App />, document.getElementById('root'));` :
 ReactDOM.render(<App />, document.getElementById('root'));`
         }
       ];
+
+    case 'vanilla-js':
+      return [
+        {
+          id: 'index.html',
+          name: 'index.html',
+          type: 'file',
+          content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Vanilla JavaScript! 🟨</h1>
+        <div class="counter">
+            <p>Count: <span id="counter-value">0</span></p>
+            <div class="buttons">
+                <button id="decrement">-</button>
+                <button id="increment">+</button>
+            </div>
+        </div>
+        <p class="description">Pure JavaScript with no frameworks!</p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>`
+        },
+        {
+          id: 'styles.css',
+          name: 'styles.css',
+          type: 'file',
+          content: `body {
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 400px;
+}
+
+h1 {
+    color: #1e293b;
+    margin-bottom: 30px;
+    font-size: 2rem;
+}
+
+.counter {
+    margin: 30px 0;
+}
+
+#counter-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #3b82f6;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+button {
+    padding: 12px 24px;
+    font-size: 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#increment {
+    background-color: #3b82f6;
+    color: white;
+}
+
+#increment:hover {
+    background-color: #2563eb;
+}
+
+#decrement {
+    background-color: #ef4444;
+    color: white;
+}
+
+#decrement:hover {
+    background-color: #dc2626;
+}
+
+.description {
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 20px;
+}`
+        },
+        {
+          id: 'script.js',
+          name: 'script.js',
+          type: 'file',
+          content: `// Vanilla JavaScript Counter App
+let count = 0;
+
+const counterValue = document.getElementById('counter-value');
+const incrementBtn = document.getElementById('increment');
+const decrementBtn = document.getElementById('decrement');
+
+function updateCounter() {
+    counterValue.textContent = count;
+}
+
+function increment() {
+    count++;
+    updateCounter();
+    console.log('Count incremented to:', count);
+}
+
+function decrement() {
+    count--;
+    updateCounter();
+    console.log('Count decremented to:', count);
+}
+
+// Add event listeners
+incrementBtn.addEventListener('click', increment);
+decrementBtn.addEventListener('click', decrement);
+
+// Initialize
+console.log('Vanilla JavaScript app initialized!');
+updateCounter();`
+        }
+      ];
+
+    case 'html-css':
+      return [
+        {
+          id: 'index.html',
+          name: 'index.html',
+          type: 'file',
+          content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML + CSS Template</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="hero">
+        <div class="container">
+            <h1>Welcome to HTML + CSS! 🌐</h1>
+            <p>Beautiful, responsive design with pure HTML and CSS</p>
+            <button class="cta-button">Get Started</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Responsive</h3>
+                    <p>Works perfectly on all devices</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Fast</h3>
+                    <p>Lightning-fast loading times</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Beautiful</h3>
+                    <p>Clean and modern design</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 HTML + CSS Template. Made with ❤️</p>
+        </div>
+    </footer>
+</body>
+</html>`
+        },
+        {
+          id: 'styles.css',
+          name: 'styles.css',
+          type: 'file',
+          content: `* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 100px 0;
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    animation: fadeInUp 1s ease-out;
+}
+
+.hero p {
+    font-size: 1.3rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    animation: fadeInUp 1s ease-out 0.2s both;
+}
+
+.cta-button {
+    background: #fff;
+    color: #667eea;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: fadeInUp 1s ease-out 0.4s both;
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.main-content {
+    padding: 80px 0;
+    background: #f8f9fa;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 40px;
+    margin-top: 40px;
+}
+
+.feature-card {
+    background: white;
+    padding: 40px 30px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.feature-card p {
+    color: #666;
+    font-size: 1rem;
+}
+
+.footer {
+    background: #333;
+    color: white;
+    text-align: center;
+    padding: 30px 0;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero p {
+        font-size: 1.1rem;
+    }
+    
+    .features {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}`
+        }
+      ];
+
     case 'vanilla-ts':
       return [
         {
@@ -387,8 +727,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });`
         }
       ];
+
     case 'next-js':
-    default:
       return [
         {
           id: 'index.html',
@@ -431,6 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
 ReactDOM.render(<HomePage />, document.getElementById('root'));`
         }
       ];
+
     case 'vue':
       return [
         {
@@ -477,6 +818,7 @@ createApp({
 }).mount('#app');`
         }
       ];
+
     case 'node-express':
       return [
         {
@@ -562,6 +904,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });`
         }
       ];
+
+    default:
+      return defaultFiles;
   }
 };
 
