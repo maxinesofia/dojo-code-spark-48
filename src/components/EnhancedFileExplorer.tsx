@@ -63,6 +63,12 @@ export function EnhancedFileExplorer({
   onRenameFile,
   onUpdateFile
 }: EnhancedFileExplorerProps) {
+  // Debug logging and safety check
+  console.log('EnhancedFileExplorer received files:', files, 'Type:', typeof files, 'Is array:', Array.isArray(files));
+  
+  // Ensure files is always an array
+  const safeFiles = Array.isArray(files) ? files : [];
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState<FileNode[]>([]);
@@ -317,13 +323,13 @@ export function EnhancedFileExplorer({
 
         {node.type === 'folder' && node.isOpen && node.children && !inSearchResults && (
           <div>
-            {node.children.map((child) => (
+            {Array.isArray(node.children) ? node.children.map((child) => (
               <FileTreeItem
                 key={child.id}
                 node={child}
                 level={level + 1}
               />
-            ))}
+            )) : null}
           </div>
         )}
       </div>
@@ -489,13 +495,13 @@ export function EnhancedFileExplorer({
             <div className="text-xs text-muted-foreground mb-2">
               Search Results ({searchResults.length})
             </div>
-            {searchResults.map((file) => (
+            {Array.isArray(searchResults) ? searchResults.map((file) => (
               <FileTreeItem
                 key={file.id}
                 node={file}
                 inSearchResults
               />
-            ))}
+            )) : null}
           </div>
         ) : searchQuery ? (
           <div className="p-4 text-center text-muted-foreground">
@@ -503,7 +509,7 @@ export function EnhancedFileExplorer({
             <p>No files found matching "{searchQuery}"</p>
           </div>
         ) : (
-          Array.isArray(files) ? files.map((node) => (
+          Array.isArray(safeFiles) ? safeFiles.map((node) => (
             <FileTreeItem
               key={node.id}
               node={node}
