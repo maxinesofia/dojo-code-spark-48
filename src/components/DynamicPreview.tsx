@@ -86,10 +86,11 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
 
   const openInNewTab = () => {
     if (executionResult?.success && executionResult.html) {
-      const newWindow = window.open();
+      const newWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
       if (newWindow) {
         newWindow.document.write(executionResult.html);
         newWindow.document.close();
+        newWindow.focus();
       }
     }
   };

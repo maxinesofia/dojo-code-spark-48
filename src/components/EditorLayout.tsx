@@ -1184,7 +1184,7 @@ export function EditorLayout() {
           <ResizableHandle />
           
           {/* Right Panel - Preview Only */}
-          <ResizablePanel defaultSize={17} minSize={15} maxSize={35}>
+          <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
             <div className="h-full bg-background border-l border-border">
               <DynamicPreview files={files} />
             </div>
