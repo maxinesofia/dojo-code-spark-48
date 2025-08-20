@@ -52,7 +52,7 @@ interface EnhancedFileExplorerProps {
 }
 
 export function EnhancedFileExplorer({
-  files,
+  files = [],
   activeFile,
   onFileSelect,
   onCreateFile,
@@ -503,12 +503,16 @@ export function EnhancedFileExplorer({
             <p>No files found matching "{searchQuery}"</p>
           </div>
         ) : (
-          files.map((node) => (
+          Array.isArray(files) ? files.map((node) => (
             <FileTreeItem
               key={node.id}
               node={node}
             />
-          ))
+          )) : (
+            <div className="p-4 text-center text-muted-foreground">
+              <p>No files to display</p>
+            </div>
+          )
         )}
 
         {dragDropZone && (
