@@ -40,18 +40,23 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
     onChange(newValue || '');
   };
 
+  const editorTheme = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) 
+    ? 'vs-dark' 
+    : 'vs';
+
   return (
     <div className="flex-1 flex flex-col bg-background">
       <div className="h-10 border-b border-border flex items-center px-4 bg-background">
         <span className="text-sm text-foreground">{fileName || 'Untitled'}</span>
       </div>
       
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <Editor
           height="100%"
           language={editorLanguage}
-          value={value || ''}
+          value={value}
           onChange={handleEditorChange}
+          theme={editorTheme}
           loading={
             <div className="flex items-center justify-center h-full bg-background">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -66,13 +71,12 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
             automaticLayout: true,
             tabSize: 2,
             wordWrap: 'on',
-            theme: theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'vs-dark' : 'vs-light',
             fontFamily: '"Fira Code", "Cascadia Code", "JetBrains Mono", Monaco, Menlo, "Ubuntu Mono", monospace',
             renderLineHighlight: 'line',
             selectOnLineNumbers: true,
             glyphMargin: false,
             folding: true,
-            showFoldingControls: 'always',
+            showFoldingControls: 'mouseover',
             contextmenu: true,
             mouseWheelZoom: true,
             smoothScrolling: true,
@@ -80,9 +84,10 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
             renderWhitespace: 'selection',
             readOnly: false,
             domReadOnly: false,
+            padding: { top: 10, bottom: 10 },
             scrollbar: {
-              vertical: 'auto',
-              horizontal: 'auto',
+              vertical: 'visible',
+              horizontal: 'visible',
               useShadows: false,
               verticalHasArrows: false,
               horizontalHasArrows: false,
