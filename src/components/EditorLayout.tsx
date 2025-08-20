@@ -1109,7 +1109,7 @@ export function EditorLayout() {
       <div className="flex-1 flex overflow-hidden">
         <ResizablePanelGroup direction="horizontal">
           {/* File Explorer - VS Code Style */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+          <ResizablePanel defaultSize={18} minSize={15} maxSize={25}>
             <div className="h-full bg-sidebar border-r border-sidebar-border flex flex-col">
               {/* File Explorer */}
               <div className="flex-1">
@@ -1141,11 +1141,11 @@ export function EditorLayout() {
           <ResizableHandle />
           
           {/* Main Editor Area */}
-          <ResizablePanel defaultSize={50}>
+          <ResizablePanel defaultSize={58}>
             <ResizablePanelGroup direction="vertical">
               {/* Code Editor */}
               <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
-                <div className="h-full">
+                <div className="h-full bg-background">
                   {selectedFile ? (
                     <CodeEditor
                       value={selectedFile.content || ''}
@@ -1184,8 +1184,10 @@ export function EditorLayout() {
           <ResizableHandle />
           
           {/* Right Panel - Preview Only */}
-          <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-            <DynamicPreview files={files} />
+          <ResizablePanel defaultSize={24} minSize={20} maxSize={40}>
+            <div className="h-full bg-background border-l border-border">
+              <DynamicPreview files={files} />
+            </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
