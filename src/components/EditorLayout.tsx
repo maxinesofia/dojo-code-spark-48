@@ -9,6 +9,9 @@ import { DynamicPreview } from "./DynamicPreview";
 import { PackageManager } from "./PackageManager";
 import { Terminal } from "./Terminal";
 import { useToast } from "@/hooks/use-toast";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import { Terminal as TerminalIcon, GitBranch, Settings } from "lucide-react";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
 
@@ -64,12 +67,6 @@ h1 {
     background-clip: text;
 }
 
-p {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-    opacity: 0.9;
-}
-
 button {
     background: #1e40af;
     color: white;
@@ -102,36 +99,9 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             clickCount++;
             button.textContent = \`Clicked \${clickCount} time\${clickCount !== 1 ? 's' : ''}!\`;
-            
-            // Add some fun animations
-            button.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                button.style.transform = 'scale(1)';
-            }, 150);
         });
     }
-    
-    // Add some dynamic content
-    setTimeout(() => {
-        const container = document.querySelector('.container');
-        if (container) {
-            const welcomeMsg = document.createElement('div');
-            welcomeMsg.innerHTML = '<p><em>✨ Ready to start coding? Edit the files and see the magic happen!</em></p>';
-            welcomeMsg.style.animation = 'fadeIn 0.5s ease-in';
-            container.appendChild(welcomeMsg);
-        }
-    }, 1000);
-});
-
-// Add CSS animation keyframes
-const style = document.createElement('style');
-style.textContent = \`
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-\`;
-document.head.appendChild(style);`
+});`
   }
 ];
 
@@ -154,11 +124,10 @@ const getTemplateFiles = (templateId: string): FileNode[] => {
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    ${templateId === 'react-ts' ? '<script src="https://unpkg.com/typescript@5/lib/typescript.js"></script>' : ''}
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel" ${templateId === 'react-ts' ? 'data-type="module"' : ''} src="App.${templateId === 'react-ts' ? 'tsx' : 'js'}"></script>
+    <script type="text/babel" src="App.${templateId === 'react-ts' ? 'tsx' : 'js'}"></script>
 </body>
 </html>`
         },
@@ -169,146 +138,27 @@ const getTemplateFiles = (templateId: string): FileNode[] => {
           content: templateId === 'react-ts' ? 
 `import React, { useState } from 'react';
 
-interface CounterProps {
-  initialCount?: number;
-}
-
-const App: React.FC<CounterProps> = ({ initialCount = 0 }) => {
-  const [count, setCount] = useState<number>(initialCount);
-
-  const handleIncrement = (): void => {
-    setCount(prev => prev + 1);
-  };
-
-  const handleDecrement = (): void => {
-    setCount(prev => prev - 1);
-  };
+const App: React.FC = () => {
+  const [count, setCount] = useState<number>(0);
 
   return (
-    <div style={{ 
-      padding: '20px', 
-      textAlign: 'center',
-      fontFamily: 'system-ui, sans-serif',
-      maxWidth: '400px',
-      margin: '50px auto',
-      backgroundColor: '#f8fafc',
-      borderRadius: '12px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-    }}>
-      <h1 style={{ color: '#1e293b', marginBottom: '20px' }}>
-        Welcome to React + TypeScript! 🚀
-      </h1>
-      <div style={{ 
-        fontSize: '24px', 
-        margin: '20px 0',
-        color: '#475569'
-      }}>
-        Count: <strong style={{ color: '#3b82f6' }}>{count}</strong>
-      </div>
-      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-        <button 
-          onClick={handleDecrement}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: '#ef4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          -
-        </button>
-        <button 
-          onClick={handleIncrement}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          +
-        </button>
-      </div>
-      <p style={{ 
-        marginTop: '20px', 
-        color: '#64748b',
-        fontSize: '14px'
-      }}>
-        ✨ Edit this component and see the magic happen!
-      </p>
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <h1>React + TypeScript + Firecracker VM! 🚀</h1>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
     </div>
   );
 };
 
-// @ts-ignore
 ReactDOM.render(<App />, document.getElementById('root'));` :
 `function App() {
   const [count, setCount] = React.useState(0);
 
   return (
-    <div style={{ 
-      padding: '20px', 
-      textAlign: 'center',
-      fontFamily: 'system-ui, sans-serif',
-      maxWidth: '400px',
-      margin: '50px auto',
-      backgroundColor: '#f8fafc',
-      borderRadius: '12px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-    }}>
-      <h1 style={{ color: '#1e293b', marginBottom: '20px' }}>
-        Welcome to React! ⚛️
-      </h1>
-      <div style={{ 
-        fontSize: '24px', 
-        margin: '20px 0',
-        color: '#475569'
-      }}>
-        Count: <strong style={{ color: '#3b82f6' }}>{count}</strong>
-      </div>
-      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-        <button 
-          onClick={() => setCount(count - 1)}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: '#ef4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          -
-        </button>
-        <button 
-          onClick={() => setCount(count + 1)}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          +
-        </button>
-      </div>
-      <p style={{ 
-        marginTop: '20px', 
-        color: '#64748b',
-        fontSize: '14px'
-      }}>
-        ✨ Edit this component and see the magic happen!
-      </p>
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <h1>React + Firecracker VM! ⚛️</h1>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
     </div>
   );
 }
@@ -341,7 +191,6 @@ ReactDOM.render(<App />, document.getElementById('root'));`
                 <button id="increment">+</button>
             </div>
         </div>
-        <p class="description">Pure JavaScript with no frameworks!</p>
     </div>
     <script src="script.js"></script>
 </body>
@@ -352,7 +201,7 @@ ReactDOM.render(<App />, document.getElementById('root'));`
           name: 'styles.css',
           type: 'file',
           content: `body {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: system-ui, sans-serif;
     margin: 0;
     padding: 0;
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
@@ -366,74 +215,15 @@ ReactDOM.render(<App />, document.getElementById('root'));`
     background: white;
     padding: 40px;
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     text-align: center;
     max-width: 400px;
-}
-
-h1 {
-    color: #1e293b;
-    margin-bottom: 30px;
-    font-size: 2rem;
-}
-
-.counter {
-    margin: 30px 0;
-}
-
-#counter-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #3b82f6;
-}
-
-.buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-button {
-    padding: 12px 24px;
-    font-size: 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-#increment {
-    background-color: #3b82f6;
-    color: white;
-}
-
-#increment:hover {
-    background-color: #2563eb;
-}
-
-#decrement {
-    background-color: #ef4444;
-    color: white;
-}
-
-#decrement:hover {
-    background-color: #dc2626;
-}
-
-.description {
-    color: #64748b;
-    font-size: 14px;
-    margin-top: 20px;
 }`
         },
         {
           id: 'script.js',
           name: 'script.js',
           type: 'file',
-          content: `// Vanilla JavaScript Counter App
-let count = 0;
-
+          content: `let count = 0;
 const counterValue = document.getElementById('counter-value');
 const incrementBtn = document.getElementById('increment');
 const decrementBtn = document.getElementById('decrement');
@@ -442,465 +232,14 @@ function updateCounter() {
     counterValue.textContent = count;
 }
 
-function increment() {
+incrementBtn.addEventListener('click', () => {
     count++;
     updateCounter();
-    console.log('Count incremented to:', count);
-}
+});
 
-function decrement() {
+decrementBtn.addEventListener('click', () => {
     count--;
     updateCounter();
-    console.log('Count decremented to:', count);
-}
-
-// Add event listeners
-incrementBtn.addEventListener('click', increment);
-decrementBtn.addEventListener('click', decrement);
-
-// Initialize
-console.log('Vanilla JavaScript app initialized!');
-updateCounter();`
-        }
-      ];
-
-    case 'html-css':
-      return [
-        {
-          id: 'index.html',
-          name: 'index.html',
-          type: 'file',
-          content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML + CSS Template</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <header class="hero">
-        <div class="container">
-            <h1>Welcome to HTML + CSS! 🌐</h1>
-            <p>Beautiful, responsive design with pure HTML and CSS</p>
-            <button class="cta-button">Get Started</button>
-        </div>
-    </header>
-
-    <main class="main-content">
-        <div class="container">
-            <section class="features">
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <h3>Responsive</h3>
-                    <p>Works perfectly on all devices</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Fast</h3>
-                    <p>Lightning-fast loading times</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🎨</div>
-                    <h3>Beautiful</h3>
-                    <p>Clean and modern design</p>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 HTML + CSS Template. Made with ❤️</p>
-        </div>
-    </footer>
-</body>
-</html>`
-        },
-        {
-          id: 'styles.css',
-          name: 'styles.css',
-          type: 'file',
-          content: `* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: system-ui, -apple-system, sans-serif;
-    line-height: 1.6;
-    color: #333;
-}
-
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    text-align: center;
-    padding: 100px 0;
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
-}
-
-.hero h1 {
-    font-size: 3.5rem;
-    margin-bottom: 1rem;
-    animation: fadeInUp 1s ease-out;
-}
-
-.hero p {
-    font-size: 1.3rem;
-    margin-bottom: 2rem;
-    opacity: 0.9;
-    animation: fadeInUp 1s ease-out 0.2s both;
-}
-
-.cta-button {
-    background: #fff;
-    color: #667eea;
-    padding: 15px 30px;
-    border: none;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    animation: fadeInUp 1s ease-out 0.4s both;
-}
-
-.cta-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-.main-content {
-    padding: 80px 0;
-    background: #f8f9fa;
-}
-
-.features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 40px;
-    margin-top: 40px;
-}
-
-.feature-card {
-    background: white;
-    padding: 40px 30px;
-    border-radius: 12px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-}
-
-.feature-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
-
-.feature-card h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-
-.feature-card p {
-    color: #666;
-    font-size: 1rem;
-}
-
-.footer {
-    background: #333;
-    color: white;
-    text-align: center;
-    padding: 30px 0;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@media (max-width: 768px) {
-    .hero h1 {
-        font-size: 2.5rem;
-    }
-    
-    .hero p {
-        font-size: 1.1rem;
-    }
-    
-    .features {
-        grid-template-columns: 1fr;
-        gap: 30px;
-    }
-}`
-        }
-      ];
-
-    case 'vanilla-ts':
-      return [
-        {
-          id: 'index.html',
-          name: 'index.html',
-          type: 'file',
-          content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TypeScript Project</title>
-    <script src="https://unpkg.com/typescript@5/lib/typescript.js"></script>
-</head>
-<body>
-    <div id="app">
-        <h1>Welcome to TypeScript!</h1>
-        <p id="counter">Count: 0</p>
-        <button id="increment">+</button>
-        <button id="decrement">-</button>
-    </div>
-    <script src="main.ts"></script>
-</body>
-</html>`
-        },
-        {
-          id: 'main.ts',
-          name: 'main.ts',
-          type: 'file',
-          content: `interface Counter {
-  value: number;
-  increment(): void;
-  decrement(): void;
-}
-
-class CounterApp implements Counter {
-  value: number = 0;
-  private counterElement: HTMLElement;
-
-  constructor() {
-    this.counterElement = document.getElementById('counter')!;
-    this.setupEventListeners();
-    this.render();
-  }
-
-  increment(): void {
-    this.value++;
-    this.render();
-  }
-
-  decrement(): void {
-    this.value--;
-    this.render();
-  }
-
-  private setupEventListeners(): void {
-    document.getElementById('increment')?.addEventListener('click', () => this.increment());
-    document.getElementById('decrement')?.addEventListener('click', () => this.decrement());
-  }
-
-  private render(): void {
-    this.counterElement.textContent = \`Count: \${this.value}\`;
-  }
-}
-
-// Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  new CounterApp();
-});`
-        }
-      ];
-
-    case 'next-js':
-      return [
-        {
-          id: 'index.html',
-          name: 'index.html',
-          type: 'file',
-          content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Next.js-like App</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="text/babel" src="pages/index.js"></script>
-</body>
-</html>`
-        },
-        {
-          id: 'pages/index.js',
-          name: 'pages/index.js',
-          type: 'file',
-          content: `function HomePage() {
-  return (
-    <div style={{ padding: '40px', fontFamily: 'system-ui, sans-serif' }}>
-      <h1>Welcome to Next.js-like App! 🚀</h1>
-      <p>This simulates a Next.js structure in the browser.</p>
-      <div style={{ marginTop: '20px' }}>
-        <a href="#" style={{ color: '#0070f3', textDecoration: 'none' }}>
-          Learn more about Next.js →
-        </a>
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.render(<HomePage />, document.getElementById('root'));`
-        }
-      ];
-
-    case 'vue':
-      return [
-        {
-          id: 'index.html',
-          name: 'index.html',
-          type: 'file',
-          content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vue.js App</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-</head>
-<body>
-    <div id="app">
-      <h1>{{ title }}</h1>
-      <p>{{ message }}</p>
-      <button @click="increment">Count: {{ count }}</button>
-    </div>
-    <script src="app.js"></script>
-</body>
-</html>`
-        },
-        {
-          id: 'app.js',
-          name: 'app.js',
-          type: 'file',
-          content: `const { createApp } = Vue;
-
-createApp({
-  data() {
-    return {
-      title: 'Welcome to Vue.js! 🔧',
-      message: 'Start building amazing reactive apps!',
-      count: 0
-    }
-  },
-  methods: {
-    increment() {
-      this.count++;
-    }
-  }
-}).mount('#app');`
-        }
-      ];
-
-    case 'node-express':
-      return [
-        {
-          id: 'index.html',
-          name: 'index.html',
-          type: 'file',
-          content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Node.js Express Simulation</title>
-</head>
-<body>
-    <div id="app">
-        <h1>Node.js Express API Simulation 🟢</h1>
-        <p>This simulates a Node.js Express server in the browser.</p>
-        <button id="fetchData">Fetch Data from "API"</button>
-        <div id="result"></div>
-    </div>
-    <script src="server.js"></script>
-</body>
-</html>`
-        },
-        {
-          id: 'server.js',
-          name: 'server.js',
-          type: 'file',
-          content: `// Simulated Express server in the browser
-class MockExpress {
-  constructor() {
-    this.routes = new Map();
-    this.setupRoutes();
-  }
-
-  get(path, handler) {
-    this.routes.set(\`GET:\${path}\`, handler);
-  }
-
-  post(path, handler) {
-    this.routes.set(\`POST:\${path}\`, handler);
-  }
-
-  async request(method, path) {
-    const key = \`\${method}:\${path}\`;
-    const handler = this.routes.get(key);
-    if (handler) {
-      return await handler();
-    }
-    return { error: 'Route not found' };
-  }
-
-  setupRoutes() {
-    this.get('/api/users', () => ({
-      users: [
-        { id: 1, name: 'John Doe', email: 'john@example.com' },
-        { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
-      ]
-    }));
-
-    this.get('/api/health', () => ({
-      status: 'OK',
-      timestamp: new Date().toISOString()
-    }));
-  }
-}
-
-// Initialize mock server
-const app = new MockExpress();
-
-// Frontend interaction
-document.addEventListener('DOMContentLoaded', () => {
-  const fetchButton = document.getElementById('fetchData');
-  const resultDiv = document.getElementById('result');
-
-  fetchButton.addEventListener('click', async () => {
-    const data = await app.request('GET', '/api/users');
-    resultDiv.innerHTML = \`
-      <h3>API Response:</h3>
-      <pre>\${JSON.stringify(data, null, 2)}</pre>
-    \`;
-  });
 });`
         }
       ];
@@ -910,497 +249,319 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 };
 
-// Load project state from localStorage
-const loadProjectState = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        files: parsed.files || defaultFiles,
-        fileContents: parsed.fileContents || {},
-        activeFileId: parsed.activeFileId || null
-      };
-    }
-  } catch (error) {
-    console.error('Failed to load project state:', error);
-  }
-  return null;
-};
-
 export function EditorLayout() {
   const [searchParams] = useSearchParams();
-  const templateId = searchParams.get('template');
-  const [projectName, setProjectName] = useState("My Awesome Project");
-  
-  // Initialize state from localStorage or template/default
-  const initialFiles = templateId ? getTemplateFiles(templateId) : defaultFiles;
-  const savedState = !templateId ? loadProjectState() : null;
-  
-  const [files, setFiles] = useState<FileNode[]>(savedState?.files || initialFiles);
-  const [activeFile, setActiveFile] = useState<FileNode | null>(() => {
-    if (savedState?.activeFileId) {
-      const findFileById = (nodes: FileNode[], id: string): FileNode | null => {
-        for (const node of nodes) {
-          if (node.id === id) return node;
-          if (node.children) {
-            const found = findFileById(node.children, id);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-      return findFileById(savedState.files, savedState.activeFileId);
-    }
-    return initialFiles[0];
-  });
-  
-  const [fileContents, setFileContents] = useState<Record<string, string>>(() => {
-    if (savedState?.fileContents && Object.keys(savedState.fileContents).length > 0) {
-      return savedState.fileContents;
-    }
-    return initialFiles.reduce((acc, file) => {
-      if (file.content) {
-        acc[file.id] = file.content;
-      }
-      return acc;
-    }, {} as Record<string, string>);
-  });
-  
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [showPackageManager, setShowPackageManager] = useState(false);
-  const [showTerminal, setShowTerminal] = useState(false);
-
-  // Save project state to localStorage whenever it changes
-  useEffect(() => {
-    if (!templateId) { // Only save if not using a template (preserves user work)
-      setIsSaving(true);
-      const saveTimeout = setTimeout(() => {
-        try {
-          const now = new Date().toISOString();
-          const stateToSave = {
-            files,
-            fileContents,
-            activeFileId: activeFile?.id || null,
-            lastSaved: now
-          };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-          setLastSaved(now);
-        } catch (error) {
-          console.error('Failed to save project state:', error);
-        } finally {
-          setIsSaving(false);
-        }
-      }, 500); // Debounce saves by 500ms
-
-      return () => clearTimeout(saveTimeout);
+  
+  const [files, setFiles] = useState<FileNode[]>(() => {
+    const template = searchParams.get('template');
+    if (template && template !== 'default') {
+      return getTemplateFiles(template);
     }
-  }, [files, fileContents, activeFile, templateId]);
-
-  const handleProjectNameChange = useCallback((newName: string) => {
-    setProjectName(newName);
-  }, []);
-
-  const saveToLocalStorage = useCallback(() => {
-    const state = {
-      files,
-      fileContents,
-      activeFileId: activeFile?.id || null,
-      lastSaved: new Date().toISOString(),
-      projectName,
-      template: searchParams.get('template') || 'vanilla'
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    setLastSaved(state.lastSaved);
-  }, [files, fileContents, activeFile, projectName, searchParams]);
-
-  // Load saved project name on mount
-  useEffect(() => {
+    
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const state = JSON.parse(saved);
-        if (state.projectName) {
-          setProjectName(state.projectName);
-        }
-      } catch (error) {
-        console.error('Error loading project name:', error);
+    return saved ? JSON.parse(saved) : defaultFiles;
+  });
+  
+  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+
+  // Auto-save functionality
+  useEffect(() => {
+    const saveTimer = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+    }, 1000);
+    
+    return () => clearTimeout(saveTimer);
+  }, [files]);
+
+  // Select first file on mount
+  useEffect(() => {
+    if (files.length > 0 && !selectedFile) {
+      const firstFile = findFirstFile(files);
+      if (firstFile) {
+        setSelectedFile(firstFile);
       }
     }
-  }, []);
+  }, [files, selectedFile]);
+
+  const findFirstFile = (nodes: FileNode[]): FileNode | null => {
+    for (const node of nodes) {
+      if (node.type === 'file') {
+        return node;
+      }
+      if (node.children) {
+        const found = findFirstFile(node.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
 
   const handleFileSelect = useCallback((file: FileNode) => {
-    setActiveFile(file);
+    if (file.type === 'file') {
+      setSelectedFile(file);
+    }
   }, []);
 
-  const handleCodeChange = useCallback((value: string | undefined) => {
-    if (activeFile && value !== undefined) {
-      setFileContents(prev => ({
-        ...prev,
-        [activeFile.id]: value
-      }));
-    }
-  }, [activeFile]);
+  const handleFileChange = useCallback((content: string | undefined) => {
+    if (!selectedFile || !content) return;
 
-  const handleSave = useCallback(() => {
-    toast({
-      title: "Project saved!",
-      description: "Your changes have been saved successfully.",
-    });
-  }, [toast]);
-
-  const handleRun = useCallback(() => {
-    toast({
-      title: "Running project...",
-      description: "Preview has been updated with your latest changes.",
-    });
-  }, [toast]);
-
-  const handleShare = useCallback(() => {
-    const shareUrl = `${window.location.origin}/editor?template=${templateId || 'vanilla-js'}&name=${encodeURIComponent(projectName)}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      toast({
-        title: "Link copied!",
-        description: "Shareable link has been copied to clipboard.",
-      });
-    }).catch(() => {
-      toast({
-        title: "Share link",
-        description: shareUrl,
-      });
-    });
-  }, [toast, templateId, projectName]);
-
-  const handleCreateFile = useCallback((fileName: string, fileType: string) => {
-    if (fileName && fileName.trim()) {
-      // Get default content based on file type
-      const getDefaultContent = (name: string, type: string) => {
-        switch (type) {
-          case 'javascript':
-            return `// ${name}\nconsole.log("Hello from ${name}");`;
-          case 'typescript':
-            return `// ${name}\nconst message: string = "Hello from ${name}";\nconsole.log(message);`;
-          case 'react-js':
-            return `import React from 'react';\n\nfunction ${name.replace(/\.[^/.]+$/, "")} () {\n  return (\n    <div>\n      <h1>Hello from ${name}</h1>\n    </div>\n  );\n}\n\nexport default ${name.replace(/\.[^/.]+$/, "")};`;
-          case 'react-ts':
-            return `import React from 'react';\n\ninterface ${name.replace(/\.[^/.]+$/, "")}Props {\n  // Define props here\n}\n\nconst ${name.replace(/\.[^/.]+$/, "")}: React.FC<${name.replace(/\.[^/.]+$/, "")}Props> = () => {\n  return (\n    <div>\n      <h1>Hello from ${name}</h1>\n    </div>\n  );\n};\n\nexport default ${name.replace(/\.[^/.]+$/, "")};`;
-          case 'html':
-            return `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>${name.replace(/\.[^/.]+$/, "")}</title>\n</head>\n<body>\n    <h1>Hello from ${name}</h1>\n</body>\n</html>`;
-          case 'css':
-            return `/* ${name} */\n\n/* Add your styles here */\n.container {\n  padding: 20px;\n}`;
-          case 'json':
-            return `{\n  "name": "${name.replace(/\.[^/.]+$/, "")}",\n  "version": "1.0.0"\n}`;
-          case 'text':
-            return `${name}\n\nAdd your content here...`;
-          default:
-            return `// ${name}\n`;
+    const updateFileContent = (nodes: FileNode[]): FileNode[] => {
+      return nodes.map(node => {
+        if (node.id === selectedFile.id) {
+          return { ...node, content };
         }
-      };
-
-      const newFile: FileNode = {
-        id: fileName.trim(),
-        name: fileName.trim(),
-        type: 'file',
-        content: getDefaultContent(fileName.trim(), fileType)
-      };
-      
-      // Add to files array
-      setFiles(prev => [...prev, newFile]);
-      
-      // Add to file contents
-      setFileContents(prev => ({
-        ...prev,
-        [fileName.trim()]: getDefaultContent(fileName.trim(), fileType)
-      }));
-
-      // Set as active file
-      setActiveFile(newFile);
-      
-      toast({
-        title: "File created!",
-        description: `${fileName} has been created successfully.`,
+        if (node.children) {
+          return { ...node, children: updateFileContent(node.children) };
+        }
+        return node;
       });
-    }
-  }, [toast]);
+    };
 
-  const handleCreateFolder = useCallback((folderName: string) => {
-    if (folderName && folderName.trim()) {
-      const newFolder: FileNode = {
-        id: folderName.trim(),
-        name: folderName.trim(),
-        type: 'folder',
-        children: [],
-        isOpen: true
-      };
-      
-      setFiles(prev => [...prev, newFolder]);
-      
-      toast({
-        title: "Folder created!",
-        description: `${folderName} folder has been created successfully.`,
-      });
-    }
-  }, [toast]);
+    setFiles(updateFileContent(files));
+  }, [selectedFile, files]);
 
-  const handleToggleFolder = useCallback((folderId: string) => {
-    setFiles(prevFiles => {
-      const toggleFolder = (nodes: FileNode[]): FileNode[] => {
+  const handleFileCreate = useCallback((name: string, type: 'file' | 'folder', parentId?: string) => {
+    const newNode: FileNode = {
+      id: `${Date.now()}-${name}`,
+      name,
+      type,
+      content: type === 'file' ? '' : undefined,
+      children: type === 'folder' ? [] : undefined,
+    };
+
+    if (!parentId) {
+      setFiles([...files, newNode]);
+    } else {
+      const addToParent = (nodes: FileNode[]): FileNode[] => {
         return nodes.map(node => {
-          if (node.id === folderId && node.type === 'folder') {
-            return { ...node, isOpen: !node.isOpen };
+          if (node.id === parentId && node.children) {
+            return { ...node, children: [...node.children, newNode] };
           }
           if (node.children) {
-            return { ...node, children: toggleFolder(node.children) };
+            return { ...node, children: addToParent(node.children) };
           }
           return node;
         });
       };
-      return toggleFolder(prevFiles);
-    });
-  }, []);
+      setFiles(addToParent(files));
+    }
 
-  const handleDeleteFile = useCallback((fileId: string) => {
-    setFiles(prevFiles => {
-      const deleteFromNodes = (nodes: FileNode[]): FileNode[] => {
-        return nodes.filter(node => {
-          if (node.id === fileId) {
-            return false;
-          }
-          if (node.children) {
-            node.children = deleteFromNodes(node.children);
-          }
-          return true;
-        });
-      };
-      return deleteFromNodes(prevFiles);
-    });
+    if (type === 'file') {
+      setSelectedFile(newNode);
+    }
 
-    // If the deleted file was active, clear it
-    if (activeFile?.id === fileId) {
-      setActiveFile(null);
-      setFileContents(prev => {
-        const updated = { ...prev };
-        delete updated[fileId];
-        return updated;
+    toast({
+      title: `${type === 'file' ? 'File' : 'Folder'} created`,
+      description: `${name} has been created successfully.`,
+    });
+  }, [files, toast]);
+
+  const handleFileDelete = useCallback((fileId: string) => {
+    const deleteNode = (nodes: FileNode[]): FileNode[] => {
+      return nodes.filter(node => {
+        if (node.id === fileId) {
+          return false;
+        }
+        if (node.children) {
+          node.children = deleteNode(node.children);
+        }
+        return true;
       });
+    };
+
+    setFiles(deleteNode(files));
+    
+    if (selectedFile?.id === fileId) {
+      const firstFile = findFirstFile(files);
+      setSelectedFile(firstFile);
     }
 
     toast({
       title: "File deleted",
-      description: "The file has been successfully deleted.",
+      description: "The file has been deleted successfully.",
     });
-  }, [activeFile, toast]);
+  }, [files, selectedFile, toast]);
 
-  const handleRenameFile = useCallback((fileId: string, newName: string) => {
-    setFiles(prevFiles => {
-      const renameInNodes = (nodes: FileNode[]): FileNode[] => {
-        return nodes.map(node => {
-          if (node.id === fileId) {
-            return { ...node, name: newName };
-          }
-          if (node.children) {
-            return { ...node, children: renameInNodes(node.children) };
-          }
-          return node;
-        });
-      };
-      return renameInNodes(prevFiles);
-    });
+  const handleFileRename = useCallback((fileId: string, newName: string) => {
+    const renameNode = (nodes: FileNode[]): FileNode[] => {
+      return nodes.map(node => {
+        if (node.id === fileId) {
+          return { ...node, name: newName };
+        }
+        if (node.children) {
+          return { ...node, children: renameNode(node.children) };
+        }
+        return node;
+      });
+    };
+
+    setFiles(renameNode(files));
+    
+    if (selectedFile?.id === fileId) {
+      setSelectedFile({ ...selectedFile, name: newName });
+    }
 
     toast({
       title: "File renamed",
-      description: `File renamed to "${newName}".`,
+      description: `File renamed to ${newName} successfully.`,
+    });
+  }, [files, selectedFile, toast]);
+
+  const handleSave = useCallback(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+    toast({
+      title: "Project saved",
+      description: "Your project has been saved locally.",
+    });
+  }, [files, toast]);
+
+  const handleRun = useCallback(() => {
+    toast({
+      title: "Running project",
+      description: "Executing code in Firecracker VM...",
     });
   }, [toast]);
 
-  const handleMoveFile = useCallback((fileId: string, targetFolderId: string | null, position?: 'before' | 'after', targetFileId?: string) => {
-    setFiles(prevFiles => {
-      // Find and remove the file from its current location
-      const removeFileFromTree = (nodes: FileNode[]): { updatedNodes: FileNode[], removedFile: FileNode | null } => {
-        for (let i = 0; i < nodes.length; i++) {
-          if (nodes[i].id === fileId) {
-            const removedFile = nodes[i];
-            const updatedNodes = [...nodes.slice(0, i), ...nodes.slice(i + 1)];
-            return { updatedNodes, removedFile };
-          }
-          if (nodes[i].children) {
-            const result = removeFileFromTree(nodes[i].children);
-            if (result.removedFile) {
-              return {
-                updatedNodes: nodes.map((node, index) => 
-                  index === i ? { ...node, children: result.updatedNodes } : node
-                ),
-                removedFile: result.removedFile
-              };
-            }
-          }
-        }
-        return { updatedNodes: nodes, removedFile: null };
-      };
-
-      // Add file to target location with positioning
-      const addFileToLocation = (nodes: FileNode[], file: FileNode, folderId: string | null, position?: 'before' | 'after', targetFileId?: string): FileNode[] => {
-        if (folderId === null && !targetFileId) {
-          // Add to root
-          return [...nodes, file];
-        }
-        
-        if (folderId !== null) {
-          // Add to specific folder
-          return nodes.map(node => {
-            if (node.id === folderId && node.type === 'folder') {
-              return {
-                ...node,
-                children: [...(node.children || []), file],
-                isOpen: true
-              };
-            }
-            if (node.children) {
-              return {
-                ...node,
-                children: addFileToLocation(node.children, file, folderId, position, targetFileId)
-              };
-            }
-            return node;
-          });
-        }
-        
-        if (targetFileId && position) {
-          // Add relative to specific file
-          const targetIndex = nodes.findIndex(node => node.id === targetFileId);
-          if (targetIndex !== -1) {
-            const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
-            return [
-              ...nodes.slice(0, insertIndex),
-              file,
-              ...nodes.slice(insertIndex)
-            ];
-          }
-          
-          // If not found at this level, search in children
-          return nodes.map(node => {
-            if (node.children) {
-              return {
-                ...node,
-                children: addFileToLocation(node.children, file, folderId, position, targetFileId)
-              };
-            }
-            return node;
-          });
-        }
-        
-        return nodes;
-      };
-
-      const { updatedNodes, removedFile } = removeFileFromTree(prevFiles);
-      if (removedFile) {
-        const finalNodes = addFileToLocation(updatedNodes, removedFile, targetFolderId, position, targetFileId);
-        toast({
-          title: "File moved!",
-          description: `${removedFile.name} has been moved successfully.`,
-        });
-        return finalNodes;
-      }
-      return prevFiles;
+  const handleShare = useCallback(() => {
+    toast({
+      title: "Share project",
+      description: "Generating shareable link...",
     });
   }, [toast]);
-  const htmlContent = fileContents['index.html'] || '';
-  const cssContent = fileContents['styles.css'] || '';
-  const jsContent = fileContents['script.js'] || '';
 
-  // Extract and inject CSS into HTML
-  const processedHtml = htmlContent.replace(
-    '</head>',
-    `<link rel="stylesheet" href="styles.css">\n<script src="script.js"></script>\n</head>`
-  );
+  const handleCommandExecute = useCallback((command: string) => {
+    console.log('Executing command:', command);
+  }, []);
+
+  const handleFileSystemChange = useCallback((newFiles: FileNode[]) => {
+    setFiles(newFiles);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header 
-        projectName={projectName}
+        projectName="Tutorials Dojo Project"
         onSave={handleSave}
         onRun={handleRun}
         onShare={handleShare}
-        onTogglePackageManager={() => setShowPackageManager(!showPackageManager)}
-        onToggleTerminal={() => {
-          console.log('Terminal toggle clicked, current state:', showTerminal);
-          setShowTerminal(!showTerminal);
-        }}
-        isSaving={isSaving}
-        lastSaved={lastSaved}
-        onProjectNameChange={handleProjectNameChange}
       />
       
       <div className="flex-1 flex overflow-hidden">
-        <EnhancedFileExplorer
-          files={files}
-          activeFile={activeFile?.id || null}
-          onFileSelect={handleFileSelect}
-          onCreateFile={handleCreateFile}
-          onCreateFolder={handleCreateFolder}
-          onMoveFile={handleMoveFile}
-          onToggleFolder={handleToggleFolder}
-          onDeleteFile={handleDeleteFile}
-          onRenameFile={handleRenameFile}
-          onUpdateFile={(fileId, content) => {
-            setFileContents(prev => ({ ...prev, [fileId]: content }));
-          }}
-        />
-        
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 flex">
-            <CodeEditor
-              value={activeFile ? (fileContents[activeFile.id] || '') : ''}
-              language="javascript"
-              onChange={handleCodeChange}
-              fileName={activeFile?.name}
-            />
-            
-            <DynamicPreview
-              files={files.map(f => ({
-                ...f,
-                content: fileContents[f.id] || f.content
-              }))}
-            />
-          </div>
-          
-          {showTerminal && (
-            <div className="fixed bottom-0 left-0 right-0 h-96 bg-[#1e1e1e] border-t border-border z-50">
-              <Terminal
-                files={files.map(f => ({
-                  ...f,
-                  content: fileContents[f.id] || f.content
-                }))}
-                onCommandExecuted={(command, output) => {
-                  console.log('Terminal command executed:', command, output);
-                }}
-                onFileSystemChange={(newFiles) => {
-                  console.log('File system changed:', newFiles);
-                  // Merge new files with existing files
-                  const updatedFiles = [...files];
-                  newFiles.forEach(newFile => {
-                    const existingIndex = updatedFiles.findIndex(f => f.id === newFile.id);
-                    if (existingIndex === -1) {
-                      updatedFiles.push(newFile);
-                    }
-                  });
-                  setFiles(updatedFiles);
-                }}
-                onClose={() => setShowTerminal(false)}
-                className="h-full"
+        <ResizablePanelGroup direction="horizontal">
+          {/* File Explorer - VS Code Style */}
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+            <div className="h-full bg-sidebar border-r border-sidebar-border">
+              <EnhancedFileExplorer
+                files={files}
+                onFileSelect={handleFileSelect}
+                onFileCreate={handleFileCreate}
+                onFileDelete={handleFileDelete}
+                onFileRename={handleFileRename}
               />
             </div>
-          )}
-        </div>
+          </ResizablePanel>
+          
+          <ResizableHandle />
+          
+          {/* Main Editor Area */}
+          <ResizablePanel defaultSize={60}>
+            <ResizablePanelGroup direction="vertical">
+              {/* Code Editor */}
+              <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
+                <div className="h-full">
+                  {selectedFile ? (
+                    <CodeEditor
+                      value={selectedFile.content || ''}
+                      language="javascript"
+                      onChange={handleFileChange}
+                      fileName={selectedFile.name}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center bg-editor-bg">
+                      <div className="text-center text-muted-foreground">
+                        <h2 className="text-2xl font-semibold mb-2">Welcome to Tutorials Dojo</h2>
+                        <p>Select a file from the explorer to start coding</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ResizablePanel>
+              
+              {/* Terminal */}
+              {isTerminalOpen && (
+                <>
+                  <ResizableHandle />
+                  <ResizablePanel defaultSize={30} minSize={20}>
+                    <Terminal
+                      files={files}
+                      onCommandExecuted={handleCommandExecute}
+                      onFileSystemChange={handleFileSystemChange}
+                      onClose={() => setIsTerminalOpen(false)}
+                    />
+                  </ResizablePanel>
+                </>
+              )}
+            </ResizablePanelGroup>
+          </ResizablePanel>
+          
+          <ResizableHandle />
+          
+          {/* Right Panel - Preview & Package Manager */}
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+            <div className="h-full bg-sidebar border-l border-sidebar-border flex flex-col">
+              {/* Preview */}
+              <div className="flex-1 flex flex-col">
+                <div className="h-8 border-b border-sidebar-border flex items-center px-3 bg-sidebar-accent">
+                  <span className="text-sm font-medium text-sidebar-foreground">Preview</span>
+                </div>
+                <div className="flex-1">
+                  <DynamicPreview files={files} />
+                </div>
+              </div>
 
-        {showPackageManager && (
-          <PackageManager 
-            isOpen={showPackageManager}
-            onClose={() => setShowPackageManager(false)} 
-          />
-        )}
+              {/* Package Manager */}
+              <div className="h-64 border-t border-sidebar-border">
+                <div className="h-8 border-b border-sidebar-border flex items-center px-3 bg-sidebar-accent">
+                  <span className="text-sm font-medium text-sidebar-foreground">Package Manager</span>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <PackageManager 
+                    isOpen={true}
+                    onClose={() => {}}
+                  />
+                </div>
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+      
+      {/* VS Code Style Status Bar */}
+      <div className="h-6 bg-sidebar-accent border-t border-sidebar-border flex items-center justify-between px-2 text-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-5 w-auto px-1 text-xs hover:bg-sidebar-accent/50">
+            <GitBranch className="w-3 h-3 mr-1" />
+            <span className="text-sidebar-foreground">main</span>
+          </Button>
+          <span className="text-sidebar-foreground/70">Ready • Firecracker VM</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-auto px-1 text-xs hover:bg-sidebar-accent/50"
+            onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+          >
+            <TerminalIcon className="w-3 h-3 mr-1" />
+            <span className="text-sidebar-foreground">{isTerminalOpen ? 'Hide Terminal' : 'Show Terminal'}</span>
+          </Button>
+          <Button variant="ghost" size="icon" className="h-5 w-5 hover:bg-sidebar-accent/50">
+            <Settings className="w-3 h-3 text-sidebar-foreground" />
+          </Button>
+        </div>
       </div>
     </div>
   );
