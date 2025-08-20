@@ -714,8 +714,26 @@ export function EditorLayout() {
   
   const [files, setFiles] = useState<FileNode[]>(() => {
     const template = searchParams.get('template');
+    const projectId = searchParams.get('project');
+    
     if (template && template !== 'default') {
       return getTemplateFiles(template);
+    }
+    
+    if (projectId) {
+      // Try to load project files
+      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+      if (savedProjects) {
+        try {
+          const projects = JSON.parse(savedProjects);
+          const project = projects.find((p: any) => p.id === projectId);
+          if (project && project.files) {
+            return project.files;
+          }
+        } catch (error) {
+          console.error('Error loading project:', error);
+        }
+      }
     }
     
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -726,14 +744,37 @@ export function EditorLayout() {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
 
-  // Auto-save functionality
+  // Auto-save functionality with project updates
   useEffect(() => {
     const saveTimer = setTimeout(() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+      
+      // Update project metadata if this is a project
+      const projectId = searchParams.get('project');
+      if (projectId) {
+        const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+        if (savedProjects) {
+          try {
+            const projects = JSON.parse(savedProjects);
+            const projectIndex = projects.findIndex((p: any) => p.id === projectId);
+            if (projectIndex >= 0) {
+              projects[projectIndex] = {
+                ...projects[projectIndex],
+                files: files,
+                fileCount: files.length,
+                lastModified: new Date().toISOString()
+              };
+              localStorage.setItem('tutorials-dojo-projects', JSON.stringify(projects));
+            }
+          } catch (error) {
+            console.error('Error updating project:', error);
+          }
+        }
+      }
     }, 1000);
     
     return () => clearTimeout(saveTimer);
-  }, [files]);
+  }, [files, searchParams]);
 
   // Select first file on mount
   useEffect(() => {
@@ -912,15 +953,31 @@ export function EditorLayout() {
         <ResizablePanelGroup direction="horizontal">
           {/* File Explorer - VS Code Style */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <div className="h-full bg-sidebar border-r border-sidebar-border">
-              <VSCodeFileExplorer
-                files={files}
-                selectedFile={selectedFile}
-                onFileSelect={handleFileSelect}
-                onFileCreate={handleFileCreate}
-                onFileDelete={handleFileDelete}
-                onFileRename={handleFileRename}
-              />
+            <div className="h-full bg-sidebar border-r border-sidebar-border flex flex-col">
+              {/* File Explorer */}
+              <div className="flex-1">
+                <VSCodeFileExplorer
+                  files={files}
+                  selectedFile={selectedFile}
+                  onFileSelect={handleFileSelect}
+                  onFileCreate={handleFileCreate}
+                  onFileDelete={handleFileDelete}
+                  onFileRename={handleFileRename}
+                />
+              </div>
+              
+              {/* Package Manager Button */}
+              <div className="border-t border-sidebar-border p-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full flex items-center gap-2"
+                  onClick={() => setIsPackageManagerOpen(true)}
+                >
+                  <Package className="w-4 h-4" />
+                  Manage Packages
+                </Button>
+              </div>
             </div>
           </ResizablePanel>
           
@@ -940,7 +997,7 @@ export function EditorLayout() {
                       fileName={selectedFile.name}
                     />
                   ) : (
-                    <div className="h-full flex items-center justify-center bg-editor-bg">
+                    <div className="h-full flex items-center justify-center bg-background">
                       <div className="text-center text-muted-foreground">
                         <h2 className="text-2xl font-semibold mb-2">Welcome to Tutorials Dojo</h2>
                         <p>Select a file from the explorer to start coding</p>
@@ -969,38 +1026,14 @@ export function EditorLayout() {
           
           <ResizableHandle />
           
-          {/* Right Panel - Preview & Package Manager */}
+          {/* Right Panel - Preview Only */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <div className="h-full bg-sidebar border-l border-sidebar-border flex flex-col">
-              {/* Preview */}
-              <div className="flex-1 flex flex-col">
-                <div className="h-8 border-b border-sidebar-border flex items-center px-3 bg-sidebar-accent">
-                  <span className="text-sm font-medium text-sidebar-foreground">Preview</span>
-                </div>
-                <div className="flex-1">
-                  <DynamicPreview files={files} />
-                </div>
+            <div className="h-full bg-sidebar border-l border-sidebar-border">
+              <div className="h-8 border-b border-sidebar-border flex items-center px-3 bg-sidebar-accent">
+                <span className="text-sm font-medium text-sidebar-foreground">Preview</span>
               </div>
-
-              {/* Package Manager */}
-              <div className="h-64 border-t border-sidebar-border">
-                <div className="h-8 border-b border-sidebar-border flex items-center justify-between px-3 bg-sidebar-accent">
-                  <span className="text-sm font-medium text-sidebar-foreground">Packages</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 text-xs hover:bg-sidebar-accent/50"
-                    onClick={() => setIsPackageManagerOpen(true)}
-                  >
-                    Manage
-                  </Button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2">
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground mb-2">Installed packages:</div>
-                    <div className="text-xs text-muted-foreground">No packages installed</div>
-                  </div>
-                </div>
+              <div className="h-[calc(100%-2rem)]">
+                <DynamicPreview files={files} />
               </div>
             </div>
           </ResizablePanel>

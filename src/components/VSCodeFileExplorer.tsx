@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FileNode } from "../types/FileTypes";
+import { PackageService, Package } from "../services/PackageService";
 
 interface VSCodeFileExplorerProps {
   files: FileNode[];
@@ -131,6 +132,11 @@ export function VSCodeFileExplorer({
   const [showCreateInput, setShowCreateInput] = useState(false);
   const [createType, setCreateType] = useState<'file' | 'folder'>('file');
 
+  // Get package service and analyze dependencies
+  const packageService = PackageService.getInstance();
+  const detectedPackages = packageService.analyzeProjectDependencies(safeFiles);
+  const installedPackages = packageService.getInstalledPackages();
+
   const toggleFolder = (folderId: string) => {
     const newExpanded = new Set(expandedFolders);
     if (newExpanded.has(folderId)) {
@@ -205,23 +211,37 @@ export function VSCodeFileExplorer({
           </div>
         </div>
         
-        <div className="px-2 py-1">
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div className="flex items-center py-1">
-              <span className="w-4 h-4 mr-2 text-xs">📦</span>
-              <span>react</span>
-              <span className="ml-auto text-muted-foreground">^18.0.0</span>
-            </div>
-            <div className="flex items-center py-1">
-              <span className="w-4 h-4 mr-2 text-xs">📦</span>
-              <span>react-dom</span>
-              <span className="ml-auto text-muted-foreground">^18.0.0</span>
-            </div>
-            <div className="flex items-center py-1">
-              <span className="w-4 h-4 mr-2 text-xs">📦</span>
-              <span>react-scripts</span>
-              <span className="ml-auto text-muted-foreground">^5.0.0</span>
-            </div>
+        <div className="px-2 py-1 max-h-32 overflow-y-auto">
+          <div className="text-xs space-y-1">
+            {installedPackages.length > 0 ? (
+              installedPackages.map((pkg) => (
+                <div key={pkg.name} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
+                  <div className="flex items-center min-w-0">
+                    <span className="w-4 h-4 mr-2 text-xs">📦</span>
+                    <span className="truncate">{pkg.name}</span>
+                  </div>
+                  <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">{pkg.version}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-muted-foreground py-1">No packages installed</div>
+            )}
+            
+            {/* Show detected but not installed packages */}
+            {detectedPackages.filter(pkg => !pkg.installed).length > 0 && (
+              <>
+                <div className="text-muted-foreground text-xs mt-2 mb-1">Detected in code:</div>
+                {detectedPackages.filter(pkg => !pkg.installed).map((pkg) => (
+                  <div key={`detected-${pkg.name}`} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
+                    <div className="flex items-center min-w-0">
+                      <span className="w-4 h-4 mr-2 text-xs">⚠️</span>
+                      <span className="truncate text-orange-500">{pkg.name}</span>
+                    </div>
+                    <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">missing</span>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
       </div>

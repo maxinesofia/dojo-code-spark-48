@@ -15,6 +15,7 @@ interface Project {
   lastModified: string;
   fileCount: number;
   template?: string;
+  files?: any[]; // Add files property for project data
 }
 
 const Projects = () => {
@@ -80,13 +81,103 @@ const Projects = () => {
       return;
     }
 
-    const newProject: Project = {
+    const newProject = {
       id: Date.now().toString(),
       name: newProjectName.trim(),
       description: 'New project',
       lastModified: new Date().toISOString(),
       fileCount: 3,
-      template: 'vanilla'
+      template: 'vanilla',
+      files: [
+        {
+          id: 'index.html',
+          name: 'index.html',
+          type: 'file' as const,
+          content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${newProjectName}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to ${newProjectName}!</h1>
+        <p>Start building your amazing project here.</p>
+        <button id="clickMe">Click me!</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>`
+        },
+        {
+          id: 'styles.css',
+          name: 'styles.css',
+          type: 'file' as const,
+          content: `body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, #fff, #ddd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+button {
+    background: #1e40af;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+}`
+        },
+        {
+          id: 'script.js',
+          name: 'script.js',
+          type: 'file' as const,
+          content: `// ${newProjectName} JavaScript
+console.log('Welcome to ${newProjectName}!');
+
+document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('clickMe');
+    let clickCount = 0;
+    
+    if (button) {
+        button.addEventListener('click', function() {
+            clickCount++;
+            button.textContent = \`Clicked \${clickCount} time\${clickCount !== 1 ? 's' : ''}!\`;
+        });
+    }
+});`
+        }
+      ]
     };
 
     const updatedProjects = [newProject, ...projects.filter(p => p.id !== 'current')];
@@ -160,10 +251,28 @@ const Projects = () => {
 
   const openProject = (project: Project) => {
     if (project.id === 'current') {
-      navigate('/');
+      navigate('/editor');
     } else {
-      // For now, just navigate to editor - in a real app, you'd load the project data
-      navigate(`/?project=${project.id}`);
+      // Load project files and navigate to editor
+      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+      if (savedProjects) {
+        try {
+          const projects = JSON.parse(savedProjects);
+          const projectData = projects.find((p: Project) => p.id === project.id);
+          if (projectData && projectData.files) {
+            // Store the project files as current project
+            localStorage.setItem('tutorials-dojo-project-state', JSON.stringify({
+              projectName: project.name,
+              template: project.template,
+              files: projectData.files,
+              lastSaved: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading project files:', error);
+        }
+      }
+      navigate(`/editor?project=${project.id}`);
     }
   };
 

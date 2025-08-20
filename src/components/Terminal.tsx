@@ -259,6 +259,14 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
       setupRealTerminal();
     }, 100);
 
+    // Set up a timeout for fallback to virtual terminal
+    const fallbackTimer = setTimeout(() => {
+      if (!isInitializedRef.current) {
+        console.log('Falling back to virtual terminal after timeout');
+        setupVirtualTerminal();
+      }
+    }, 2000);
+
     // Handle terminal resize when expanded/collapsed
     const handleResize = () => {
       if (fitAddon) {
@@ -273,6 +281,9 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
     return () => {
       console.log('Cleaning up terminal');
       window.removeEventListener('resize', handleResize);
+      
+      // Clear fallback timer
+      clearTimeout(fallbackTimer);
       
       if (dataHandlerRef.current && terminal) {
         terminal.dispose();
