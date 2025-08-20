@@ -106,8 +106,8 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
   const dimensions = getViewportDimensions(viewport);
 
   return (
-    <div className="flex-1 bg-editor-preview border-l border-editor-border flex flex-col">
-      <div className="h-12 border-b border-editor-border flex items-center justify-between px-4 bg-background">
+    <div className="w-full h-full flex flex-col bg-editor-preview border-l border-editor-border">
+      <div className="h-12 border-b border-editor-border flex items-center justify-between px-4 bg-background flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground">Dynamic Preview</span>
           {isLoading && <RefreshCw className="w-3 h-3 animate-spin text-primary" />}
@@ -162,7 +162,7 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
       </div>
 
       {error && (
-        <div className="p-4 border-b border-destructive/20">
+        <div className="p-4 border-b border-destructive/20 flex-shrink-0">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -172,14 +172,16 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
         </div>
       )}
       
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         {isNodejsProject() ? (
-          <ApiPreview files={safeFiles} />
+          <div className="w-full h-full">
+            <ApiPreview files={safeFiles} />
+          </div>
         ) : (
-          <div className="flex justify-center bg-muted/10 h-full">
+          <div className="w-full h-full flex justify-center bg-muted/10">
             <div 
               className={cn(
-                "transition-all duration-300 bg-white shadow-sm",
+                "transition-all duration-300 bg-white shadow-sm h-full",
                 viewport !== 'desktop' && "border-x border-border"
               )}
               style={dimensions}
@@ -196,7 +198,7 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
       </div>
 
       {executionResult?.logs && executionResult.logs.length > 0 && (
-        <div className="border-t border-editor-border bg-muted/30 p-2 max-h-32 overflow-y-auto">
+        <div className="border-t border-editor-border bg-muted/30 p-2 max-h-32 overflow-y-auto flex-shrink-0">
           <div className="text-xs text-muted-foreground font-medium mb-1">Console Output:</div>
           {executionResult.logs.map((log, index) => (
             <div key={index} className="text-xs font-mono text-foreground opacity-80">
