@@ -265,6 +265,7 @@ export function EditorLayout() {
   
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
 
   // Auto-save functionality
   useEffect(() => {
@@ -541,14 +542,22 @@ export function EditorLayout() {
 
               {/* Package Manager */}
               <div className="h-64 border-t border-sidebar-border">
-                <div className="h-8 border-b border-sidebar-border flex items-center px-3 bg-sidebar-accent">
-                  <span className="text-sm font-medium text-sidebar-foreground">Package Manager</span>
+                <div className="h-8 border-b border-sidebar-border flex items-center justify-between px-3 bg-sidebar-accent">
+                  <span className="text-sm font-medium text-sidebar-foreground">Packages</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 text-xs hover:bg-sidebar-accent/50"
+                    onClick={() => setIsPackageManagerOpen(true)}
+                  >
+                    Manage
+                  </Button>
                 </div>
-                <div className="flex-1 overflow-hidden">
-                  <PackageManager 
-                    isOpen={true}
-                    onClose={() => {}}
-                  />
+                <div className="flex-1 overflow-y-auto p-2">
+                  <div className="space-y-1">
+                    <div className="text-xs text-muted-foreground mb-2">Installed packages:</div>
+                    <div className="text-xs text-muted-foreground">No packages installed</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -581,6 +590,14 @@ export function EditorLayout() {
           </Button>
         </div>
       </div>
+      
+      {/* Package Manager Modal */}
+      {isPackageManagerOpen && (
+        <PackageManager 
+          isOpen={isPackageManagerOpen}
+          onClose={() => setIsPackageManagerOpen(false)}
+        />
+      )}
     </div>
   );
 }
