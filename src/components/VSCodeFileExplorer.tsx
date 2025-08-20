@@ -97,7 +97,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
       
       {node.type === 'folder' && node.isOpen && node.children && (
         <div>
-          {node.children.map((child) => (
+          {Array.isArray(node.children) ? node.children.map((child) => (
             <FileTreeItem
               key={child.id}
               node={child}
@@ -106,7 +106,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
               onSelect={onSelect}
               onToggle={onToggle}
             />
-          ))}
+          )) : null}
         </div>
       )}
     </div>
@@ -114,13 +114,19 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 };
 
 export function VSCodeFileExplorer({
-  files,
+  files = [],
   selectedFile,
   onFileSelect,
   onFileCreate,
   onFileDelete,
   onFileRename
 }: VSCodeFileExplorerProps) {
+  // Debug logging and safety check
+  console.log('VSCodeFileExplorer received files:', files, 'Type:', typeof files, 'Is array:', Array.isArray(files));
+  
+  // Ensure files is always an array
+  const safeFiles = Array.isArray(files) ? files : [];
+  
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [showCreateInput, setShowCreateInput] = useState(false);
   const [createType, setCreateType] = useState<'file' | 'folder'>('file');
@@ -135,7 +141,7 @@ export function VSCodeFileExplorer({
     setExpandedFolders(newExpanded);
   };
 
-  const filesWithExpandedState = files.map(file => ({
+  const filesWithExpandedState = safeFiles.map(file => ({
     ...file,
     isOpen: expandedFolders.has(file.id)
   }));
