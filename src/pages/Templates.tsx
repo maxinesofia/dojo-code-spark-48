@@ -129,8 +129,8 @@ const Templates = () => {
   const handleCreateProject = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     const projectName = `New ${template?.name || 'Project'}`;
-    // Open in new tab to preserve current work
-    window.open(`/editor?template=${templateId}&name=${encodeURIComponent(projectName)}`, '_blank');
+    // Navigate to editor with template
+    navigate(`/editor?template=${templateId}&name=${encodeURIComponent(projectName)}`);
   };
 
   const handleBackToEditor = () => {

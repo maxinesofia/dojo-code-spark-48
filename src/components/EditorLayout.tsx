@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "./Header";
-import { EnhancedFileExplorer } from "./EnhancedFileExplorer";
-import { DragDropFileManager } from "./DragDropFileManager";
+import { VSCodeFileExplorer } from "./VSCodeFileExplorer";
 import { FileNode } from "../types/FileTypes";
 import { CodeEditor } from "./CodeEditor";
 import { DynamicPreview } from "./DynamicPreview";
@@ -11,7 +10,7 @@ import { Terminal } from "./Terminal";
 import { useToast } from "@/hooks/use-toast";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
-import { Terminal as TerminalIcon, GitBranch, Settings } from "lucide-react";
+import { Terminal as TerminalIcon, GitBranch, Settings, Package } from "lucide-react";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
 
@@ -217,6 +216,38 @@ ReactDOM.render(<App />, document.getElementById('root'));`
     border-radius: 12px;
     text-align: center;
     max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1 {
+    color: #d97706;
+    margin-bottom: 30px;
+}
+
+.counter {
+    margin: 20px 0;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+button {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #d97706;
 }`
         },
         {
@@ -240,7 +271,435 @@ incrementBtn.addEventListener('click', () => {
 decrementBtn.addEventListener('click', () => {
     count--;
     updateCounter();
-});`
+});
+
+console.log('Vanilla JavaScript app loaded!');`
+        }
+      ];
+
+    case 'html-css':
+      return [
+        {
+          id: 'index.html',
+          name: 'index.html',
+          type: 'file',
+          content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML + CSS Template</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">🌐 HTML + CSS</div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section id="home" class="hero">
+            <h1>Welcome to HTML + CSS</h1>
+            <p>A beautiful static website template</p>
+            <button class="cta-button">Get Started</button>
+        </section>
+        
+        <section id="about" class="content">
+            <h2>About This Template</h2>
+            <p>This is a simple HTML and CSS template that demonstrates modern web design principles.</p>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2024 HTML + CSS Template. Built with ❤️</p>
+    </footer>
+</body>
+</html>`
+        },
+        {
+          id: 'styles.css',
+          name: 'styles.css',
+          type: 'file',
+          content: `* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.3s;
+}
+
+nav a:hover {
+    opacity: 0.8;
+}
+
+main {
+    margin-top: 70px;
+}
+
+.hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 100px 2rem;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.cta-button {
+    background: white;
+    color: #667eea;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+}
+
+.content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 2rem;
+    text-align: center;
+}
+
+.content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #667eea;
+}
+
+footer {
+    background: #333;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+}`
+        }
+      ];
+
+    case 'vanilla-ts':
+      return [
+        {
+          id: 'index.html',
+          name: 'index.html',
+          type: 'file',
+          content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeScript App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Vanilla TypeScript 🔷</h1>
+        <div class="app">
+            <div class="counter">
+                <h2>Counter: <span id="counter">0</span></h2>
+                <div class="buttons">
+                    <button id="decrease">-</button>
+                    <button id="increase">+</button>
+                    <button id="reset">Reset</button>
+                </div>
+            </div>
+            <div class="todo">
+                <h2>Todo List</h2>
+                <div class="input-group">
+                    <input type="text" id="todoInput" placeholder="Add a todo...">
+                    <button id="addTodo">Add</button>
+                </div>
+                <ul id="todoList"></ul>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="script.ts"></script>
+</body>
+</html>`
+        },
+        {
+          id: 'script.ts',
+          name: 'script.ts',
+          type: 'file',
+          content: `interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+class TodoApp {
+  private counter: number = 0;
+  private todos: Todo[] = [];
+  private nextId: number = 1;
+
+  constructor() {
+    this.initCounter();
+    this.initTodoList();
+  }
+
+  private initCounter(): void {
+    const counterElement = document.getElementById('counter')!;
+    const decreaseBtn = document.getElementById('decrease')!;
+    const increaseBtn = document.getElementById('increase')!;
+    const resetBtn = document.getElementById('reset')!;
+
+    decreaseBtn.addEventListener('click', () => {
+      this.counter--;
+      this.updateCounter();
+    });
+
+    increaseBtn.addEventListener('click', () => {
+      this.counter++;
+      this.updateCounter();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      this.counter = 0;
+      this.updateCounter();
+    });
+  }
+
+  private updateCounter(): void {
+    const counterElement = document.getElementById('counter')!;
+    counterElement.textContent = this.counter.toString();
+  }
+
+  private initTodoList(): void {
+    const todoInput = document.getElementById('todoInput') as HTMLInputElement;
+    const addTodoBtn = document.getElementById('addTodo')!;
+
+    addTodoBtn.addEventListener('click', () => {
+      this.addTodo(todoInput.value);
+      todoInput.value = '';
+    });
+
+    todoInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.addTodo(todoInput.value);
+        todoInput.value = '';
+      }
+    });
+  }
+
+  private addTodo(text: string): void {
+    if (text.trim() === '') return;
+
+    const todo: Todo = {
+      id: this.nextId++,
+      text: text.trim(),
+      completed: false
+    };
+
+    this.todos.push(todo);
+    this.renderTodos();
+  }
+
+  private renderTodos(): void {
+    const todoList = document.getElementById('todoList')!;
+    todoList.innerHTML = '';
+
+    this.todos.forEach(todo => {
+      const li = document.createElement('li');
+      li.className = todo.completed ? 'completed' : '';
+      li.innerHTML = \`
+        <span>\${todo.text}</span>
+        <button onclick="app.deleteTodo(\${todo.id})">Delete</button>
+      \`;
+      
+      li.addEventListener('click', () => {
+        this.toggleTodo(todo.id);
+      });
+
+      todoList.appendChild(li);
+    });
+  }
+
+  public deleteTodo(id: number): void {
+    this.todos = this.todos.filter(todo => todo.id !== id);
+    this.renderTodos();
+  }
+
+  private toggleTodo(id: number): void {
+    const todo = this.todos.find(t => t.id === id);
+    if (todo) {
+      todo.completed = !todo.completed;
+      this.renderTodos();
+    }
+  }
+}
+
+const app = new TodoApp();
+console.log('TypeScript app initialized!');`
+        },
+        {
+          id: 'styles.css',
+          name: 'styles.css',
+          type: 'file',
+          content: `body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #1e40af;
+    margin-bottom: 30px;
+}
+
+.app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.counter, .todo {
+    padding: 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #1e40af;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+#todoList {
+    list-style: none;
+    padding: 0;
+}
+
+#todoList li {
+    background: #f9fafb;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#todoList li:hover {
+    background: #e5e7eb;
+}
+
+#todoList li.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+    .app {
+        grid-template-columns: 1fr;
+    }
+}`
         }
       ];
 
@@ -454,30 +913,13 @@ export function EditorLayout() {
           {/* File Explorer - VS Code Style */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
             <div className="h-full bg-sidebar border-r border-sidebar-border">
-              <EnhancedFileExplorer
+              <VSCodeFileExplorer
                 files={files}
-                activeFile={selectedFile?.id || null}
+                selectedFile={selectedFile}
                 onFileSelect={handleFileSelect}
-                onCreateFile={(fileName: string, fileType: string) => handleFileCreate(fileName, fileType === 'folder' ? 'folder' : 'file')}
-                onCreateFolder={(folderName: string) => handleFileCreate(folderName, 'folder')}
-                onMoveFile={() => {}} // Not implemented yet
-                onToggleFolder={() => {}} // Not implemented yet  
-                onDeleteFile={handleFileDelete}
-                onRenameFile={handleFileRename}
-                onUpdateFile={(fileId: string, content: string) => {
-                  const updateFileContent = (nodes: FileNode[]): FileNode[] => {
-                    return nodes.map(node => {
-                      if (node.id === fileId) {
-                        return { ...node, content };
-                      }
-                      if (node.children) {
-                        return { ...node, children: updateFileContent(node.children) };
-                      }
-                      return node;
-                    });
-                  };
-                  setFiles(updateFileContent(files));
-                }}
+                onFileCreate={handleFileCreate}
+                onFileDelete={handleFileDelete}
+                onFileRename={handleFileRename}
               />
             </div>
           </ResizablePanel>
