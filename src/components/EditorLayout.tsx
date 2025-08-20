@@ -436,6 +436,163 @@ footer {
         }
       ];
 
+    case 'node-express':
+      return [
+        {
+          id: 'package.json',
+          name: 'package.json',
+          type: 'file',
+          content: `{
+  "name": "node-express-app",
+  "version": "1.0.0",
+  "description": "A simple Express.js application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo \\"Error: no test specified\\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["express", "node", "api"],
+  "author": "",
+  "license": "MIT"
+}`
+        },
+        {
+          id: 'server.js',
+          name: 'server.js',
+          type: 'file',
+          content: `const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to Express.js + Firecracker VM! 🚀',
+    timestamp: new Date().toISOString(),
+    status: 'running'
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
+});
+
+app.get('/api/users', (req, res) => {
+  const users = [
+    { id: 1, name: 'John Doe', email: 'john@example.com' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+  ];
+  res.json(users);
+});
+
+app.post('/api/users', (req, res) => {
+  const { name, email } = req.body;
+  const newUser = {
+    id: Date.now(),
+    name,
+    email
+  };
+  res.status(201).json(newUser);
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+app.listen(PORT, () => {
+  console.log(\`🚀 Server running on port \${PORT}\`);
+  console.log(\`📱 API endpoints available at http://localhost:\${PORT}\`);
+});`
+        },
+        {
+          id: 'README.md',
+          name: 'README.md',
+          type: 'file',
+          content: `# Express.js + Firecracker VM
+
+A simple Express.js application running on Firecracker VM.
+
+## Features
+
+- ✅ Express.js server
+- ✅ CORS enabled
+- ✅ Security headers with Helmet
+- ✅ JSON parsing
+- ✅ Error handling
+- ✅ Health check endpoint
+
+## API Endpoints
+
+### GET /
+Welcome message with server status
+
+### GET /api/health
+Health check endpoint with system info
+
+### GET /api/users
+Get list of users
+
+### POST /api/users
+Create a new user
+\`\`\`json
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+\`\`\`
+
+## Getting Started
+
+1. Install dependencies:
+\`\`\`bash
+npm install
+\`\`\`
+
+2. Start the development server:
+\`\`\`bash
+npm run dev
+\`\`\`
+
+3. Visit http://localhost:3000
+
+## Scripts
+
+- \`npm start\` - Start production server
+- \`npm run dev\` - Start development server with nodemon
+- \`npm test\` - Run tests
+`
+        }
+      ];
+
     case 'vanilla-ts':
       return [
         {
@@ -823,12 +980,12 @@ export function EditorLayout() {
     setFiles(updateFileContent(files));
   }, [selectedFile, files]);
 
-  const handleFileCreate = useCallback((name: string, type: 'file' | 'folder', parentId?: string) => {
+  const handleFileCreate = useCallback((name: string, type: 'file' | 'folder', content?: string, parentId?: string) => {
     const newNode: FileNode = {
       id: `${Date.now()}-${name}`,
       name,
       type,
-      content: type === 'file' ? '' : undefined,
+      content: content || (type === 'file' ? '' : undefined),
       children: type === 'folder' ? [] : undefined,
     };
 
@@ -997,12 +1154,12 @@ export function EditorLayout() {
                       fileName={selectedFile.name}
                     />
                   ) : (
-                    <div className="h-full flex items-center justify-center bg-background">
-                      <div className="text-center text-muted-foreground">
-                        <h2 className="text-2xl font-semibold mb-2">Welcome to Tutorials Dojo</h2>
-                        <p>Select a file from the explorer to start coding</p>
-                      </div>
+                  <div className="h-full flex items-center justify-center bg-background">
+                    <div className="text-center text-muted-foreground">
+                      <h2 className="text-2xl font-semibold mb-2">Welcome to Tutorials Dojo</h2>
+                      <p>Select a file from the explorer to start coding</p>
                     </div>
+                  </div>
                   )}
                 </div>
               </ResizablePanel>
@@ -1032,7 +1189,7 @@ export function EditorLayout() {
               <div className="h-8 border-b border-sidebar-border flex items-center px-3 bg-sidebar-accent">
                 <span className="text-sm font-medium text-sidebar-foreground">Preview</span>
               </div>
-              <div className="h-[calc(100%-2rem)]">
+              <div className="h-[calc(100%-2rem)] overflow-hidden">
                 <DynamicPreview files={files} />
               </div>
             </div>

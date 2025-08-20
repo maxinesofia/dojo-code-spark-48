@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileNode } from "./FileExplorer";
+import { FileNode } from "../types/FileTypes";
 import { Trash2, Edit3, FolderPlus, FilePlus, Copy } from "lucide-react";
 
 interface FileContextMenuProps {

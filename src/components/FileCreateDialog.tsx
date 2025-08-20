@@ -1,120 +1,160 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus } from "lucide-react";
+import React, { useState, useRef } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { File, Folder, Upload } from 'lucide-react';
 
 interface FileCreateDialogProps {
-  onCreateFile: (fileName: string, fileType: string) => void;
-  onCreateFolder: (folderName: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateFile: (name: string, type: 'file' | 'folder', content?: string) => void;
 }
 
-export function FileCreateDialog({ onCreateFile, onCreateFolder }: FileCreateDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [fileName, setFileName] = useState("");
-  const [fileType, setFileType] = useState("javascript");
-  const [createType, setCreateType] = useState<"file" | "folder">("file");
+export function FileCreateDialog({ isOpen, onClose, onCreateFile }: FileCreateDialogProps) {
+  const [fileName, setFileName] = useState('');
+  const [folderName, setFolderName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fileTypes = [
-    { value: "javascript", label: "JavaScript (.js)", extension: ".js" },
-    { value: "typescript", label: "TypeScript (.ts)", extension: ".ts" },
-    { value: "react-js", label: "React Component (.jsx)", extension: ".jsx" },
-    { value: "react-ts", label: "React TypeScript (.tsx)", extension: ".tsx" },
-    { value: "html", label: "HTML (.html)", extension: ".html" },
-    { value: "css", label: "CSS (.css)", extension: ".css" },
-    { value: "json", label: "JSON (.json)", extension: ".json" },
-    { value: "text", label: "Text File (.txt)", extension: ".txt" },
-  ];
-
-  const handleSubmit = () => {
-    if (!fileName.trim()) return;
-    
-    if (createType === "folder") {
-      onCreateFolder(fileName.trim());
-    } else {
-      const selectedType = fileTypes.find(type => type.value === fileType);
-      const extension = selectedType?.extension || ".js";
-      const fullFileName = fileName.includes('.') ? fileName : fileName + extension;
-      onCreateFile(fullFileName, fileType);
+  const handleCreateFile = () => {
+    if (fileName.trim()) {
+      onCreateFile(fileName.trim(), 'file');
+      setFileName('');
+      onClose();
     }
-    
-    setFileName("");
-    setFileType("javascript");
-    setCreateType("file");
-    setIsOpen(false);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleCreateFolder = () => {
+    if (folderName.trim()) {
+      onCreateFile(folderName.trim(), 'folder');
+      setFolderName('');
+      onClose();
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        onCreateFile(file.name, 'file', content);
+      };
+      reader.readAsText(file);
+    });
+
+    onClose();
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent, action: () => void) => {
     if (e.key === 'Enter') {
-      handleSubmit();
+      action();
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-          <Plus className="w-3 h-3" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New {createType === "file" ? "File" : "Folder"}</DialogTitle>
+          <DialogTitle>Add Files or Folders</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-3">
-            <Label>Type</Label>
-            <RadioGroup value={createType} onValueChange={(value: "file" | "folder") => setCreateType(value)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="file" id="file" />
-                <Label htmlFor="file">File</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="folder" id="folder" />
-                <Label htmlFor="folder">Folder</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="filename">{createType === "file" ? "File" : "Folder"} Name</Label>
-            <Input
-              id="filename"
-              placeholder={`Enter ${createType} name...`}
-              value={fileName}
-              onChange={(e) => setFileName(e.target.value)}
-              onKeyPress={handleKeyPress}
-              autoFocus
-            />
-          </div>
-          {createType === "file" && (
-            <div className="grid gap-2">
-              <Label htmlFor="filetype">File Type</Label>
-              <Select value={fileType} onValueChange={setFileType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select file type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fileTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        
+        <Tabs defaultValue="file" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="file">New File</TabsTrigger>
+            <TabsTrigger value="folder">New Folder</TabsTrigger>
+            <TabsTrigger value="upload">Upload File</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="file" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fileName">File Name</Label>
+              <Input
+                id="fileName"
+                placeholder="example.js"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, handleCreateFile)}
+                autoFocus
+              />
             </div>
-          )}
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={!fileName.trim()}>
-            Create {createType === "file" ? "File" : "Folder"}
-          </Button>
-        </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateFile} disabled={!fileName.trim()}>
+                <File className="w-4 h-4 mr-2" />
+                Create File
+              </Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="folder" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="folderName">Folder Name</Label>
+              <Input
+                id="folderName"
+                placeholder="components"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, handleCreateFolder)}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateFolder} disabled={!folderName.trim()}>
+                <Folder className="w-4 h-4 mr-2" />
+                Create Folder
+              </Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="upload" className="space-y-4">
+            <div className="space-y-2">
+              <Label>Upload Files</Label>
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Choose files to upload
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept=".js,.jsx,.ts,.tsx,.html,.css,.json,.md,.txt,.py,.java,.cpp,.c,.php,.rb,.go,.rs,.swift,.kt,.dart,.vue,.svelte"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Select Files
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

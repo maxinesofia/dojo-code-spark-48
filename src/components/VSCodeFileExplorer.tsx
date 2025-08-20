@@ -7,19 +7,22 @@ import {
   FolderOpen,
   Plus,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  Trash2,
+  Edit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FileNode } from "../types/FileTypes";
 import { PackageService, Package } from "../services/PackageService";
+import { FileCreateDialog } from "./FileCreateDialog";
 
 interface VSCodeFileExplorerProps {
   files: FileNode[];
   selectedFile: FileNode | null;
   onFileSelect: (file: FileNode) => void;
-  onFileCreate: (name: string, type: 'file' | 'folder', parentId?: string) => void;
+  onFileCreate: (name: string, type: 'file' | 'folder', content?: string, parentId?: string) => void;
   onFileDelete: (fileId: string) => void;
   onFileRename: (fileId: string, newName: string) => void;
 }
@@ -30,6 +33,8 @@ interface FileTreeItemProps {
   isSelected: boolean;
   onSelect: (file: FileNode) => void;
   onToggle?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onRename?: (id: string, newName: string) => void;
 }
 
 const FileTreeItem: React.FC<FileTreeItemProps> = ({ 
@@ -37,13 +42,35 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   level, 
   isSelected, 
   onSelect,
-  onToggle 
+  onToggle,
+  onDelete,
+  onRename
 }) => {
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameName, setRenameName] = useState(node.name);
+
   const handleClick = () => {
     if (node.type === 'folder') {
       onToggle?.(node.id);
     } else {
       onSelect(node);
+    }
+  };
+
+  const handleRename = () => {
+    if (renameName.trim() && renameName !== node.name) {
+      onRename?.(node.id, renameName.trim());
+    }
+    setIsRenaming(false);
+    setRenameName(node.name);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleRename();
+    } else if (e.key === 'Escape') {
+      setIsRenaming(false);
+      setRenameName(node.name);
     }
   };
 
@@ -57,6 +84,19 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
       case 'html': return '🌐';
       case 'css': return '🎨';
       case 'json': return '📋';
+      case 'md': return '📝';
+      case 'py': return '🐍';
+      case 'java': return '☕';
+      case 'cpp': case 'c': return '⚙️';
+      case 'php': return '🐘';
+      case 'rb': return '💎';
+      case 'go': return '🐹';
+      case 'rs': return '🦀';
+      case 'swift': return '🍎';
+      case 'kt': return '🅺';
+      case 'dart': return '🎯';
+      case 'vue': return '💚';
+      case 'svelte': return '🧡';
       default: return '📄';
     }
   };
@@ -65,7 +105,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     <div>
       <div
         className={cn(
-          "flex items-center py-1 px-2 text-sm cursor-pointer hover:bg-muted/50 group",
+          "flex items-center py-1 px-2 text-sm cursor-pointer hover:bg-muted/50 group relative",
           isSelected && "bg-primary/20 text-primary",
           "transition-colors"
         )}
@@ -93,7 +133,46 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
             </span>
           </>
         )}
-        <span className="truncate">{node.name}</span>
+        
+        {isRenaming ? (
+          <Input
+            value={renameName}
+            onChange={(e) => setRenameName(e.target.value)}
+            onBlur={handleRename}
+            onKeyPress={handleKeyPress}
+            className="h-6 text-xs border-0 bg-background p-1 min-w-0"
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="truncate flex-1">{node.name}</span>
+        )}
+
+        {/* Action buttons on hover */}
+        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 p-0 hover:bg-sidebar-accent"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsRenaming(true);
+            }}
+          >
+            <Edit className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 p-0 hover:bg-sidebar-accent hover:text-red-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(node.id);
+            }}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
       
       {node.type === 'folder' && node.isOpen && node.children && (
@@ -106,6 +185,8 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
               isSelected={isSelected && child.id === node.id}
               onSelect={onSelect}
               onToggle={onToggle}
+              onDelete={onDelete}
+              onRename={onRename}
             />
           )) : null}
         </div>
@@ -129,8 +210,7 @@ export function VSCodeFileExplorer({
   const safeFiles = Array.isArray(files) ? files : [];
   
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const [showCreateInput, setShowCreateInput] = useState(false);
-  const [createType, setCreateType] = useState<'file' | 'folder'>('file');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Get package service and analyze dependencies
   const packageService = PackageService.getInstance();
@@ -163,10 +243,7 @@ export function VSCodeFileExplorer({
               variant="ghost" 
               size="icon" 
               className="h-5 w-5 hover:bg-sidebar-accent"
-              onClick={() => {
-                setCreateType('file');
-                setShowCreateInput(true);
-              }}
+              onClick={() => setShowCreateDialog(true)}
             >
               <Plus className="h-3 w-3" />
             </Button>
@@ -195,10 +272,21 @@ export function VSCodeFileExplorer({
               isSelected={selectedFile?.id === node.id}
               onSelect={onFileSelect}
               onToggle={toggleFolder}
+              onDelete={onFileDelete}
+              onRename={onFileRename}
             />
           ))}
         </div>
       </div>
+
+      {/* File Create Dialog */}
+      <FileCreateDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onCreateFile={(name, type, content) => {
+          onFileCreate(name, type, content);
+        }}
+      />
 
       {/* Dependencies Section */}
       <div className="mt-4 border-t border-sidebar-border">
