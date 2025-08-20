@@ -27,12 +27,18 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
         return 'css';
       case 'json':
         return 'json';
+      case 'md':
+        return 'markdown';
       default:
         return 'javascript';
     }
   };
 
   const editorLanguage = fileName ? getLanguageFromFileName(fileName) : language;
+
+  const handleEditorChange = (newValue: string | undefined) => {
+    onChange(newValue || '');
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-background">
@@ -45,7 +51,7 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
           height="100%"
           language={editorLanguage}
           value={value || ''}
-          onChange={onChange}
+          onChange={handleEditorChange}
           loading={
             <div className="flex items-center justify-center h-full bg-background">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -72,6 +78,8 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
             smoothScrolling: true,
             cursorBlinking: 'smooth',
             renderWhitespace: 'selection',
+            readOnly: false,
+            domReadOnly: false,
             scrollbar: {
               vertical: 'auto',
               horizontal: 'auto',

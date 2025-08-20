@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { CodeExecutionService, ExecutionResult } from "@/services/CodeExecutionService";
 import { FileNode } from "@/types/FileTypes";
+import { ApiPreview } from "./ApiPreview";
 
 interface DynamicPreviewProps {
   files: FileNode[];
@@ -168,37 +169,25 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
         </div>
       )}
       
-      <div className="flex-1 overflow-hidden flex justify-center bg-muted/10">
-        {isNodejsProject() && !error ? (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center max-w-md">
-              <div className="text-6xl mb-4">🚀</div>
-              <h3 className="text-lg font-semibold mb-2">Node.js Project Detected</h3>
-              <p className="text-muted-foreground mb-4">
-                This appears to be a Node.js/Express server project. Use the Terminal below to run your server:
-              </p>
-              <div className="bg-muted/50 p-3 rounded-md font-mono text-sm mb-4">
-                npm start
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Your server will run on localhost:3000 or the configured PORT
-              </p>
-            </div>
-          </div>
+      <div className="flex-1 overflow-hidden">
+        {isNodejsProject() ? (
+          <ApiPreview files={files} />
         ) : (
-          <div 
-            className={cn(
-              "transition-all duration-300 bg-white shadow-sm",
-              viewport !== 'desktop' && "border-x border-border"
-            )}
-            style={dimensions}
-          >
-            <iframe
-              ref={iframeRef}
-              className="w-full h-full border-0"
-              title="Dynamic Preview"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-            />
+          <div className="flex justify-center bg-muted/10 h-full">
+            <div 
+              className={cn(
+                "transition-all duration-300 bg-white shadow-sm",
+                viewport !== 'desktop' && "border-x border-border"
+              )}
+              style={dimensions}
+            >
+              <iframe
+                ref={iframeRef}
+                className="w-full h-full border-0"
+                title="Dynamic Preview"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+              />
+            </div>
           </div>
         )}
       </div>
