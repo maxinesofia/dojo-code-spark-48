@@ -15,6 +15,9 @@ interface DynamicPreviewProps {
 type ViewportSize = 'mobile' | 'tablet' | 'desktop';
 
 export function DynamicPreview({ files, language = 'javascript' }: DynamicPreviewProps) {
+  // Ensure files is always an array to prevent "some is not a function" errors
+  const safeFiles = Array.isArray(files) ? files : [];
+  
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const executionService = useRef(new CodeExecutionService());
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +37,7 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
   };
 
   const isNodejsProject = () => {
-    return files.some(file => 
+    return safeFiles.some(file => 
       file.name === 'package.json' || 
       file.name === 'server.js' ||
       (file.content && file.content.includes('require(')) ||
@@ -56,7 +59,7 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
         return;
       }
 
-      const result = await executionService.current.executeCode(files, language);
+      const result = await executionService.current.executeCode(safeFiles, language);
       setExecutionResult(result);
 
       if (result.success && result.html) {
@@ -98,7 +101,7 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
     return () => {
       executionService.current.cleanup();
     };
-  }, [files, language]);
+  }, [safeFiles, language]);
 
   const dimensions = getViewportDimensions(viewport);
 
@@ -171,7 +174,7 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
       
       <div className="flex-1 overflow-hidden">
         {isNodejsProject() ? (
-          <ApiPreview files={files} />
+          <ApiPreview files={safeFiles} />
         ) : (
           <div className="flex justify-center bg-muted/10 h-full">
             <div 
