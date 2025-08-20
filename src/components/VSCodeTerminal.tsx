@@ -82,7 +82,7 @@ export function VSCodeTerminal({ files, onClose }: VSCodeTerminalProps) {
       terminal.writeln('');
       
       // Start terminal session  
-      wsService.startTerminal();
+      wsService.startTerminal('vscode-project', 'vscode-user');
     });
 
     wsService.onDisconnected(() => {
