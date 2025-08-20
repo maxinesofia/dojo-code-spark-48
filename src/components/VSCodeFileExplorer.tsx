@@ -233,9 +233,9 @@ export function VSCodeFileExplorer({
   }));
 
   return (
-    <div className="h-full bg-sidebar text-sidebar-foreground">
+    <div className="h-full bg-sidebar text-sidebar-foreground flex flex-col">
       {/* Explorer Header */}
-      <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-sidebar-border">
+      <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-sidebar-border flex-shrink-0">
         <div className="flex items-center justify-between">
           <span>Explorer</span>
           <div className="flex items-center gap-1">
@@ -254,28 +254,30 @@ export function VSCodeFileExplorer({
         </div>
       </div>
 
-      {/* Project Folder */}
-      <div className="px-2 py-1">
-        <div className="flex items-center text-sm font-medium py-1">
-          <ChevronDown className="w-4 h-4 mr-1" />
-          <Folder className="w-4 h-4 mr-2 text-blue-400" />
-          <span>TUTORIALS DOJO</span>
-        </div>
-        
-        {/* File Tree */}
-        <div className="ml-2">
-          {filesWithExpandedState.map((node) => (
-            <FileTreeItem
-              key={node.id}
-              node={node}
-              level={0}
-              isSelected={selectedFile?.id === node.id}
-              onSelect={onFileSelect}
-              onToggle={toggleFolder}
-              onDelete={onFileDelete}
-              onRename={onFileRename}
-            />
-          ))}
+      {/* Project Folder - Scrollable File Tree */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-2 py-1">
+          <div className="flex items-center text-sm font-medium py-1">
+            <ChevronDown className="w-4 h-4 mr-1" />
+            <Folder className="w-4 h-4 mr-2 text-blue-400" />
+            <span>TUTORIALS DOJO</span>
+          </div>
+          
+          {/* File Tree */}
+          <div className="ml-2">
+            {filesWithExpandedState.map((node) => (
+              <FileTreeItem
+                key={node.id}
+                node={node}
+                level={0}
+                isSelected={selectedFile?.id === node.id}
+                onSelect={onFileSelect}
+                onToggle={toggleFolder}
+                onDelete={onFileDelete}
+                onRename={onFileRename}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -288,51 +290,51 @@ export function VSCodeFileExplorer({
         }}
       />
 
-      {/* Dependencies Section */}
-      <div className="mt-4 border-t border-sidebar-border">
-        <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <div className="flex items-center justify-between">
-            <span>Dependencies</span>
-            <Button variant="ghost" size="icon" className="h-5 w-5 hover:bg-sidebar-accent">
-              <Search className="h-3 w-3" />
-            </Button>
+      {/* Dependencies Section - Fixed at bottom */}
+      {(installedPackages.length > 0 || detectedPackages.filter(pkg => !pkg.installed).length > 0) && (
+        <div className="border-t border-sidebar-border flex-shrink-0">
+          <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="flex items-center justify-between">
+              <span>Dependencies</span>
+              <Button variant="ghost" size="icon" className="h-5 w-5 hover:bg-sidebar-accent">
+                <Search className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-        </div>
-        
-        <div className="px-2 py-1 max-h-32 overflow-y-auto">
-          <div className="text-xs space-y-1">
-            {installedPackages.length > 0 ? (
-              installedPackages.map((pkg) => (
-                <div key={pkg.name} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
-                  <div className="flex items-center min-w-0">
-                    <span className="w-4 h-4 mr-2 text-xs">📦</span>
-                    <span className="truncate">{pkg.name}</span>
-                  </div>
-                  <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">{pkg.version}</span>
-                </div>
-              ))
-            ) : (
-              <div className="text-muted-foreground py-1">No packages installed</div>
-            )}
-            
-            {/* Show detected but not installed packages */}
-            {detectedPackages.filter(pkg => !pkg.installed).length > 0 && (
-              <>
-                <div className="text-muted-foreground text-xs mt-2 mb-1">Detected in code:</div>
-                {detectedPackages.filter(pkg => !pkg.installed).map((pkg) => (
-                  <div key={`detected-${pkg.name}`} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
+          
+          <div className="px-2 py-1 max-h-24 overflow-y-auto">
+            <div className="text-xs space-y-1">
+              {installedPackages.length > 0 && (
+                installedPackages.map((pkg) => (
+                  <div key={pkg.name} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
                     <div className="flex items-center min-w-0">
-                      <span className="w-4 h-4 mr-2 text-xs">⚠️</span>
-                      <span className="truncate text-orange-500">{pkg.name}</span>
+                      <span className="w-4 h-4 mr-2 text-xs">📦</span>
+                      <span className="truncate">{pkg.name}</span>
                     </div>
-                    <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">missing</span>
+                    <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">{pkg.version}</span>
                   </div>
-                ))}
-              </>
-            )}
+                ))
+              )}
+              
+              {/* Show detected but not installed packages */}
+              {detectedPackages.filter(pkg => !pkg.installed).length > 0 && (
+                <>
+                  {installedPackages.length > 0 && <div className="text-muted-foreground text-xs mt-2 mb-1">Detected in code:</div>}
+                  {detectedPackages.filter(pkg => !pkg.installed).map((pkg) => (
+                    <div key={`detected-${pkg.name}`} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
+                      <div className="flex items-center min-w-0">
+                        <span className="w-4 h-4 mr-2 text-xs">⚠️</span>
+                        <span className="truncate text-orange-500">{pkg.name}</span>
+                      </div>
+                      <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">missing</span>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

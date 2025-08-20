@@ -1112,7 +1112,7 @@ export function EditorLayout() {
           <ResizablePanel defaultSize={18} minSize={15} maxSize={25}>
             <div className="h-full bg-sidebar border-r border-sidebar-border flex flex-col">
               {/* File Explorer */}
-              <div className="flex-1">
+              <div className="flex-1 min-h-0">
                 <VSCodeFileExplorer
                   files={files}
                   selectedFile={selectedFile}
@@ -1124,7 +1124,7 @@ export function EditorLayout() {
               </div>
               
               {/* Package Manager Button */}
-              <div className="border-t border-sidebar-border p-2">
+              <div className="border-t border-sidebar-border p-2 flex-shrink-0">
                 <Button 
                   variant="outline" 
                   size="sm" 
