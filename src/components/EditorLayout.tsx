@@ -1141,7 +1141,7 @@ export function EditorLayout() {
           <ResizableHandle />
           
           {/* Main Editor Area */}
-          <ResizablePanel defaultSize={60}>
+          <ResizablePanel defaultSize={50}>
             <ResizablePanelGroup direction="vertical">
               {/* Code Editor */}
               <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
@@ -1184,15 +1184,8 @@ export function EditorLayout() {
           <ResizableHandle />
           
           {/* Right Panel - Preview Only */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <div className="h-full bg-sidebar border-l border-sidebar-border">
-              <div className="h-8 border-b border-sidebar-border flex items-center px-3 bg-sidebar-accent">
-                <span className="text-sm font-medium text-sidebar-foreground">Preview</span>
-              </div>
-              <div className="h-[calc(100%-2rem)] overflow-hidden">
-                <DynamicPreview files={files} />
-              </div>
-            </div>
+          <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+            <DynamicPreview files={files} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

@@ -32,6 +32,15 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
     }
   };
 
+  const isNodejsProject = () => {
+    return files.some(file => 
+      file.name === 'package.json' || 
+      file.name === 'server.js' ||
+      (file.content && file.content.includes('require(')) ||
+      (file.content && file.content.includes('module.exports'))
+    );
+  };
+
   const executeCode = async () => {
     if (!iframeRef.current) return;
     
@@ -39,6 +48,13 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
     setError(null);
 
     try {
+      // Check if this is a Node.js project
+      if (isNodejsProject()) {
+        setError('This is a Node.js project. Use the Terminal to run "npm start" or "node server.js" to test your server.');
+        setIsLoading(false);
+        return;
+      }
+
       const result = await executionService.current.executeCode(files, language);
       setExecutionResult(result);
 
@@ -152,21 +168,39 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
         </div>
       )}
       
-      <div className="flex-1 overflow-hidden flex justify-center bg-muted/20">
-        <div 
-          className={cn(
-            "transition-all duration-300 bg-white shadow-sm",
-            viewport !== 'desktop' && "border-x border-editor-border"
-          )}
-          style={dimensions}
-        >
-          <iframe
-            ref={iframeRef}
-            className="w-full h-full border-0"
-            title="Dynamic Preview"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-          />
-        </div>
+      <div className="flex-1 overflow-hidden flex justify-center bg-muted/10">
+        {isNodejsProject() && !error ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center max-w-md">
+              <div className="text-6xl mb-4">🚀</div>
+              <h3 className="text-lg font-semibold mb-2">Node.js Project Detected</h3>
+              <p className="text-muted-foreground mb-4">
+                This appears to be a Node.js/Express server project. Use the Terminal below to run your server:
+              </p>
+              <div className="bg-muted/50 p-3 rounded-md font-mono text-sm mb-4">
+                npm start
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your server will run on localhost:3000 or the configured PORT
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div 
+            className={cn(
+              "transition-all duration-300 bg-white shadow-sm",
+              viewport !== 'desktop' && "border-x border-border"
+            )}
+            style={dimensions}
+          >
+            <iframe
+              ref={iframeRef}
+              className="w-full h-full border-0"
+              title="Dynamic Preview"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+            />
+          </div>
+        )}
       </div>
 
       {executionResult?.logs && executionResult.logs.length > 0 && (

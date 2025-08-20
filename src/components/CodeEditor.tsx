@@ -35,19 +35,19 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
   const editorLanguage = fileName ? getLanguageFromFileName(fileName) : language;
 
   return (
-    <div className="flex-1 bg-editor-bg">
-      <div className="h-10 border-b border-editor-border flex items-center px-4 bg-background">
+    <div className="flex-1 flex flex-col bg-background">
+      <div className="h-10 border-b border-border flex items-center px-4 bg-background">
         <span className="text-sm text-foreground">{fileName || 'Untitled'}</span>
       </div>
       
-      <div className="h-[calc(100%-2.5rem)]">
+      <div className="flex-1">
         <Editor
           height="100%"
           language={editorLanguage}
-          value={value}
+          value={value || ''}
           onChange={onChange}
           loading={
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full bg-background">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           }
@@ -61,18 +61,24 @@ export function CodeEditor({ value, language, onChange, fileName }: CodeEditorPr
             tabSize: 2,
             wordWrap: 'on',
             theme: theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'vs-dark' : 'vs-light',
-            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+            fontFamily: '"Fira Code", "Cascadia Code", "JetBrains Mono", Monaco, Menlo, "Ubuntu Mono", monospace',
             renderLineHighlight: 'line',
             selectOnLineNumbers: true,
             glyphMargin: false,
             folding: true,
             showFoldingControls: 'always',
+            contextmenu: true,
+            mouseWheelZoom: true,
+            smoothScrolling: true,
+            cursorBlinking: 'smooth',
+            renderWhitespace: 'selection',
             scrollbar: {
               vertical: 'auto',
               horizontal: 'auto',
               useShadows: false,
               verticalHasArrows: false,
               horizontalHasArrows: false,
+              alwaysConsumeMouseWheel: false,
             },
           }}
         />
