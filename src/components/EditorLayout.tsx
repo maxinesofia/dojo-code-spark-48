@@ -455,10 +455,28 @@ export function EditorLayout() {
             <div className="h-full bg-sidebar border-r border-sidebar-border">
               <EnhancedFileExplorer
                 files={files}
+                activeFile={selectedFile?.id || null}
                 onFileSelect={handleFileSelect}
-                onFileCreate={handleFileCreate}
-                onFileDelete={handleFileDelete}
-                onFileRename={handleFileRename}
+                onCreateFile={(fileName: string, fileType: string) => handleFileCreate(fileName, fileType === 'folder' ? 'folder' : 'file')}
+                onCreateFolder={(folderName: string) => handleFileCreate(folderName, 'folder')}
+                onMoveFile={() => {}} // Not implemented yet
+                onToggleFolder={() => {}} // Not implemented yet  
+                onDeleteFile={handleFileDelete}
+                onRenameFile={handleFileRename}
+                onUpdateFile={(fileId: string, content: string) => {
+                  const updateFileContent = (nodes: FileNode[]): FileNode[] => {
+                    return nodes.map(node => {
+                      if (node.id === fileId) {
+                        return { ...node, content };
+                      }
+                      if (node.children) {
+                        return { ...node, children: updateFileContent(node.children) };
+                      }
+                      return node;
+                    });
+                  };
+                  setFiles(updateFileContent(files));
+                }}
               />
             </div>
           </ResizablePanel>
