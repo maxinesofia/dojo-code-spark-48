@@ -156,23 +156,26 @@ export function Terminal({
             commandHistory = commandHistory.slice(0, 100);
           }
           
-          try {
-            const output = await virtualTerminalService.executeCommand(currentInput);
-            if (output) {
-              if (currentInput.trim() === 'clear') {
-                terminal.clear();
-              } else {
-                const lines = output.split('\n');
-                lines.forEach((line, index) => {
-                  if (index === lines.length - 1 && line === '') return;
-                  terminal.writeln(line);
-                });
+            try {
+              const output = await virtualTerminalService.executeCommand(currentInput);
+              if (output) {
+                if (currentInput.trim() === 'clear') {
+                  // Clear command returns ANSI escape codes, write them directly
+                  terminal.write(output);
+                } else {
+                  // Process output for ANSI escape codes and proper formatting
+                  const lines = output.split('\n');
+                  lines.forEach((line, index) => {
+                    if (index === lines.length - 1 && line === '') return;
+                    // Write line directly to preserve ANSI escape codes
+                    terminal.write(line + '\r\n');
+                  });
+                }
               }
+              onCommandExecuted?.(currentInput, output);
+            } catch (error) {
+              terminal.writeln(`\x1b[31mError: ${error instanceof Error ? error.message : 'Unknown error'}\x1b[0m`);
             }
-            onCommandExecuted?.(currentInput, output);
-          } catch (error) {
-            terminal.writeln(`\x1b[31mError: ${error instanceof Error ? error.message : 'Unknown error'}\x1b[0m`);
-          }
         }
         
         currentInput = '';
@@ -188,8 +191,9 @@ export function Terminal({
         currentInput = '';
         historyIdx = -1;
         showPrompt();
-      } else if (code === 12) { // Ctrl+L
-        terminal.clear();
+      } else if (code === 12) { // Ctrl+L - Clear screen like real terminal
+        const clearOutput = await virtualTerminalService.executeCommand('clear');
+        terminal.write(clearOutput);
         showPrompt();
       } else if (code >= 32 && code <= 126) { // Printable characters
         currentInput += data;

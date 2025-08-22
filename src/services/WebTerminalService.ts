@@ -85,23 +85,25 @@ export class WebTerminalService {
   }
 
   getSessionInitMessage(): string {
-    return 'Virtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
+    // Simulate PTY initialization with ANSI escape codes as described in terminal anatomy
+    return '\x1b[?2004h\x1b]0;Virtual Terminal\x07\x1b[mVirtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
   }
 
   getPrompt(): string {
     const pwd = this.vfs.currentDirectory;
     const user = this.environment.get('USER') || 'developer';
     
+    // Add ANSI colors and formatting like real terminal emulators
     if (pwd === '/') {
-      return `${user}:/$`;
+      return `\x1b[32m${user}\x1b[0m:\x1b[34m/\x1b[0m$`;
     } else {
       // Convert absolute path to home-relative if in home directory
       const home = this.environment.get('HOME') || '/';
       if (pwd.startsWith(home) && pwd !== home) {
         const relativePath = pwd.slice(home.length);
-        return `${user}:~${relativePath} $`;
+        return `\x1b[32m${user}\x1b[0m:\x1b[34m~${relativePath}\x1b[0m $`;
       } else {
-        return `${user}:${pwd} $`;
+        return `\x1b[32m${user}\x1b[0m:\x1b[34m${pwd}\x1b[0m $`;
       }
     }
   }
