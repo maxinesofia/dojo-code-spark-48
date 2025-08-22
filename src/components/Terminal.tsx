@@ -71,19 +71,18 @@ export function Terminal({
     wsService.onError((error: string) => {
       console.error('Terminal error:', error);
       setError(error);
-      // Fall back to virtual terminal
-      setTimeout(() => {
+      if (!isInitializedRef.current) {
+        console.log('Failed to connect to real terminal, falling back to virtual');
         setupVirtualTerminal();
-      }, 1000);
+      }
     });
     
     wsService.onConnectionFailed(() => {
       console.log('Failed to connect to real terminal, falling back to virtual');
-      setError('Connection failed');
-      // Fall back to virtual terminal
-      setTimeout(() => {
+      setError(null); // Clear error since we're falling back successfully
+      if (!isInitializedRef.current) {
         setupVirtualTerminal();
-      }, 1000);
+      }
     });
     
     wsService.onDisconnected(() => {
@@ -106,7 +105,7 @@ export function Terminal({
   }, []);
 
   const setupVirtualTerminal = useCallback(() => {
-    if (!xtermRef.current) return;
+    if (!xtermRef.current || isInitializedRef.current) return;
     
     // Clear any existing handlers
     if (terminalServiceRef.current && 'disconnect' in terminalServiceRef.current) {
@@ -130,7 +129,7 @@ export function Terminal({
     // Show session boot message only once
     terminal.clear();
     const initMessage = virtualTerminalService.getSessionInitMessage();
-    terminal.writeln(initMessage);
+    terminal.write(initMessage);
     
     const showPrompt = () => {
       const prompt = virtualTerminalService.getPrompt();

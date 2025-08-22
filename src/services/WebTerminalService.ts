@@ -85,8 +85,11 @@ export class WebTerminalService {
   }
 
   getSessionInitMessage(): string {
-    // Simulate PTY initialization with ANSI escape codes as described in terminal anatomy
-    return '\x1b[?2004h\x1b]0;Virtual Terminal\x07\x1b[mVirtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
+    if (this.sessionInitialized) {
+      return ''; // Don't show banner again
+    }
+    this.sessionInitialized = true;
+    return 'Virtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
   }
 
   getPrompt(): string {
@@ -159,7 +162,7 @@ export class WebTerminalService {
 
         case 'clear':
         case 'cls':
-          return '\x1b[2J\x1b[H'; // ANSI clear screen codes
+          return '\x1b[2J\x1b[H';
 
         case 'cp':
         case 'copy':
