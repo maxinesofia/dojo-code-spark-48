@@ -129,9 +129,9 @@ export function Terminal({
 
     // Clear terminal and show virtual terminal message
     terminal.clear();
-    terminal.writeln('\x1b[33m💻 Virtual Terminal Mode\x1b[0m');
-    terminal.writeln('\x1b[90mSimulated shell environment - file operations are virtual\x1b[0m');
-    terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
+    terminal.writeln('\x1b[33m💻 Virtual Terminal Mode - Fully Functional\x1b[0m');
+    terminal.writeln('\x1b[90mComplete terminal simulation with file operations, dev tools & package managers\x1b[0m');
+    terminal.writeln('\x1b[90mType "help" for available commands | Supports: npm, node, git, python, and more!\x1b[0m');
     terminal.writeln('');
     
     const prompt = () => {
@@ -164,8 +164,8 @@ export function Terminal({
             if (output) {
               if (currentInput.trim() === 'clear') {
                 terminal.clear();
-                terminal.writeln('\x1b[33m💻 Virtual Terminal Mode\x1b[0m');
-                terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
+                terminal.writeln('\x1b[33m💻 Virtual Terminal Mode - Fully Functional\x1b[0m');
+                terminal.writeln('\x1b[90mType "help" for available commands | Supports: npm, node, git, python, and more!\x1b[0m');
                 terminal.writeln('');
               } else {
                 const lines = output.split('\n');
@@ -196,8 +196,8 @@ export function Terminal({
         prompt();
       } else if (code === 12) { // Ctrl+L
         terminal.clear();
-        terminal.writeln('\x1b[33m💻 Virtual Terminal Mode\x1b[0m');
-        terminal.writeln('\x1b[90mType "help" for available commands\x1b[0m');
+        terminal.writeln('\x1b[33m💻 Virtual Terminal Mode - Fully Functional\x1b[0m');
+        terminal.writeln('\x1b[90mType "help" for available commands | Supports: npm, node, git, python, and more!\x1b[0m');
         terminal.writeln('');
         prompt();
       } else if (code >= 32 && code <= 126) { // Printable characters
