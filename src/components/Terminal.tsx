@@ -127,20 +127,17 @@ export function Terminal({
     virtualTerminalService.setupVirtualFS(files);
     terminalServiceRef.current = virtualTerminalService;
 
-    // Clear terminal and show virtual terminal message
+    // Show session boot message only once
     terminal.clear();
-    terminal.writeln('\x1b[33m💻 Virtual Terminal Mode - Fully Functional\x1b[0m');
-    terminal.writeln('\x1b[90mComplete terminal simulation with file operations, dev tools & package managers\x1b[0m');
-    terminal.writeln('\x1b[90mType "help" for available commands | Supports: npm, node, git, python, and more!\x1b[0m');
-    terminal.writeln('');
+    const initMessage = virtualTerminalService.getSessionInitMessage();
+    terminal.writeln(initMessage);
     
-    const prompt = () => {
-      const cwd = virtualTerminalService.getCurrentDirectory();
-      const user = virtualTerminalService.getEnvironment('USER') || 'developer';
-      terminal.write(`\x1b[32m${user}\x1b[0m:\x1b[34m${cwd}\x1b[0m$ `);
+    const showPrompt = () => {
+      const prompt = virtualTerminalService.getPrompt();
+      terminal.write(`${prompt} `);
     };
 
-    prompt();
+    showPrompt();
 
     // Handle virtual terminal input - single event handler
     let currentInput = '';
@@ -164,9 +161,6 @@ export function Terminal({
             if (output) {
               if (currentInput.trim() === 'clear') {
                 terminal.clear();
-                terminal.writeln('\x1b[33m💻 Virtual Terminal Mode - Fully Functional\x1b[0m');
-                terminal.writeln('\x1b[90mType "help" for available commands | Supports: npm, node, git, python, and more!\x1b[0m');
-                terminal.writeln('');
               } else {
                 const lines = output.split('\n');
                 lines.forEach((line, index) => {
@@ -183,7 +177,7 @@ export function Terminal({
         
         currentInput = '';
         historyIdx = -1;
-        prompt();
+        showPrompt();
       } else if (code === 127) { // Backspace
         if (currentInput.length > 0) {
           currentInput = currentInput.slice(0, -1);
@@ -193,13 +187,10 @@ export function Terminal({
         terminal.writeln('^C');
         currentInput = '';
         historyIdx = -1;
-        prompt();
+        showPrompt();
       } else if (code === 12) { // Ctrl+L
         terminal.clear();
-        terminal.writeln('\x1b[33m💻 Virtual Terminal Mode - Fully Functional\x1b[0m');
-        terminal.writeln('\x1b[90mType "help" for available commands | Supports: npm, node, git, python, and more!\x1b[0m');
-        terminal.writeln('');
-        prompt();
+        showPrompt();
       } else if (code >= 32 && code <= 126) { // Printable characters
         currentInput += data;
         terminal.write(data);

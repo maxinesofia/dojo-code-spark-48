@@ -20,6 +20,7 @@ export class WebTerminalService {
   private commandHistory: TerminalCommand[];
   private aliases: Map<string, string>;
   private onFileSystemChange?: (files: FileNode[]) => void;
+  private sessionInitialized = false;
 
   constructor(onFileSystemChange?: (files: FileNode[]) => void) {
     this.onFileSystemChange = onFileSystemChange;
@@ -81,6 +82,28 @@ export class WebTerminalService {
       directories: Array.from(this.vfs.directories),
       files: Array.from(this.vfs.files.keys())
     });
+  }
+
+  getSessionInitMessage(): string {
+    return 'Virtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
+  }
+
+  getPrompt(): string {
+    const pwd = this.vfs.currentDirectory;
+    const user = this.environment.get('USER') || 'developer';
+    
+    if (pwd === '/') {
+      return `${user}:/$`;
+    } else {
+      // Convert absolute path to home-relative if in home directory
+      const home = this.environment.get('HOME') || '/';
+      if (pwd.startsWith(home) && pwd !== home) {
+        const relativePath = pwd.slice(home.length);
+        return `${user}:~${relativePath} $`;
+      } else {
+        return `${user}:${pwd} $`;
+      }
+    }
   }
 
   async executeCommand(command: string): Promise<string> {
