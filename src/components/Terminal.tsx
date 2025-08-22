@@ -15,9 +15,19 @@ interface TerminalProps {
   onFileSystemChange?: (newFiles: FileNode[]) => void;
   onClose?: () => void;
   className?: string;
+  sessionId?: string;
+  showHeader?: boolean;
 }
 
-export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose, className = '' }: TerminalProps) {
+export function Terminal({ 
+  files, 
+  onCommandExecuted, 
+  onFileSystemChange, 
+  onClose, 
+  className = '', 
+  sessionId,
+  showHeader = true 
+}: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -26,7 +36,7 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
   const dataHandlerRef = useRef<((data: string) => void) | null>(null);
   
   const [isConnected, setIsConnected] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isVirtual, setIsVirtual] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -340,59 +350,64 @@ export function Terminal({ files, onCommandExecuted, onFileSystemChange, onClose
         ${className}
       `}
     >
-      {/* Terminal Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">Terminal</span>
+      {/* Terminal Header - only show if showHeader is true */}
+      {showHeader && (
+        <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">Terminal</span>
+            {sessionId && (
+              <span className="text-xs text-muted-foreground">#{sessionId.split('-')[1]}</span>
+            )}
+            
+            {/* Status indicator */}
+            {isVirtual && (
+              <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                Virtual
+              </span>
+            )}
+            {isConnected && !isVirtual && currentSessionId && (
+              <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">
+                Connected
+              </span>
+            )}
+            {!isConnected && !isVirtual && (
+              <span className="bg-yellow-600 text-white px-2 py-1 rounded text-xs">
+                Connecting...
+              </span>
+            )}
+            {error && !isVirtual && (
+              <span className="bg-red-600 text-white px-2 py-1 rounded text-xs">
+                Error
+              </span>
+            )}
+          </div>
           
-          {/* Status indicator */}
-          {isVirtual && (
-            <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
-              Virtual
-            </span>
-          )}
-          {isConnected && !isVirtual && sessionId && (
-            <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">
-              Connected
-            </span>
-          )}
-          {!isConnected && !isVirtual && (
-            <span className="bg-yellow-600 text-white px-2 py-1 rounded text-xs">
-              Connecting...
-            </span>
-          )}
-          {error && !isVirtual && (
-            <span className="bg-red-600 text-white px-2 py-1 rounded text-xs">
-              Error
-            </span>
-          )}
+          <div className="flex items-center gap-1">
+            <Button
+              onClick={toggleMinimized}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+            >
+              <Minimize2 className="h-3 w-3" />
+            </Button>
+            <Button
+              onClick={handleClose}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted hover:bg-red-500/20"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-1">
-          <Button
-            onClick={toggleMinimized}
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-          >
-            <Minimize2 className="h-3 w-3" />
-          </Button>
-          <Button
-            onClick={handleClose}
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted hover:bg-red-500/20"
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Terminal Content */}
       {!isMinimized && (
         <div 
           ref={terminalRef} 
-          className="h-[calc(100%-2.5rem)] p-2 overflow-hidden"
+          className={`p-2 overflow-hidden ${showHeader ? 'h-[calc(100%-2.5rem)]' : 'h-full'}`}
           style={{ 
             fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
           }}

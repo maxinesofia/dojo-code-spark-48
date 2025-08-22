@@ -10,7 +10,7 @@ import { Terminal } from "./Terminal";
 import { useToast } from "@/hooks/use-toast";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
-import { Terminal as TerminalIcon, GitBranch, Settings, Package } from "lucide-react";
+import { Terminal as TerminalIcon, GitBranch, Settings, Package, X } from "lucide-react";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
 
@@ -900,6 +900,8 @@ export function EditorLayout() {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
+  const [terminalSessions, setTerminalSessions] = useState<{ id: string; title: string; active: boolean }[]>([]);
+  const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
 
   // Auto-save functionality with project updates
   useEffect(() => {
@@ -1097,6 +1099,77 @@ export function EditorLayout() {
     setFiles(newFiles);
   }, []);
 
+  // Terminal session management
+  const createNewTerminal = useCallback(() => {
+    const sessionId = `terminal-${Date.now()}`;
+    const newSession = {
+      id: sessionId,
+      title: `Terminal ${terminalSessions.length + 1}`,
+      active: true
+    };
+    
+    setTerminalSessions(prev => [
+      ...prev.map(s => ({ ...s, active: false })),
+      newSession
+    ]);
+    setActiveTerminalId(sessionId);
+    setIsTerminalOpen(true);
+  }, [terminalSessions]);
+
+  const closeTerminal = useCallback((sessionId: string) => {
+    setTerminalSessions(prev => {
+      const filtered = prev.filter(s => s.id !== sessionId);
+      if (filtered.length === 0) {
+        setIsTerminalOpen(false);
+        setActiveTerminalId(null);
+        return [];
+      }
+      // Activate the last terminal if we closed the active one
+      if (sessionId === activeTerminalId) {
+        const lastTerminal = filtered[filtered.length - 1];
+        lastTerminal.active = true;
+        setActiveTerminalId(lastTerminal.id);
+      }
+      return filtered;
+    });
+  }, [activeTerminalId]);
+
+  const switchTerminal = useCallback((sessionId: string) => {
+    setTerminalSessions(prev => prev.map(s => ({
+      ...s,
+      active: s.id === sessionId
+    })));
+    setActiveTerminalId(sessionId);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+` (backtick) - Toggle terminal
+      if (event.ctrlKey && event.key === '`') {
+        event.preventDefault();
+        if (isTerminalOpen) {
+          setIsTerminalOpen(false);
+        } else {
+          if (terminalSessions.length === 0) {
+            createNewTerminal();
+          } else {
+            setIsTerminalOpen(true);
+          }
+        }
+      }
+      
+      // Ctrl+Shift+` - Create new terminal
+      if (event.ctrlKey && event.shiftKey && event.key === '`') {
+        event.preventDefault();
+        createNewTerminal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTerminalOpen, terminalSessions, createNewTerminal]);
+
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header 
@@ -1164,17 +1237,78 @@ export function EditorLayout() {
                 </div>
               </ResizablePanel>
               
-              {/* Terminal */}
+              {/* Terminal Panel */}
               {isTerminalOpen && (
                 <>
                   <ResizableHandle />
                   <ResizablePanel defaultSize={30} minSize={20}>
-                    <Terminal
-                      files={files}
-                      onCommandExecuted={handleCommandExecute}
-                      onFileSystemChange={handleFileSystemChange}
-                      onClose={() => setIsTerminalOpen(false)}
-                    />
+                    <div className="h-full bg-background flex flex-col">
+                      {/* Terminal Tabs */}
+                      <div className="border-b border-border bg-muted/30 flex items-center justify-between">
+                        <div className="flex items-center">
+                          {terminalSessions.map((session) => (
+                            <div
+                              key={session.id}
+                              className={`
+                                flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-r border-border
+                                ${session.active ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}
+                              `}
+                              onClick={() => switchTerminal(session.id)}
+                            >
+                              <TerminalIcon className="w-3 h-3" />
+                              <span>{session.title}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 hover:bg-muted"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  closeTerminal(session.id);
+                                }}
+                              >
+                                <X className="h-2 w-2" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center px-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={createNewTerminal}
+                            title="New Terminal (Ctrl+Shift+`)"
+                          >
+                            <TerminalIcon className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => setIsTerminalOpen(false)}
+                            title="Close Panel"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Active Terminal */}
+                      <div className="flex-1">
+                        {activeTerminalId && (
+                          <Terminal
+                            key={activeTerminalId}
+                            files={files}
+                            onCommandExecuted={handleCommandExecute}
+                            onFileSystemChange={handleFileSystemChange}
+                            onClose={() => closeTerminal(activeTerminalId)}
+                            sessionId={activeTerminalId}
+                            showHeader={false}
+                          />
+                        )}
+                      </div>
+                    </div>
                   </ResizablePanel>
                 </>
               )}
@@ -1207,10 +1341,24 @@ export function EditorLayout() {
             variant="ghost"
             size="icon"
             className="h-5 w-auto px-1 text-xs hover:bg-sidebar-accent/50"
-            onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+            onClick={() => {
+              if (isTerminalOpen) {
+                setIsTerminalOpen(false);
+              } else {
+                if (terminalSessions.length === 0) {
+                  createNewTerminal();
+                } else {
+                  setIsTerminalOpen(true);
+                }
+              }
+            }}
+            title="Toggle Terminal (Ctrl+`)"
           >
             <TerminalIcon className="w-3 h-3 mr-1" />
-            <span className="text-sidebar-foreground">{isTerminalOpen ? 'Hide Terminal' : 'Show Terminal'}</span>
+            <span className="text-sidebar-foreground">
+              {isTerminalOpen ? 'Hide Terminal' : 'Show Terminal'}
+              {terminalSessions.length > 0 && ` (${terminalSessions.length})`}
+            </span>
           </Button>
           <Button variant="ghost" size="icon" className="h-5 w-5 hover:bg-sidebar-accent/50">
             <Settings className="w-3 h-3 text-sidebar-foreground" />
