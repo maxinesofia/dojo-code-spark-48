@@ -3,7 +3,7 @@ import { Save, Share, Play, Settings, User, FileText, Moon, Sun, CheckCircle, Ed
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useState, useEffect } from "react";
-import { EditableProjectTitle } from './EditableProjectTitle';
+import { EditableProjectTitle } from '@/components/EditableProjectTitle';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";

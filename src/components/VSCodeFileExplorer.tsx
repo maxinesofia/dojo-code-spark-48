@@ -4,7 +4,7 @@ import { FileNode } from '../types/FileTypes';
 import { getFileIcon } from '../utils/fileIcons';
 import { FileContextMenu } from './FileContextMenu';
 import { FileCreateDialog } from './FileCreateDialog';
-import { EditableProjectTitle } from './EditableProjectTitle';
+import { EditableProjectTitle } from '@/components/EditableProjectTitle';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
