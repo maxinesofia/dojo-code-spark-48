@@ -61,7 +61,7 @@ class TerminalController {
       ws.send(JSON.stringify({ 
         type: 'session_init', 
         sessionId,
-        message: 'Git Bash Terminal Ready - Type commands to interact!' 
+        message: 'Terminal ready' 
       }));
     });
   }
@@ -162,20 +162,13 @@ class TerminalController {
         }));
       });
 
-      // Send welcome message
-      setTimeout(() => {
-        const welcomeMsg = '\x1b[32mWelcome to Git Bash Terminal!\x1b[0m\r\n';
-        ws.send(JSON.stringify({
-          type: 'output',
-          data: welcomeMsg
-        }));
-      }, 100);
+      // Terminal is ready - no welcome message needed
 
       ws.send(JSON.stringify({
         type: 'terminal_started',
         sessionId,
         workspace: sessionWorkspace,
-        message: 'Terminal session started with Git support!'
+        message: 'Terminal ready'
       }));
 
     } catch (error) {
