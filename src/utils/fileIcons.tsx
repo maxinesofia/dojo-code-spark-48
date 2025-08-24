@@ -36,7 +36,23 @@ import {
   Download,
   Shield,
   Eye,
-  FileQuestion
+  FileQuestion,
+  Zap,
+  Server,
+  Cloud,
+  Cpu,
+  Command,
+  Box,
+  Layers,
+  Component,
+  Workflow,
+  Activity,
+  Puzzle,
+  Wrench,
+  Rocket,
+  Smartphone,
+  Monitor,
+  Triangle
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -48,13 +64,15 @@ interface FileIconMapping {
 }
 
 const fileIconMap: FileIconMapping = {
-  // JavaScript/TypeScript
+  // JavaScript/TypeScript - Enhanced with framework context
   'js': { icon: FileCode, color: 'text-yellow-500' },
-  'jsx': { icon: FileCode, color: 'text-blue-400' },
+  'jsx': { icon: Component, color: 'text-blue-400' }, // React component
   'ts': { icon: FileCode, color: 'text-blue-600' },
-  'tsx': { icon: FileCode, color: 'text-blue-400' },
+  'tsx': { icon: Component, color: 'text-blue-400' }, // React TypeScript component
   'mjs': { icon: FileCode, color: 'text-yellow-500' },
   'cjs': { icon: FileCode, color: 'text-yellow-500' },
+  'vue': { icon: Component, color: 'text-green-500' }, // Vue component
+  'svelte': { icon: Component, color: 'text-orange-600' }, // Svelte component
   
   // Web technologies
   'html': { icon: Globe, color: 'text-orange-500' },
@@ -135,20 +153,27 @@ const fileIconMap: FileIconMapping = {
   'txt': { icon: FileText, color: 'text-gray-500' },
   'rtf': { icon: FileText, color: 'text-blue-500' },
   
-  // Programming languages
-  'py': { icon: FileCode, color: 'text-yellow-600' },
+  // Programming languages - Enhanced with technology branding
+  'py': { icon: FileCode, color: 'text-blue-500' }, // Python blue
   'java': { icon: FileCode, color: 'text-red-600' },
   'c': { icon: FileCode, color: 'text-blue-600' },
   'cpp': { icon: FileCode, color: 'text-blue-700' },
   'h': { icon: FileCode, color: 'text-purple-600' },
-  'cs': { icon: FileCode, color: 'text-green-600' },
-  'php': { icon: FileCode, color: 'text-purple-700' },
-  'rb': { icon: FileCode, color: 'text-red-500' },
-  'go': { icon: FileCode, color: 'text-blue-500' },
-  'rs': { icon: FileCode, color: 'text-orange-600' },
+  'cs': { icon: FileCode, color: 'text-purple-600' }, // C# purple
+  'php': { icon: FileCode, color: 'text-indigo-600' }, // PHP indigo
+  'rb': { icon: FileCode, color: 'text-red-500' }, // Ruby red
+  'go': { icon: FileCode, color: 'text-cyan-500' }, // Go cyan
+  'rs': { icon: FileCode, color: 'text-orange-600' }, // Rust orange
   'swift': { icon: FileCode, color: 'text-orange-500' },
-  'kt': { icon: FileCode, color: 'text-purple-500' },
-  'dart': { icon: FileCode, color: 'text-blue-500' },
+  'kt': { icon: FileCode, color: 'text-purple-500' }, // Kotlin purple
+  'dart': { icon: FileCode, color: 'text-blue-500' }, // Dart blue
+  'elm': { icon: FileCode, color: 'text-blue-400' }, // Elm
+  'clj': { icon: FileCode, color: 'text-green-600' }, // Clojure
+  'scala': { icon: FileCode, color: 'text-red-600' }, // Scala
+  'haskell': { icon: FileCode, color: 'text-purple-600' }, // Haskell
+  'lua': { icon: FileCode, color: 'text-blue-600' }, // Lua
+  'r': { icon: FileCode, color: 'text-blue-500' }, // R
+  'matlab': { icon: FileCode, color: 'text-orange-500' }, // MATLAB
   
   // Shell scripts
   'sh': { icon: Terminal, color: 'text-green-500' },
@@ -164,66 +189,163 @@ const fileIconMap: FileIconMapping = {
   'db': { icon: Database, color: 'text-green-500' },
   'sqlite': { icon: Database, color: 'text-blue-500' },
   
-  // Special files
+  // Special files - Enhanced with technology branding
   'md': { icon: Book, color: 'text-blue-500' },
   'mdx': { icon: Book, color: 'text-blue-600' },
   'readme': { icon: Book, color: 'text-green-500' },
   'license': { icon: FileText, color: 'text-yellow-500' },
-  'dockerfile': { icon: Settings, color: 'text-blue-500' },
-  'makefile': { icon: Settings, color: 'text-red-500' },
-  'rakefile': { icon: Settings, color: 'text-red-600' },
-  'gemfile': { icon: Package, color: 'text-red-500' },
-  'composer': { icon: Package, color: 'text-orange-500' },
-  'requirements': { icon: FileText, color: 'text-blue-500' },
-  'pipfile': { icon: Package, color: 'text-yellow-600' },
-  'cargo': { icon: Package, color: 'text-orange-600' },
+  'dockerfile': { icon: Box, color: 'text-blue-500' }, // Docker blue
+  'makefile': { icon: Wrench, color: 'text-red-500' },
+  'rakefile': { icon: Wrench, color: 'text-red-600' },
+  'gemfile': { icon: Package, color: 'text-red-500' }, // Ruby gem
+  'composer': { icon: Package, color: 'text-orange-500' }, // PHP Composer
+  'requirements': { icon: FileText, color: 'text-blue-500' }, // Python
+  'pipfile': { icon: Package, color: 'text-yellow-600' }, // Python Pipenv
+  'cargo': { icon: Package, color: 'text-orange-600' }, // Rust Cargo
+  'podfile': { icon: Package, color: 'text-blue-500' }, // iOS CocoaPods
+  'pubspec': { icon: Package, color: 'text-blue-500' }, // Flutter/Dart
+  'mix': { icon: Package, color: 'text-purple-500' }, // Elixir
+  'sbt': { icon: Package, color: 'text-red-600' }, // Scala SBT
+  'gradle': { icon: Wrench, color: 'text-green-600' }, // Gradle
+  'maven': { icon: Wrench, color: 'text-orange-600' }, // Maven
 };
 
-// Special filename mappings (for files without extensions or special cases)
+// Enhanced special filename mappings with technology branding
 const specialFiles: { [key: string]: { icon: LucideIcon; color: string } } = {
-  'dockerfile': { icon: Settings, color: 'text-blue-500' },
-  'makefile': { icon: Settings, color: 'text-red-500' },
-  'rakefile': { icon: Settings, color: 'text-red-600' },
-  'gemfile': { icon: Package, color: 'text-red-500' },
-  'package.json': { icon: Package, color: 'text-red-500' },
-  'package-lock.json': { icon: Lock, color: 'text-red-600' },
+  // Docker
+  'dockerfile': { icon: Box, color: 'text-blue-500' },
+  'docker-compose.yml': { icon: Layers, color: 'text-blue-600' },
+  'docker-compose.yaml': { icon: Layers, color: 'text-blue-600' },
+  '.dockerignore': { icon: FileX, color: 'text-blue-500' },
+  
+  // Build tools
+  'makefile': { icon: Wrench, color: 'text-red-500' },
+  'cmake': { icon: Wrench, color: 'text-red-600' },
+  'rakefile': { icon: Wrench, color: 'text-red-600' },
+  'gulpfile.js': { icon: Workflow, color: 'text-red-500' },
+  'gruntfile.js': { icon: Workflow, color: 'text-orange-500' },
+  
+  // Package managers
+  'package.json': { icon: Server, color: 'text-green-600' }, // Node.js green
+  'package-lock.json': { icon: Lock, color: 'text-green-700' },
   'yarn.lock': { icon: Lock, color: 'text-blue-500' },
   'bun.lockb': { icon: Lock, color: 'text-orange-500' },
-  'composer.json': { icon: Package, color: 'text-orange-500' },
-  'composer.lock': { icon: Lock, color: 'text-orange-600' },
-  'requirements.txt': { icon: FileText, color: 'text-blue-500' },
+  'pnpm-lock.yaml': { icon: Lock, color: 'text-yellow-600' },
+  'gemfile': { icon: Package, color: 'text-red-500' },
+  'gemfile.lock': { icon: Lock, color: 'text-red-600' },
+  'composer.json': { icon: Package, color: 'text-purple-600' }, // PHP purple
+  'composer.lock': { icon: Lock, color: 'text-purple-700' },
+  'requirements.txt': { icon: FileText, color: 'text-blue-500' }, // Python blue
   'pipfile': { icon: Package, color: 'text-yellow-600' },
-  'cargo.toml': { icon: Package, color: 'text-orange-600' },
+  'pipfile.lock': { icon: Lock, color: 'text-yellow-700' },
+  'cargo.toml': { icon: Package, color: 'text-orange-600' }, // Rust orange
   'cargo.lock': { icon: Lock, color: 'text-orange-700' },
-  '.gitignore': { icon: GitBranch, color: 'text-orange-500' },
-  '.gitattributes': { icon: GitBranch, color: 'text-orange-500' },
-  '.dockerignore': { icon: FileX, color: 'text-blue-500' },
-  '.editorconfig': { icon: Settings, color: 'text-gray-500' },
-  '.eslintrc': { icon: FileCheck, color: 'text-purple-500' },
+  'pubspec.yaml': { icon: Package, color: 'text-blue-500' }, // Flutter/Dart
+  'pubspec.lock': { icon: Lock, color: 'text-blue-600' },
+  'podfile': { icon: Package, color: 'text-blue-500' }, // iOS
+  'podfile.lock': { icon: Lock, color: 'text-blue-600' },
+  
+  // Configuration files with technology branding
+  'webpack.config.js': { icon: Box, color: 'text-blue-500' }, // Webpack blue
+  'webpack.config.ts': { icon: Box, color: 'text-blue-500' },
+  'rollup.config.js': { icon: Puzzle, color: 'text-red-500' }, // Rollup red
+  'rollup.config.ts': { icon: Puzzle, color: 'text-red-500' },
+  'vite.config.js': { icon: Zap, color: 'text-purple-500' }, // Vite purple/lightning
+  'vite.config.ts': { icon: Zap, color: 'text-purple-500' },
+  'parcel.config.js': { icon: Box, color: 'text-orange-500' },
+  'snowpack.config.js': { icon: Activity, color: 'text-blue-400' },
+  
+  // Framework configs
+  'next.config.js': { icon: Triangle, color: 'text-gray-900' }, // Next.js black
+  'next.config.ts': { icon: Triangle, color: 'text-gray-900' },
+  'nuxt.config.js': { icon: Component, color: 'text-green-500' }, // Nuxt green
+  'nuxt.config.ts': { icon: Component, color: 'text-green-500' },
+  'gatsby-config.js': { icon: Rocket, color: 'text-purple-600' }, // Gatsby purple
+  'svelte.config.js': { icon: Component, color: 'text-orange-600' }, // Svelte orange
+  'angular.json': { icon: Component, color: 'text-red-600' }, // Angular red
+  
+  // Styling and CSS frameworks
+  'tailwind.config.js': { icon: Palette, color: 'text-cyan-500' }, // Tailwind cyan
+  'tailwind.config.ts': { icon: Palette, color: 'text-cyan-500' },
+  'postcss.config.js': { icon: Palette, color: 'text-orange-500' },
+  'babel.config.js': { icon: Settings, color: 'text-yellow-600' }, // Babel yellow
+  '.babelrc': { icon: Settings, color: 'text-yellow-600' },
+  '.babelrc.js': { icon: Settings, color: 'text-yellow-600' },
+  '.babelrc.json': { icon: Settings, color: 'text-yellow-600' },
+  
+  // TypeScript configs
+  'tsconfig.json': { icon: Settings, color: 'text-blue-600' }, // TypeScript blue
+  'tsconfig.app.json': { icon: Settings, color: 'text-blue-600' },
+  'tsconfig.node.json': { icon: Settings, color: 'text-blue-600' },
+  'jsconfig.json': { icon: Settings, color: 'text-yellow-500' },
+  
+  // Linting and formatting
+  '.eslintrc': { icon: FileCheck, color: 'text-purple-500' }, // ESLint purple
   '.eslintrc.js': { icon: FileCheck, color: 'text-purple-500' },
   '.eslintrc.json': { icon: FileCheck, color: 'text-purple-500' },
-  '.prettierrc': { icon: FileCheck, color: 'text-pink-500' },
+  '.eslintrc.yml': { icon: FileCheck, color: 'text-purple-500' },
+  'eslint.config.js': { icon: FileCheck, color: 'text-purple-500' },
+  '.prettierrc': { icon: FileCheck, color: 'text-pink-500' }, // Prettier pink
   '.prettierrc.js': { icon: FileCheck, color: 'text-pink-500' },
   '.prettierrc.json': { icon: FileCheck, color: 'text-pink-500' },
-  'tsconfig.json': { icon: Settings, color: 'text-blue-600' },
-  'jsconfig.json': { icon: Settings, color: 'text-yellow-500' },
-  'vite.config.js': { icon: Settings, color: 'text-purple-500' },
-  'vite.config.ts': { icon: Settings, color: 'text-purple-500' },
-  'webpack.config.js': { icon: Settings, color: 'text-blue-500' },
-  'rollup.config.js': { icon: Settings, color: 'text-red-500' },
-  'tailwind.config.js': { icon: Settings, color: 'text-cyan-500' },
-  'tailwind.config.ts': { icon: Settings, color: 'text-cyan-500' },
-  'postcss.config.js': { icon: Settings, color: 'text-orange-500' },
-  'babel.config.js': { icon: Settings, color: 'text-yellow-600' },
-  '.babelrc': { icon: Settings, color: 'text-yellow-600' },
+  '.prettierrc.yml': { icon: FileCheck, color: 'text-pink-500' },
+  'prettier.config.js': { icon: FileCheck, color: 'text-pink-500' },
+  
+  // Version control
+  '.gitignore': { icon: GitBranch, color: 'text-orange-500' },
+  '.gitattributes': { icon: GitBranch, color: 'text-orange-500' },
+  '.gitmodules': { icon: GitBranch, color: 'text-orange-500' },
+  
+  // Documentation and project files
   'readme.md': { icon: Book, color: 'text-green-500' },
+  'readme.txt': { icon: Book, color: 'text-green-500' },
   'license': { icon: FileText, color: 'text-yellow-500' },
   'license.md': { icon: FileText, color: 'text-yellow-500' },
+  'license.txt': { icon: FileText, color: 'text-yellow-500' },
   'changelog.md': { icon: FileText, color: 'text-blue-500' },
+  'changelog.txt': { icon: FileText, color: 'text-blue-500' },
+  'contributing.md': { icon: Book, color: 'text-green-600' },
+  'code_of_conduct.md': { icon: Book, color: 'text-purple-500' },
+  
+  // Environment and secrets
   '.env': { icon: FileKey, color: 'text-green-600' },
   '.env.local': { icon: FileKey, color: 'text-green-600' },
   '.env.development': { icon: FileKey, color: 'text-green-600' },
   '.env.production': { icon: FileKey, color: 'text-green-600' },
+  '.env.staging': { icon: FileKey, color: 'text-green-600' },
+  '.env.test': { icon: FileKey, color: 'text-green-600' },
+  '.env.example': { icon: FileKey, color: 'text-gray-500' },
+  
+  // Editor configs
+  '.editorconfig': { icon: Settings, color: 'text-gray-500' },
+  '.vscode/settings.json': { icon: Settings, color: 'text-blue-500' },
+  
+  // CI/CD and deployment
+  '.github/workflows': { icon: Workflow, color: 'text-gray-900' },
+  'vercel.json': { icon: Cloud, color: 'text-gray-900' }, // Vercel black
+  'netlify.toml': { icon: Cloud, color: 'text-teal-500' }, // Netlify teal
+  'firebase.json': { icon: Cloud, color: 'text-orange-500' }, // Firebase orange
+  'serverless.yml': { icon: Cloud, color: 'text-red-500' },
+  'azure-pipelines.yml': { icon: Workflow, color: 'text-blue-600' }, // Azure blue
+  '.travis.yml': { icon: Workflow, color: 'text-green-600' },
+  'circle.yml': { icon: Workflow, color: 'text-green-500' },
+  'jenkins.yml': { icon: Workflow, color: 'text-blue-500' },
+  
+  // Mobile development
+  'android/': { icon: Smartphone, color: 'text-green-500' }, // Android green
+  'ios/': { icon: Smartphone, color: 'text-gray-700' }, // iOS gray
+  'flutter/': { icon: Smartphone, color: 'text-blue-500' }, // Flutter blue
+  'react-native/': { icon: Smartphone, color: 'text-blue-400' }, // React Native
+  
+  // Server files
+  'server.js': { icon: Server, color: 'text-green-500' }, // Node.js server
+  'server.ts': { icon: Server, color: 'text-green-500' },
+  'app.js': { icon: Server, color: 'text-green-500' },
+  'app.ts': { icon: Server, color: 'text-green-500' },
+  'index.js': { icon: Server, color: 'text-yellow-500' },
+  'index.ts': { icon: Server, color: 'text-blue-600' },
+  'main.js': { icon: Server, color: 'text-yellow-500' },
+  'main.ts': { icon: Server, color: 'text-blue-600' },
 };
 
 export function getFileIcon(fileName: string, isFolder: boolean = false, isExpanded: boolean = false) {
