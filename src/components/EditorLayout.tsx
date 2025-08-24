@@ -7,7 +7,6 @@ import { CodeEditor } from "./CodeEditor";
 import { DynamicPreview } from "./DynamicPreview";
 import { PackageManager } from "./PackageManager";
 import { Terminal } from "./Terminal";
-import { EnhancedTerminal } from "./EnhancedTerminal";
 import { useToast } from "@/hooks/use-toast";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";

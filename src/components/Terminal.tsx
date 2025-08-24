@@ -1,212 +1,214 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
-import 'xterm/css/xterm.css';
+import { TerminalWebSocketService } from '../services/TerminalWebSocketService';
 import { WebTerminalService } from '../services/WebTerminalService';
 import { FileNode } from '../types/FileTypes';
 import { Button } from './ui/button';
-import { X, Minimize2, Maximize2, Terminal as TerminalIcon, Wifi, WifiOff } from 'lucide-react';
+import { Minimize2, X } from 'lucide-react';
+import 'xterm/css/xterm.css';
 
 interface TerminalProps {
-  files?: FileNode[];
-  onCommandExecuted?: (command: string) => void;
-  onFileSystemChange?: (files: FileNode[]) => void;
+  files: FileNode[];
+  onCommandExecuted?: (command: string, output: string) => void;
+  onFileSystemChange?: (newFiles: FileNode[]) => void;
   onClose?: () => void;
   className?: string;
-  showHeader?: boolean;
   sessionId?: string;
+  showHeader?: boolean;
 }
 
 export function Terminal({ 
-  files = [], 
+  files, 
   onCommandExecuted, 
   onFileSystemChange, 
   onClose, 
-  className = '',
-  showHeader = true,
-  sessionId
+  className = '', 
+  sessionId,
+  showHeader = true 
 }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const terminalInstanceRef = useRef<XTerm | null>(null);
+  const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const terminalServiceRef = useRef<TerminalWebSocketService | WebTerminalService | null>(null);
   const isInitializedRef = useRef(false);
-  const webTerminalService = useRef<WebTerminalService | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const dataHandlerRef = useRef<((data: string) => void) | null>(null);
   
+  const [isConnected, setIsConnected] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isVirtual, setIsVirtual] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [currentCommand, setCurrentCommand] = useState('');
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [connectionState, setConnectionState] = useState({ connected: false, error: null as string | null });
 
-
-  // Set up terminal WebSocket connection for real commands
-  const setupRealTerminal = useCallback(async () => {
-    console.log('🔌 Setting up real terminal with WebSocket...');
+  const setupRealTerminal = useCallback(() => {
+    if (!xtermRef.current || isInitializedRef.current) return;
     
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname === 'localhost' 
-        ? 'localhost:5000' 
-        : window.location.host.replace(':3000', ':5000');
-      const wsUrl = `${protocol}//${host}/terminal`;
+    const terminal = xtermRef.current;
+    
+    console.log('Attempting to connect to real terminal backend');
+    setError(null);
+    setIsVirtual(false);
+    
+    const wsService = new TerminalWebSocketService();
+    terminalServiceRef.current = wsService;
+    
+    // Set up event handlers
+    wsService.onConnected(() => {
+      console.log('Connected to real terminal');
+      setIsConnected(true);
+      setError(null);
+      isInitializedRef.current = true;
       
-      console.log('🔌 Connecting to:', wsUrl);
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log('✅ Terminal WebSocket connected');
-        setConnectionState({ connected: true, error: null });
-        
-        // Start terminal session
-        ws.send(JSON.stringify({
-          type: 'start_terminal',
-          data: { projectId: 'default', userId: 'default-user' }
-        }));
-      };
-
-      ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        
-        switch (message.type) {
-          case 'session_init':
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.writeln('\x1b[32m✓ Terminal session initialized\x1b[0m');
-            }
-            break;
-          case 'terminal_started':
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.writeln('\x1b[32m✓ Real terminal ready - you can now type commands!\x1b[0m');
-              terminalInstanceRef.current.writeln('\x1b[36mTry: ls, pwd, git status, node --version, npm --version\x1b[0m');
-            }
-            break;
-          case 'output':
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.write(message.data);
-            }
-            break;
-          case 'error':
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.writeln(`\x1b[31m❌ Error: ${message.data}\x1b[0m`);
-            }
-            break;
-          case 'process_exit':
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.writeln(`\x1b[33m⚠️ Process exited with code ${message.code}\x1b[0m`);
-            }
-            break;
-        }
-      };
-
-      ws.onclose = () => {
-        console.log('🔌 Terminal WebSocket disconnected');
-        setConnectionState({ connected: false, error: null });
-      };
-
-      ws.onerror = (error) => {
-        console.error('❌ Terminal WebSocket error:', error);
-        setConnectionState({ connected: false, error: 'Connection failed' });
-      };
-
-    } catch (error) {
-      console.error('❌ Failed to setup real terminal:', error);
-      setConnectionState({ connected: false, error: 'Setup failed' });
-      throw error;
-    }
+      // Start terminal session with placeholder IDs
+      wsService.startTerminal('project-1', 'user-1');
+    });
+    
+    wsService.onOutput((data: string) => {
+      terminal.write(data);
+    });
+    
+    wsService.onError((error: string) => {
+      console.error('Terminal error:', error);
+      setError(error);
+      if (!isInitializedRef.current) {
+        console.log('Failed to connect to real terminal, falling back to virtual');
+        setupVirtualTerminal();
+      }
+    });
+    
+    wsService.onConnectionFailed(() => {
+      console.log('Failed to connect to real terminal, falling back to virtual');
+      setError(null); // Clear error since we're falling back successfully
+      if (!isInitializedRef.current) {
+        setupVirtualTerminal();
+      }
+    });
+    
+    wsService.onDisconnected(() => {
+      console.log('Disconnected from real terminal');
+      setIsConnected(false);
+    });
+    
+    // Handle user input - send raw input to terminal
+    const dataHandler = (data: string) => {
+      if (wsService.isConnected()) {
+        wsService.executeCommand(data);
+      }
+    };
+    
+    dataHandlerRef.current = dataHandler;
+    terminal.onData(dataHandler);
+    
+    // Connect to WebSocket
+    wsService.connect();
   }, []);
 
-  // Set up virtual terminal as fallback
   const setupVirtualTerminal = useCallback(() => {
-    console.log('Setting up virtual terminal as fallback...');
+    if (!xtermRef.current || isInitializedRef.current) return;
     
-    if (!webTerminalService.current) {
-      webTerminalService.current = new WebTerminalService(onFileSystemChange);
-      webTerminalService.current.setupVirtualFS(files);
+    // Clear any existing handlers
+    if (terminalServiceRef.current && 'disconnect' in terminalServiceRef.current) {
+      (terminalServiceRef.current as TerminalWebSocketService).disconnect();
     }
+    
+    const terminal = xtermRef.current;
+    
+    console.log('Setting up virtual terminal');
+    setIsVirtual(true);
+    setIsConnected(true);
+    setError(null);
+    isInitializedRef.current = true;
 
-    if (terminalInstanceRef.current) {
-      terminalInstanceRef.current.writeln('\x1b[33m⚠️ Using virtual terminal (commands simulated)\x1b[0m');
-      terminalInstanceRef.current.writeln('\x1b[36mTry: ls, cd, mkdir, touch, cat, npm, git commands\x1b[0m');
-      terminalInstanceRef.current.write(webTerminalService.current.getPrompt());
-    }
-  }, [files, onFileSystemChange]);
+    const virtualTerminalService = new WebTerminalService((newFiles: FileNode[]) => {
+      onFileSystemChange?.(newFiles);
+    });
+    virtualTerminalService.setupVirtualFS(files);
+    terminalServiceRef.current = virtualTerminalService;
 
-  // Set up input handler for both real and virtual terminal
-  const setupInputHandler = useCallback((terminal: XTerm) => {
-    const dataHandler = (data: string) => {
-      const ws = wsRef.current;
-      
-      // If real terminal is connected, send input directly
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: 'command',
-          data: { type: 'input', data }
-        }));
-        return;
-      }
+    // Show session boot message only once
+    terminal.clear();
+    const initMessage = virtualTerminalService.getSessionInitMessage();
+    terminal.write(initMessage);
+    
+    const showPrompt = () => {
+      const prompt = virtualTerminalService.getPrompt();
+      terminal.write(`${prompt} `);
+    };
 
-      // Fallback to virtual terminal
-      if (!webTerminalService.current) return;
+    showPrompt();
 
-      if (data === '\r') { // Enter key
-        const command = currentCommand.trim();
-        if (command) {
-          setCommandHistory(prev => [...prev, command]);
-          
-          webTerminalService.current!.executeCommand(command).then(output => {
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.writeln('\r' + output);
-            }
-            
-            if (onCommandExecuted) {
-              onCommandExecuted(command);
-            }
-            
-            // Update file system if command affects it - simplified
-            if (onFileSystemChange && (command.startsWith('touch ') || command.startsWith('mkdir ') || command.startsWith('rm '))) {
-              // For now, just call the callback - the file system will be handled by the WebTerminalService internally
-              onFileSystemChange(files);
-            }
-          });
-          
-          setCurrentCommand('');
-        } else {
-          if (terminalInstanceRef.current) {
-            terminalInstanceRef.current.writeln('\r' + webTerminalService.current!.getPrompt());
+    // Handle virtual terminal input - single event handler
+    let currentInput = '';
+    let commandHistory: string[] = [];
+    let historyIdx = -1;
+
+    const dataHandler = async (data: string) => {
+      const code = data.charCodeAt(0);
+
+      if (code === 13) { // Enter
+        terminal.writeln('');
+        
+        if (currentInput.trim()) {
+          commandHistory.unshift(currentInput);
+          if (commandHistory.length > 100) {
+            commandHistory = commandHistory.slice(0, 100);
           }
+          
+            try {
+              const output = await virtualTerminalService.executeCommand(currentInput);
+              if (output) {
+                if (currentInput.trim() === 'clear') {
+                  // Clear command returns ANSI escape codes, write them directly
+                  terminal.write(output);
+                } else {
+                  // Process output for ANSI escape codes and proper formatting
+                  const lines = output.split('\n');
+                  lines.forEach((line, index) => {
+                    if (index === lines.length - 1 && line === '') return;
+                    // Write line directly to preserve ANSI escape codes
+                    terminal.write(line + '\r\n');
+                  });
+                }
+              }
+              onCommandExecuted?.(currentInput, output);
+            } catch (error) {
+              terminal.writeln(`\x1b[31mError: ${error instanceof Error ? error.message : 'Unknown error'}\x1b[0m`);
+            }
         }
-      } else if (data === '\u007F') { // Backspace
-        if (currentCommand.length > 0) {
-          setCurrentCommand(prev => prev.slice(0, -1));
-          if (terminalInstanceRef.current) {
-            terminalInstanceRef.current.write('\b \b');
-          }
+        
+        currentInput = '';
+        historyIdx = -1;
+        showPrompt();
+      } else if (code === 127) { // Backspace
+        if (currentInput.length > 0) {
+          currentInput = currentInput.slice(0, -1);
+          terminal.write('\b \b');
         }
-      } else if (data === '\u0003') { // Ctrl+C
-        if (terminalInstanceRef.current) {
-          terminalInstanceRef.current.writeln('^C');
-          terminalInstanceRef.current.write('\r' + webTerminalService.current!.getPrompt());
-        }
-        setCurrentCommand('');
-      } else if (data.charCodeAt(0) >= 32) { // Printable characters
-        setCurrentCommand(prev => prev + data);
-        if (terminalInstanceRef.current) {
-          terminalInstanceRef.current.write(data);
-        }
+      } else if (code === 3) { // Ctrl+C
+        terminal.writeln('^C');
+        currentInput = '';
+        historyIdx = -1;
+        showPrompt();
+      } else if (code === 12) { // Ctrl+L - Clear screen like real terminal
+        const clearOutput = await virtualTerminalService.executeCommand('clear');
+        terminal.write(clearOutput);
+        showPrompt();
+      } else if (code >= 32 && code <= 126) { // Printable characters
+        currentInput += data;
+        terminal.write(data);
       }
     };
 
     // Store the handler reference and attach it
     dataHandlerRef.current = dataHandler;
     terminal.onData(dataHandler);
-  }, [currentCommand, onCommandExecuted, onFileSystemChange]);
+  }, [files, onCommandExecuted, onFileSystemChange]);
 
   useEffect(() => {
     if (!terminalRef.current || isInitializedRef.current) return;
 
-    console.log('🚀 Initializing terminal');
+    console.log('Initializing terminal');
 
     // Initialize terminal
     const terminal = new XTerm({
@@ -246,123 +248,151 @@ export function Terminal({
 
     const fitAddon = new FitAddon();
     const webLinksAddon = new WebLinksAddon();
-
+    
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(webLinksAddon);
-
+    
     terminal.open(terminalRef.current);
     fitAddon.fit();
 
-    // Store references
-    terminalInstanceRef.current = terminal;
+    xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    isInitializedRef.current = true;
+    // Try to connect to real terminal first, fall back to virtual
+    setTimeout(() => {
+      setupRealTerminal();
+    }, 100);
 
-    // Set up input handling
-    setupInputHandler(terminal);
+    // Set up a timeout for fallback to virtual terminal
+    const fallbackTimer = setTimeout(() => {
+      if (!isInitializedRef.current) {
+        console.log('Falling back to virtual terminal after timeout');
+        setupVirtualTerminal();
+      }
+    }, 2000);
 
-    // Focus the terminal so it can receive input
-    terminal.focus();
-
-    // Try to connect to real terminal first, fallback to virtual
-    setupRealTerminal().catch(() => {
-      console.log('🔄 Real terminal unavailable, falling back to virtual terminal');
-      setupVirtualTerminal();
-    });
-
-    // Handle resize
+    // Handle terminal resize when expanded/collapsed
     const handleResize = () => {
-      if (fitAddonRef.current && terminalInstanceRef.current) {
-        fitAddonRef.current.fit();
-        const ws = wsRef.current;
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({
-            type: 'resize',
-            data: { cols: terminalInstanceRef.current.cols, rows: terminalInstanceRef.current.rows }
-          }));
-        }
+      if (fitAddon) {
+        setTimeout(() => {
+          fitAddon.fit();
+        }, 100);
       }
     };
 
     window.addEventListener('resize', handleResize);
 
     return () => {
+      console.log('Cleaning up terminal');
       window.removeEventListener('resize', handleResize);
       
-      // Close WebSocket connection
-      const ws = wsRef.current;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'stop' }));
-        ws.close();
+      // Clear fallback timer
+      clearTimeout(fallbackTimer);
+      
+      if (dataHandlerRef.current && terminal) {
+        terminal.dispose();
       }
       
-      // Dispose terminal
-      if (terminalInstanceRef.current) {
-        terminalInstanceRef.current.dispose();
-        terminalInstanceRef.current = null;
+      if (terminalServiceRef.current && 'disconnect' in terminalServiceRef.current) {
+        (terminalServiceRef.current as TerminalWebSocketService).disconnect();
       }
       
-      fitAddonRef.current = null;
+      isInitializedRef.current = false;
+      dataHandlerRef.current = null;
     };
-  }, [setupRealTerminal, setupVirtualTerminal, setupInputHandler]);
+  }, [setupRealTerminal]);
 
-  // Handle minimized state resize
+  // Trigger resize when minimized state changes
   useEffect(() => {
-    if (!isMinimized && fitAddonRef.current && terminalInstanceRef.current) {
+    if (fitAddonRef.current) {
       setTimeout(() => {
         fitAddonRef.current?.fit();
-        terminalInstanceRef.current?.focus(); // Refocus after resize
-      }, 100);
+      }, 300);
     }
   }, [isMinimized]);
 
+  const toggleMinimized = () => {
+    setIsMinimized(!isMinimized);
+  };
+
+  const handleClose = () => {
+    onClose?.();
+  };
+
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={toggleMinimized}
+          variant="outline"
+          size="sm"
+          className="bg-background/95 backdrop-blur-sm border shadow-lg hover:scale-105 transition-transform"
+        >
+          <span className="mr-2">💻</span>
+          Terminal
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex flex-col h-full bg-background border border-border rounded-lg ${className}`}>
-      {/* Terminal Header */}
+    <div 
+      className={`
+        relative bg-[#1e1e1e] border border-border rounded-lg overflow-hidden
+        transition-all duration-300 ease-out
+        ${isMinimized ? 'h-10' : 'h-full'}
+        ${className}
+      `}
+    >
+      {/* Terminal Header - only show if showHeader is true */}
       {showHeader && (
-        <div className="flex items-center justify-between p-2 border-b border-border bg-muted/50">
+        <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border">
           <div className="flex items-center gap-2">
-            <TerminalIcon className="h-4 w-4" />
-            <span className="text-sm font-medium">Terminal</span>
-            {connectionState.connected ? (
-              <div className="flex items-center gap-1 text-green-600">
-                <Wifi className="h-3 w-3" />
-                <span className="text-xs">Real Terminal</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-yellow-600">
-                <WifiOff className="h-3 w-3" />
-                <span className="text-xs">Virtual</span>
-              </div>
+            <span className="text-sm font-medium text-foreground">Terminal</span>
+            {sessionId && (
+              <span className="text-xs text-muted-foreground">#{sessionId.split('-')[1]}</span>
             )}
-            {connectionState.error && (
-              <span className="text-xs text-red-500">{connectionState.error}</span>
+            
+            {/* Status indicator */}
+            {isVirtual && (
+              <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                Virtual
+              </span>
+            )}
+            {isConnected && !isVirtual && currentSessionId && (
+              <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">
+                Connected
+              </span>
+            )}
+            {!isConnected && !isVirtual && (
+              <span className="bg-yellow-600 text-white px-2 py-1 rounded text-xs">
+                Connecting...
+              </span>
+            )}
+            {error && !isVirtual && (
+              <span className="bg-red-600 text-white px-2 py-1 rounded text-xs">
+                Error
+              </span>
             )}
           </div>
           
           <div className="flex items-center gap-1">
             <Button
+              onClick={toggleMinimized}
               variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => setIsMinimized(!isMinimized)}
-              title={isMinimized ? "Restore" : "Minimize"}
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
             >
-              {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+              <Minimize2 className="h-3 w-3" />
             </Button>
-            
-            {onClose && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={onClose}
-                title="Close Terminal"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
+            <Button
+              onClick={handleClose}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted hover:bg-red-500/20"
+            >
+              <X className="h-3 w-3" />
+            </Button>
           </div>
         </div>
       )}
@@ -371,13 +401,9 @@ export function Terminal({
       {!isMinimized && (
         <div 
           ref={terminalRef} 
-          className="flex-1 p-2"
-          style={{ minHeight: '200px' }}
-          onClick={() => {
-            // Focus terminal when clicked
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.focus();
-            }
+          className={`p-2 overflow-hidden ${showHeader ? 'h-[calc(100%-2.5rem)]' : 'h-full'}`}
+          style={{ 
+            fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", monospace' 
           }}
         />
       )}

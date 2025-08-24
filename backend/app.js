@@ -3,7 +3,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-const terminalController = require('./controllers/terminalController');
 require('dotenv').config();
 
 // Import routes
@@ -11,7 +10,6 @@ const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const fileRoutes = require('./routes/files');
 const executionRoutes = require('./routes/execution');
-const terminalRoutes = require('./routes/terminal');
 
 // Import database
 const sequelize = require('./config/database');
@@ -75,7 +73,6 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api', fileRoutes);
 app.use('/api/execution', executionRoutes);
-app.use('/api/terminal', terminalRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -170,8 +167,5 @@ process.on('SIGINT', async () => {
 });
 
 startServer();
-
-// Initialize terminal WebSocket server when app starts
-app.terminalController = terminalController;
 
 module.exports = app;
