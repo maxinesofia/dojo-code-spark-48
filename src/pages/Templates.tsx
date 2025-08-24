@@ -3,14 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText } from "lucide-react";
+import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText, Component, Triangle, Box, FileCode } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Template {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon: any; // Changed to accept Lucide icon components
+  iconColor: string; // Added color for proper branding
   category: string;
   tags: string[];
   usageCount: number;
@@ -22,7 +23,8 @@ const templates: Template[] = [
     id: "react",
     name: "React",
     description: "React example starter project",
-    icon: "⚛️",
+    icon: Component,
+    iconColor: "text-blue-400", // React blue
     category: "Frontend",
     tags: ["React", "JavaScript", "SPA"],
     usageCount: 8400000
@@ -31,7 +33,8 @@ const templates: Template[] = [
     id: "vanilla-js",
     name: "JavaScript",
     description: "The JavaScript template",
-    icon: "🟨",
+    icon: FileCode,
+    iconColor: "text-yellow-500", // JavaScript yellow
     category: "Frontend",
     tags: ["Vanilla", "JavaScript", "ES6"],
     usageCount: 3400000
@@ -40,7 +43,8 @@ const templates: Template[] = [
     id: "html-css",
     name: "HTML + CSS",
     description: "A template for HTML and CSS",
-    icon: "🌐",
+    icon: Globe,
+    iconColor: "text-orange-500", // HTML orange
     category: "Frontend",
     tags: ["HTML", "CSS", "Static"],
     usageCount: 2700000
@@ -49,7 +53,8 @@ const templates: Template[] = [
     id: "react-ts",
     name: "React (TS)",
     description: "React and TypeScript example starter project",
-    icon: "⚛️",
+    icon: Component,
+    iconColor: "text-blue-400", // React blue
     category: "Frontend",
     tags: ["React", "TypeScript", "SPA"],
     usageCount: 995500
@@ -58,7 +63,8 @@ const templates: Template[] = [
     id: "vanilla-ts",
     name: "Vanilla TypeScript",
     description: "JavaScript and TypeScript example starter project",
-    icon: "🔷",
+    icon: FileCode,
+    iconColor: "text-blue-600", // TypeScript blue
     category: "Frontend",
     tags: ["TypeScript", "Vanilla", "ES6"],
     usageCount: 315900
@@ -67,7 +73,8 @@ const templates: Template[] = [
     id: "node-express",
     name: "Node.js Express",
     description: "Node.js with Express server starter project",
-    icon: "🟢",
+    icon: Server,
+    iconColor: "text-green-500", // Node.js green
     category: "Backend",
     tags: ["Node.js", "Express", "API"],
     usageCount: 243200
@@ -76,7 +83,8 @@ const templates: Template[] = [
     id: "next-js",
     name: "Next.js",
     description: "Full-stack React framework with SSR",
-    icon: "▲",
+    icon: Triangle,
+    iconColor: "text-gray-900", // Next.js black/dark
     category: "Full Stack",
     tags: ["Next.js", "React", "SSR"],
     usageCount: 180500
@@ -85,7 +93,8 @@ const templates: Template[] = [
     id: "vue",
     name: "Vue.js",
     description: "Progressive JavaScript framework",
-    icon: "🔧",
+    icon: Component,
+    iconColor: "text-green-500", // Vue green
     category: "Frontend",
     tags: ["Vue", "JavaScript", "SPA"],
     usageCount: 156700
@@ -188,7 +197,7 @@ const Templates = () => {
             <Card key={template.id} className="group hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer border-border bg-card">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-3xl">{template.icon}</div>
+                  <template.icon className={`w-8 h-8 ${template.iconColor}`} />
                   <div className="flex items-center gap-1 text-muted-foreground text-sm">
                     <Zap className="w-3 h-3" />
                     {formatUsageCount(template.usageCount)}
