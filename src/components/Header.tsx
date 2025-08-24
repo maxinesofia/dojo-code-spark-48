@@ -124,7 +124,15 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           <Play className="w-4 h-4 mr-2" />
           Run
         </Button>
-        <Button variant="outline" size="sm" onClick={onShare}>
+        <Button variant="outline" size="sm" onClick={() => {
+          const shareUrl = window.location.href;
+          navigator.clipboard.writeText(shareUrl);
+          toast({
+            title: "Success",
+            description: "Project link copied to clipboard!"
+          });
+          onShare();
+        }}>
           <Share className="w-4 h-4 mr-2" />
           Share
         </Button>
@@ -188,31 +196,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
                     <Moon className="w-4 h-4 mr-2" />
                     Dark
                   </Button>
-                  <Button
-                    variant={theme === "system" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setTheme("system")}
-                  >
-                    System
-                  </Button>
                 </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => {
-                    localStorage.clear();
-                    toast({
-                      title: "Success",
-                      description: "All project data cleared"
-                    });
-                    window.location.reload();
-                  }}
-                >
-                  Clear All Data
-                </Button>
               </div>
             </div>
           </DialogContent>
