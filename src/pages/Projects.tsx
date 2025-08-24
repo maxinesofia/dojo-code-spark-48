@@ -377,32 +377,13 @@ const Projects = () => {
     }
 
     try {
-      // FIRST: Save the current project if it has content
-      const currentProject = ProjectService.getCurrentProject();
-      if (currentProject && currentProject.files.length > 0) {
-        // Save current project as a separate saved project with unique ID
-        const savedCurrentProject = {
-          id: `project-${Date.now()}`, // Unique ID
-          name: currentProject.name,
-          description: currentProject.description || 'Saved project',
-          template: currentProject.template,
-          isPublic: false,
-          isForked: false,
-          lastModified: new Date().toISOString(),
-          fileCount: currentProject.files.length,
-          files: currentProject.files
-        };
-        
-        // Save it to the projects list (NOT as current)
-        ProjectService.saveProject(savedCurrentProject);
-      }
-
-      // SECOND: Create the NEW project with selected template
+      // Create the NEW project with selected template - DON'T touch current project!
       const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
       const projectFiles = selectedTemplate.files(newProjectName.trim());
       
+      // Create new project with UNIQUE ID (not 'current')
       const newProject = {
-        id: 'current', // This becomes the new current project
+        id: `project-${Date.now()}`, // Unique ID - NOT 'current'
         name: newProjectName.trim(),
         description: selectedTemplate.description,
         template: newProjectTemplate,
@@ -413,7 +394,10 @@ const Projects = () => {
         files: projectFiles
       };
 
-      // THIRD: Switch to the new project (replaces current project state)
+      // Save the new project as a separate project
+      ProjectService.saveProject(newProject);
+      
+      // Now switch to the new project (this will preserve current as a saved project)
       ProjectService.switchToProject(newProject);
       
       loadProjects(); // Reload to show updated projects list
@@ -423,9 +407,12 @@ const Projects = () => {
       setIsCreateDialogOpen(false);
       
       toast({
-        title: "Success",
-        description: `New ${selectedTemplate.name} project "${newProjectName.trim()}" created!`
+        title: "Success", 
+        description: `New ${selectedTemplate.name} project "${newProjectName.trim()}" created! Your previous project is still saved.`
       });
+      
+      // Navigate to the editor to work on the new project
+      navigate('/');
       
     } catch (error) {
       console.error('Error creating project:', error);
