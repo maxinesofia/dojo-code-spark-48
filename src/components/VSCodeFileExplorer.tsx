@@ -18,7 +18,7 @@ interface VSCodeFileExplorerProps {
   onFileCreate: (name: string, type: 'file' | 'folder', content?: string, parentId?: string) => void;
   onFileDelete: (fileId: string) => void;
   onFileRename: (fileId: string, newName: string) => void;
-  onFileMove?: (fileId: string, newParentId?: string, newIndex?: number) => void;
+  onFileMove?: (fileId: string, newParentId?: string, targetNodeId?: string, position?: 'above' | 'below') => void;
   projectTitle?: string;
   onProjectTitleChange?: (newTitle: string) => void;
 }
@@ -33,7 +33,7 @@ interface FileTreeItemProps {
   onDelete?: (id: string) => void;
   onRename?: (id: string, newName: string) => void;
   onCreateInFolder?: (parentId: string, name: string, type: 'file' | 'folder', content?: string) => void;
-  onMove?: (fileId: string, newParentId?: string, newIndex?: number) => void;
+  onMove?: (fileId: string, newParentId?: string, targetNodeId?: string, position?: 'above' | 'below') => void;
   expandedFolders: Set<string>;
 }
 
@@ -55,6 +55,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dropPosition, setDropPosition] = useState<'above' | 'below' | 'inside' | null>(null);
 
   // Check if this folder is expanded
   const isExpanded = node.type === 'folder' && expandedFolders.has(node.id);
@@ -99,12 +100,34 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const height = rect.height;
+    
     if (node.type === 'folder') {
-      e.dataTransfer.dropEffect = 'move';
-      setIsDragOver(true);
+      // For folders, check if we're dropping above, below, or inside
+      if (y < height * 0.25) {
+        setDropPosition('above');
+        setIsDragOver(true);
+      } else if (y > height * 0.75) {
+        setDropPosition('below');
+        setIsDragOver(true);
+      } else {
+        setDropPosition('inside');
+        setIsDragOver(true);
+      }
     } else {
-      e.dataTransfer.dropEffect = 'move';
+      // For files, only above or below
+      if (y < height * 0.5) {
+        setDropPosition('above');
+        setIsDragOver(true);
+      } else {
+        setDropPosition('below');
+        setIsDragOver(true);
+      }
     }
+    
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -118,6 +141,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setIsDragOver(false);
+      setDropPosition(null);
     }
   };
 
@@ -128,27 +152,36 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     const draggedFileId = e.dataTransfer.getData('text/plain');
     
     if (draggedFileId && draggedFileId !== node.id) {
-      if (node.type === 'folder') {
+      if (dropPosition === 'inside' && node.type === 'folder') {
         // Drop into folder
         onMove?.(draggedFileId, node.id);
-      } else {
-        // This could be used for reordering in the future
-        console.log('Drop on file for reordering:', draggedFileId, 'onto', node.id);
+      } else if (dropPosition === 'above' || dropPosition === 'below') {
+        // Reorder - pass the target node ID and position
+        onMove?.(draggedFileId, undefined, node.id, dropPosition);
       }
     }
     
     setIsDragOver(false);
+    setDropPosition(null);
   };
 
   return (
-    <div>
+    <div className="relative">
+      {/* Drop indicators */}
+      {isDragOver && dropPosition === 'above' && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
+      )}
+      {isDragOver && dropPosition === 'below' && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
+      )}
+      
       <div
         className={cn(
           "flex items-center py-1 px-2 text-sm cursor-pointer hover:bg-muted/50 group relative",
           isSelected && "bg-primary/20 text-primary",
           isDragging && "opacity-50",
-          isDragOver && node.type === 'folder' && "bg-blue-100 border border-blue-300 border-dashed",
-          "transition-colors"
+          isDragOver && dropPosition === 'inside' && node.type === 'folder' && "bg-blue-100 border border-blue-300 border-dashed",
+          "transition-all duration-200"
         )}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}

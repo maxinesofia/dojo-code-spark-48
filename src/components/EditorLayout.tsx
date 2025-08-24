@@ -1064,8 +1064,8 @@ export function EditorLayout() {
     });
   }, [files, selectedFile, toast]);
 
-  const handleFileMove = useCallback((fileId: string, newParentId?: string) => {
-    console.log('Moving file:', fileId, 'to parent:', newParentId);
+  const handleFileMove = useCallback((fileId: string, newParentId?: string, targetNodeId?: string, position?: 'above' | 'below') => {
+    console.log('Moving file:', fileId, 'to parent:', newParentId, 'target:', targetNodeId, 'position:', position);
     
     // Find and remove the file from its current location
     let fileToMove: FileNode | null = null;
@@ -1092,15 +1092,23 @@ export function EditorLayout() {
       return result;
     };
 
-    // Add file to new location
-    const addFileToParent = (nodes: FileNode[]): FileNode[] => {
-      if (!newParentId) {
-        // Moving to root - add fileToMove to the top level
+    // Add file to new location (either parent folder or reorder)
+    const addFileToLocation = (nodes: FileNode[]): FileNode[] => {
+      if (targetNodeId && position) {
+        // Reordering - find the target node and insert before/after it
+        return reorderNodes(nodes, targetNodeId, position);
+      } else if (newParentId) {
+        // Moving to a parent folder
+        return addToParentFolder(nodes, newParentId);
+      } else {
+        // Moving to root
         return [...nodes, fileToMove!];
       }
-      
+    };
+
+    const addToParentFolder = (nodes: FileNode[], parentId: string): FileNode[] => {
       return nodes.map(node => {
-        if (node.id === newParentId && node.type === 'folder') {
+        if (node.id === parentId && node.type === 'folder') {
           // Add to this folder's children
           const updatedChildren = [...(node.children || []), fileToMove!];
           return { ...node, children: updatedChildren };
@@ -1108,7 +1116,7 @@ export function EditorLayout() {
         
         if (node.children && Array.isArray(node.children)) {
           // Recursively check children
-          const updatedChildren = addFileToParent(node.children);
+          const updatedChildren = addToParentFolder(node.children, parentId);
           return { ...node, children: updatedChildren };
         }
         
@@ -1116,18 +1124,49 @@ export function EditorLayout() {
       });
     };
 
+    const reorderNodes = (nodes: FileNode[], targetId: string, insertPosition: 'above' | 'below'): FileNode[] => {
+      const result: FileNode[] = [];
+      
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        
+        if (node.id === targetId) {
+          if (insertPosition === 'above') {
+            // Insert before this node
+            result.push(fileToMove!);
+            result.push(node);
+          } else {
+            // Insert after this node
+            result.push(node);
+            result.push(fileToMove!);
+          }
+        } else {
+          if (node.children && Array.isArray(node.children)) {
+            // Recursively check children for reordering
+            const updatedChildren = reorderNodes(node.children, targetId, insertPosition);
+            result.push({ ...node, children: updatedChildren });
+          } else {
+            result.push(node);
+          }
+        }
+      }
+      
+      return result;
+    };
+
     console.log('Starting file removal process');
     const updatedFiles = removeFile([...files]);
     console.log('File to move:', fileToMove);
     
     if (fileToMove) {
-      console.log('Adding file to new parent');
-      const finalFiles = addFileToParent(updatedFiles);
+      console.log('Adding file to new location');
+      const finalFiles = addFileToLocation(updatedFiles);
       setFiles(finalFiles);
       
+      const action = targetNodeId ? 'reordered' : 'moved';
       toast({
-        title: "File moved",
-        description: `${fileToMove.name} has been moved successfully.`,
+        title: `File ${action}`,
+        description: `${fileToMove.name} has been ${action} successfully.`,
       });
     } else {
       console.log('File not found:', fileId);
