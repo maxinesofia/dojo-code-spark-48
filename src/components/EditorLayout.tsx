@@ -1303,12 +1303,14 @@ export function EditorLayout() {
                       {/* Active Terminal */}
                       <div className="flex-1">
                         {activeTerminalId && (
-                          <EnhancedTerminal
+                          <Terminal
                             key={activeTerminalId}
-                            projectId={ProjectService.getCurrentProject()?.id}
-                            userId="current-user"
-                            className="h-full"
+                            files={files}
+                            onCommandExecuted={handleCommandExecute}
+                            onFileSystemChange={handleFileSystemChange}
                             onClose={() => closeTerminal(activeTerminalId)}
+                            sessionId={activeTerminalId}
+                            showHeader={false}
                           />
                         )}
                       </div>
