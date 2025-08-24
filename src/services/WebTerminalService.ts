@@ -316,8 +316,12 @@ export class WebTerminalService {
   }
 
   private isInDirectory(filePath: string, dirPath: string): boolean {
-    if (dirPath === '/') return true;
-    return filePath.startsWith(dirPath + '/');
+    if (dirPath === '/') {
+      // For root directory, check if file is directly in root or one level deep
+      const pathSegments = filePath.split('/').filter(s => s);
+      return pathSegments.length > 0;
+    }
+    return filePath.startsWith(dirPath + '/') && filePath !== dirPath;
   }
 
   private handleLs(args: string[]): string {
@@ -333,32 +337,29 @@ export class WebTerminalService {
     
     const items: string[] = [];
     
-    // Add directories
+    // Add directories that are direct children of the target path
     for (const dir of this.vfs.directories) {
-      if (this.isInDirectory(dir, resolvedPath) && dir !== resolvedPath) {
-        const segments = dir.split('/');
-        const dirSegments = resolvedPath.split('/');
-        if (segments.length === dirSegments.length + 1) {
-          const name = segments[segments.length - 1];
-          if (showAll || !name.startsWith('.')) {
-            items.push(longFormat ? `drwxr-xr-x 2 developer developer 4096 ${new Date().toDateString()} ${name}/` : `${name}/`);
-          }
+      if (dir === resolvedPath) continue; // Skip the current directory itself
+      
+      // Check if this directory is a direct child of the resolved path
+      const parentPath = dir.substring(0, dir.lastIndexOf('/')) || '/';
+      if (parentPath === resolvedPath) {
+        const name = dir.substring(dir.lastIndexOf('/') + 1);
+        if (showAll || !name.startsWith('.')) {
+          items.push(longFormat ? `drwxr-xr-x 2 developer developer 4096 ${new Date().toDateString()} ${name}/` : `${name}/`);
         }
       }
     }
     
-    // Add files
+    // Add files that are direct children of the target path
     for (const [filePath] of this.vfs.files) {
-      if (this.isInDirectory(filePath, resolvedPath)) {
-        const segments = filePath.split('/');
-        const dirSegments = resolvedPath.split('/');
-        if (segments.length === dirSegments.length + 1) {
-          const name = segments[segments.length - 1];
-          if (showAll || !name.startsWith('.')) {
-            const file = this.vfs.files.get(filePath)!;
-            const size = file.content.length;
-            items.push(longFormat ? `-rw-r--r-- 1 developer developer ${size} ${new Date().toDateString()} ${name}` : name);
-          }
+      const parentPath = filePath.substring(0, filePath.lastIndexOf('/')) || '/';
+      if (parentPath === resolvedPath) {
+        const name = filePath.substring(filePath.lastIndexOf('/') + 1);
+        if (showAll || !name.startsWith('.')) {
+          const file = this.vfs.files.get(filePath)!;
+          const size = file.content.length;
+          items.push(longFormat ? `-rw-r--r-- 1 developer developer ${size} ${new Date().toDateString()} ${name}` : name);
         }
       }
     }
