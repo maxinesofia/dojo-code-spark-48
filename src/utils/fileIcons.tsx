@@ -52,7 +52,8 @@ import {
   Rocket,
   Smartphone,
   Monitor,
-  Triangle
+  Triangle,
+  Star
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -67,11 +68,11 @@ const fileIconMap: FileIconMapping = {
   // JavaScript/TypeScript - Enhanced with framework context
   'js': { icon: FileCode, color: 'text-yellow-500' },
   'jsx': { icon: Component, color: 'text-blue-400' }, // React component
-  'ts': { icon: FileCode, color: 'text-blue-600' },
-  'tsx': { icon: Component, color: 'text-blue-400' }, // React TypeScript component
+  'ts': { icon: Code, color: 'text-blue-600' }, // TypeScript unique icon
+  'tsx': { icon: Layers, color: 'text-blue-500' }, // React + TypeScript combination
   'mjs': { icon: FileCode, color: 'text-yellow-500' },
   'cjs': { icon: FileCode, color: 'text-yellow-500' },
-  'vue': { icon: Component, color: 'text-green-500' }, // Vue component
+  'vue': { icon: Star, color: 'text-green-500' }, // Vue unique icon (star shape resembles Vue logo)
   'svelte': { icon: Component, color: 'text-orange-600' }, // Svelte component
   
   // Web technologies

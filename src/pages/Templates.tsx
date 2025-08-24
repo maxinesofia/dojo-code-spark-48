@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText, Component, Triangle, Box, FileCode } from "lucide-react";
+import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText, Component, Triangle, Box, FileCode, Layers, Star, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Template {
@@ -53,8 +53,8 @@ const templates: Template[] = [
     id: "react-ts",
     name: "React (TS)",
     description: "React and TypeScript example starter project",
-    icon: Component,
-    iconColor: "text-blue-400", // React blue
+    icon: Layers, // Different from regular React to show TS+React combo
+    iconColor: "text-blue-500", // Slightly different blue
     category: "Frontend",
     tags: ["React", "TypeScript", "SPA"],
     usageCount: 995500
@@ -63,7 +63,7 @@ const templates: Template[] = [
     id: "vanilla-ts",
     name: "Vanilla TypeScript",
     description: "JavaScript and TypeScript example starter project",
-    icon: FileCode,
+    icon: Code, // Unique icon for TypeScript
     iconColor: "text-blue-600", // TypeScript blue
     category: "Frontend",
     tags: ["TypeScript", "Vanilla", "ES6"],
@@ -93,7 +93,7 @@ const templates: Template[] = [
     id: "vue",
     name: "Vue.js",
     description: "Progressive JavaScript framework",
-    icon: Component,
+    icon: Star, // Unique icon for Vue (star shape resembles Vue logo)
     iconColor: "text-green-500", // Vue green
     category: "Frontend",
     tags: ["Vue", "JavaScript", "SPA"],
