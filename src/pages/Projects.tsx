@@ -878,6 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectTemplate, setNewProjectTemplate] = useState("vanilla");
@@ -892,14 +893,19 @@ const Projects = () => {
   const loadProjects = () => {
     try {
       const allProjects = ProjectService.getAllProjects();
-      const currentProject = ProjectService.getCurrentProject();
+      const currentState = ProjectService.getProjectState();
       
-      // Combine saved projects with current project
-      const projectsList = currentProject 
-        ? [currentProject, ...allProjects.filter(p => p.id !== 'current')]
-        : allProjects;
+      // Just show all saved projects, mark which one is current
+      setProjects(allProjects);
       
-      setProjects(projectsList);
+      // Find current project by matching with project state
+      if (currentState) {
+        const currentProject = allProjects.find(p => 
+          p.name === currentState.projectName && 
+          p.template === currentState.template
+        );
+        setCurrentProjectId(currentProject?.id || null);
+      }
     } catch (error) {
       console.error('Error loading projects:', error);
     }
@@ -997,13 +1003,9 @@ const Projects = () => {
   };
 
   const openProject = (project: Project) => {
-    if (project.id === 'current') {
-      navigate('/editor');
-    } else {
-      // Switch to the selected project
-      ProjectService.switchToProject(project);
-      navigate(`/editor?project=${project.id}`);
-    }
+    // Switch to the selected project
+    ProjectService.switchToProject(project);
+    navigate('/');
   };
 
   const formatDate = (dateString: string) => {
@@ -1152,7 +1154,7 @@ const Projects = () => {
                         >
                           <span>{getTemplateIcon(project.template)}</span>
                           {project.name}
-                          {project.id === 'current' && (
+                          {project.id === currentProjectId && (
                             <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
                               Current
                             </span>
@@ -1171,7 +1173,7 @@ const Projects = () => {
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
-                      {project.id !== 'current' && (
+                      {project.id !== currentProjectId && (
                         <Button
                           variant="ghost"
                           size="sm"
