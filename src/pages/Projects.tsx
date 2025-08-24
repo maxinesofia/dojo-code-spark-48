@@ -143,27 +143,31 @@ const Projects = () => {
     try {
       // First, save the current project if it exists and has changes
       const currentProject = ProjectService.getCurrentProject();
-      if (currentProject && currentProject.files.length > 0) {
-        // Save current project with a unique ID if it's still the default "current" project
-        if (currentProject.id === 'current' && currentProject.name !== 'Untitled Project') {
-          const savedProject = ProjectService.createNewProject(
-            currentProject.name,
-            currentProject.template,
-            currentProject.files
-          );
-          console.log('Saved current project as:', savedProject.name);
+      if (currentProject && currentProject.files.length > 0 && currentProject.name !== 'Untitled Project') {
+        // Only save if it's the current project with actual content
+        if (currentProject.id === 'current') {
+          // Save current project with a unique ID before creating new one
+          ProjectService.saveCurrentProject(currentProject, currentProject.files);
         }
       }
 
-      // Now create the new project
+      // Now create the new project with fresh default files
       const projectFiles = getDefaultFiles(newProjectName.trim());
-      const newProject = ProjectService.createNewProject(
-        newProjectName.trim(),
-        'vanilla',
-        projectFiles
-      );
+      
+      // Create new project and immediately switch to it (this clears current state)
+      const newProject = {
+        id: Date.now().toString(),
+        name: newProjectName.trim(),
+        description: 'New project',
+        template: 'vanilla' as const,
+        isPublic: false,
+        isForked: false,
+        lastModified: new Date().toISOString(),
+        fileCount: projectFiles.length,
+        files: projectFiles
+      };
 
-      // Switch to the new project
+      // Switch to the new project (this sets it as current)
       ProjectService.switchToProject(newProject);
       
       loadProjects(); // Reload to get the updated list
