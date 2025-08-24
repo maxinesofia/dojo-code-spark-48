@@ -32,23 +32,33 @@ interface FileTreeItemProps {
   node: FileNode;
   level: number;
   isSelected: boolean;
+  selectedFile: FileNode | null;
   onSelect: (file: FileNode) => void;
   onToggle?: (id: string) => void;
   onDelete?: (id: string) => void;
   onRename?: (id: string, newName: string) => void;
+  onCreateInFolder?: (parentId: string, name: string, type: 'file' | 'folder', content?: string) => void;
+  expandedFolders: Set<string>;
 }
 
 const FileTreeItem: React.FC<FileTreeItemProps> = ({ 
   node, 
   level, 
   isSelected, 
+  selectedFile,
   onSelect,
   onToggle,
   onDelete,
-  onRename
+  onRename,
+  onCreateInFolder,
+  expandedFolders
 }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameName, setRenameName] = useState(node.name);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  // Check if this folder is expanded
+  const isExpanded = node.type === 'folder' && expandedFolders.has(node.id);
 
   const handleClick = () => {
     if (node.type === 'folder') {
@@ -75,7 +85,6 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     }
   };
 
-
   return (
     <div>
       <div
@@ -89,16 +98,18 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
       >
         {node.type === 'folder' ? (
           <>
-            {node.isOpen ? (
+            {isExpanded ? (
               <ChevronDown className="w-4 h-4 mr-1 flex-shrink-0" />
             ) : (
               <ChevronRight className="w-4 h-4 mr-1 flex-shrink-0" />
             )}
-            {node.isOpen ? (
-              <FolderOpen className="w-4 h-4 mr-2 flex-shrink-0 text-blue-400" />
-            ) : (
-              <Folder className="w-4 h-4 mr-2 flex-shrink-0 text-blue-400" />
-            )}
+            <FileIcon 
+              fileName={node.name}
+              isFolder={true}
+              isExpanded={isExpanded}
+              size={16}
+              className="mr-2 flex-shrink-0"
+            />
           </>
         ) : (
           <>
@@ -127,6 +138,20 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 
         {/* Action buttons on hover */}
         <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-2">
+          {node.type === 'folder' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 p-0 hover:bg-sidebar-accent"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCreateDialog(true);
+              }}
+              title="Add file to folder"
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -135,6 +160,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
               e.stopPropagation();
               setIsRenaming(true);
             }}
+            title="Rename"
           >
             <Edit className="h-3 w-3" />
           </Button>
@@ -146,24 +172,40 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
               e.stopPropagation();
               onDelete?.(node.id);
             }}
+            title="Delete"
           >
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       </div>
       
-      {node.type === 'folder' && node.isOpen && node.children && (
+      {/* File Create Dialog for this folder */}
+      {node.type === 'folder' && (
+        <FileCreateDialog
+          isOpen={showCreateDialog}
+          onClose={() => setShowCreateDialog(false)}
+          onCreateFile={(name, type, content) => {
+            onCreateInFolder?.(node.id, name, type, content);
+          }}
+          parentFolder={node.name}
+        />
+      )}
+      
+      {isExpanded && node.children && (
         <div>
           {Array.isArray(node.children) ? node.children.map((child) => (
             <FileTreeItem
               key={child.id}
               node={child}
               level={level + 1}
-              isSelected={isSelected && child.id === node.id}
+              isSelected={selectedFile?.id === child.id}
+              selectedFile={selectedFile}
               onSelect={onSelect}
               onToggle={onToggle}
               onDelete={onDelete}
               onRename={onRename}
+              onCreateInFolder={onCreateInFolder}
+              expandedFolders={expandedFolders}
             />
           )) : null}
         </div>
@@ -204,10 +246,9 @@ export function VSCodeFileExplorer({
     setExpandedFolders(newExpanded);
   };
 
-  const filesWithExpandedState = safeFiles.map(file => ({
-    ...file,
-    isOpen: expandedFolders.has(file.id)
-  }));
+  const handleCreateInFolder = (parentId: string, name: string, type: 'file' | 'folder', content?: string) => {
+    onFileCreate(name, type, content, parentId);
+  };
 
   return (
     <div className="h-full bg-sidebar text-sidebar-foreground flex flex-col">
@@ -242,16 +283,19 @@ export function VSCodeFileExplorer({
           
           {/* File Tree */}
           <div className="ml-2">
-            {filesWithExpandedState.map((node) => (
+            {safeFiles.map((node) => (
               <FileTreeItem
                 key={node.id}
                 node={node}
                 level={0}
                 isSelected={selectedFile?.id === node.id}
+                selectedFile={selectedFile}
                 onSelect={onFileSelect}
                 onToggle={toggleFolder}
                 onDelete={onFileDelete}
                 onRename={onFileRename}
+                onCreateInFolder={handleCreateInFolder}
+                expandedFolders={expandedFolders}
               />
             ))}
           </div>

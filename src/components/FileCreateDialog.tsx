@@ -15,9 +15,10 @@ interface FileCreateDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateFile: (name: string, type: 'file' | 'folder', content?: string) => void;
+  parentFolder?: string; // Optional parent folder name for context
 }
 
-export function FileCreateDialog({ isOpen, onClose, onCreateFile }: FileCreateDialogProps) {
+export function FileCreateDialog({ isOpen, onClose, onCreateFile, parentFolder }: FileCreateDialogProps) {
   const [fileName, setFileName] = useState('');
   const [folderName, setFolderName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +69,9 @@ export function FileCreateDialog({ isOpen, onClose, onCreateFile }: FileCreateDi
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Files or Folders</DialogTitle>
+          <DialogTitle>
+            {parentFolder ? `Add to ${parentFolder}` : 'Add Files or Folders'}
+          </DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="file" className="w-full">
