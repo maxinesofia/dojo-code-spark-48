@@ -38,34 +38,6 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
     if (editedName.trim() && editedName !== projectName) {
       onProjectNameChange?.(editedName.trim());
       
-      // Update current project state
-      const currentState = localStorage.getItem('tutorials-dojo-project-state');
-      if (currentState) {
-        try {
-          const state = JSON.parse(currentState);
-          state.projectName = editedName.trim();
-          localStorage.setItem('tutorials-dojo-project-state', JSON.stringify(state));
-        } catch (error) {
-          console.error('Error updating project name:', error);
-        }
-      }
-      
-      // Update projects list if this is the current project
-      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
-      if (savedProjects) {
-        try {
-          const projects = JSON.parse(savedProjects);
-          const updatedProjects = projects.map((project: any) => 
-            project.id === 'current' 
-              ? { ...project, name: editedName.trim(), lastModified: new Date().toISOString() }
-              : project
-          );
-          localStorage.setItem('tutorials-dojo-projects', JSON.stringify(updatedProjects));
-        } catch (error) {
-          console.error('Error updating projects list:', error);
-        }
-      }
-      
       toast({
         title: "Success",
         description: "Project renamed successfully!"

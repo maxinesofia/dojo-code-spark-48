@@ -7,115 +7,38 @@ import { Label } from "@/components/ui/label";
 import { Trash2, Edit3, Plus, Calendar, FileText, FolderOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { ProjectService, Project } from "@/services/ProjectService";
+import { FileNode } from "@/types/FileTypes";
 
-interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  lastModified: string;
-  fileCount: number;
-  template?: string;
-  files?: any[]; // Add files property for project data
-}
-
-const Projects = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
-  const loadProjects = () => {
-    const savedProjects = localStorage.getItem('tutorials-dojo-projects');
-    if (savedProjects) {
-      try {
-        setProjects(JSON.parse(savedProjects));
-      } catch (error) {
-        console.error('Error loading projects:', error);
-      }
-    }
-
-    // Check if there's a current project state
-    const currentProjectState = localStorage.getItem('tutorials-dojo-project-state');
-    if (currentProjectState) {
-      try {
-        const state = JSON.parse(currentProjectState);
-        const currentProject: Project = {
-          id: 'current',
-          name: state.projectName || 'Untitled Project',
-          description: 'Your current project',
-          lastModified: state.lastSaved || new Date().toISOString(),
-          fileCount: state.files?.length || 0,
-          template: state.template || 'vanilla'
-        };
-        
-        setProjects(prev => {
-          const existing = prev.find(p => p.id === 'current');
-          if (existing) {
-            return prev.map(p => p.id === 'current' ? currentProject : p);
-          }
-          return [currentProject, ...prev];
-        });
-      } catch (error) {
-        console.error('Error loading current project:', error);
-      }
-    }
-  };
-
-  const saveProjects = (updatedProjects: Project[]) => {
-    localStorage.setItem('tutorials-dojo-projects', JSON.stringify(updatedProjects.filter(p => p.id !== 'current')));
-  };
-
-  const createNewProject = () => {
-    if (!newProjectName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a project name",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const newProject = {
-      id: Date.now().toString(),
-      name: newProjectName.trim(),
-      description: 'New project',
-      lastModified: new Date().toISOString(),
-      fileCount: 3,
-      template: 'vanilla',
-      files: [
-        {
-          id: 'index.html',
-          name: 'index.html',
-          type: 'file' as const,
-          content: `<!DOCTYPE html>
+// Default files for new projects
+const getDefaultFiles = (projectName: string): FileNode[] => [
+  {
+    id: 'index.html',
+    name: 'index.html',
+    type: 'file',
+    content: `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${newProjectName}</title>
+    <title>${projectName}</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to ${newProjectName}!</h1>
+        <h1>Welcome to ${projectName}!</h1>
         <p>Start building your amazing project here.</p>
         <button id="clickMe">Click me!</button>
     </div>
     <script src="script.js"></script>
 </body>
 </html>`
-        },
-        {
-          id: 'styles.css',
-          name: 'styles.css',
-          type: 'file' as const,
-          content: `body {
+  },
+  {
+    id: 'styles.css',
+    name: 'styles.css',
+    type: 'file',
+    content: `body {
     font-family: system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     margin: 0;
@@ -157,13 +80,13 @@ button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
 }`
-        },
-        {
-          id: 'script.js',
-          name: 'script.js',
-          type: 'file' as const,
-          content: `// ${newProjectName} JavaScript
-console.log('Welcome to ${newProjectName}!');
+  },
+  {
+    id: 'script.js',
+    name: 'script.js',
+    type: 'file',
+    content: `// ${projectName} JavaScript
+console.log('Welcome to ${projectName}!');
 
 document.addEventListener('DOMContentLoaded', function() {
     const button = document.getElementById('clickMe');
@@ -176,13 +99,55 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });`
-        }
-      ]
-    };
+  }
+];
 
-    const updatedProjects = [newProject, ...projects.filter(p => p.id !== 'current')];
-    setProjects([...updatedProjects]);
-    saveProjects(updatedProjects);
+const Projects = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = () => {
+    try {
+      const allProjects = ProjectService.getAllProjects();
+      const currentProject = ProjectService.getCurrentProject();
+      
+      // Combine saved projects with current project
+      const projectsList = currentProject 
+        ? [currentProject, ...allProjects.filter(p => p.id !== 'current')]
+        : allProjects;
+      
+      setProjects(projectsList);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
+  const createNewProject = () => {
+    if (!newProjectName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a project name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const projectFiles = getDefaultFiles(newProjectName.trim());
+    const newProject = ProjectService.createNewProject(
+      newProjectName.trim(),
+      'vanilla',
+      projectFiles
+    );
+    
+    loadProjects(); // Reload to get the updated list
     
     setNewProjectName("");
     setIsCreateDialogOpen(false);
@@ -203,29 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    const updatedProjects = projects.map(project => 
-      project.id === projectId 
-        ? { ...project, name: newName.trim(), lastModified: new Date().toISOString() }
-        : project
-    );
-    
-    setProjects(updatedProjects);
-    saveProjects(updatedProjects);
+    ProjectService.renameProject(projectId, newName.trim());
+    loadProjects(); // Reload to get the updated list
     setEditingProject(null);
-
-    // If renaming current project, update the project state
-    if (projectId === 'current') {
-      const currentState = localStorage.getItem('tutorials-dojo-project-state');
-      if (currentState) {
-        try {
-          const state = JSON.parse(currentState);
-          state.projectName = newName.trim();
-          localStorage.setItem('tutorials-dojo-project-state', JSON.stringify(state));
-        } catch (error) {
-          console.error('Error updating current project name:', error);
-        }
-      }
-    }
     
     toast({
       title: "Success",
@@ -234,14 +179,8 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const deleteProject = (projectId: string) => {
-    if (projectId === 'current') {
-      // Clear current project state
-      localStorage.removeItem('tutorials-dojo-project-state');
-    }
-    
-    const updatedProjects = projects.filter(project => project.id !== projectId);
-    setProjects(updatedProjects);
-    saveProjects(updatedProjects);
+    ProjectService.deleteProject(projectId);
+    loadProjects(); // Reload to get the updated list
     
     toast({
       title: "Success",
@@ -253,25 +192,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (project.id === 'current') {
       navigate('/editor');
     } else {
-      // Load project files and navigate to editor
-      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
-      if (savedProjects) {
-        try {
-          const projects = JSON.parse(savedProjects);
-          const projectData = projects.find((p: Project) => p.id === project.id);
-          if (projectData && projectData.files) {
-            // Store the project files as current project
-            localStorage.setItem('tutorials-dojo-project-state', JSON.stringify({
-              projectName: project.name,
-              template: project.template,
-              files: projectData.files,
-              lastSaved: new Date().toISOString()
-            }));
-          }
-        } catch (error) {
-          console.error('Error loading project files:', error);
-        }
-      }
+      // Switch to the selected project
+      ProjectService.switchToProject(project);
       navigate(`/editor?project=${project.id}`);
     }
   };

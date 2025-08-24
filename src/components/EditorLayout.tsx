@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { Terminal as TerminalIcon, GitBranch, Settings, Package, X } from "lucide-react";
+import { ProjectService } from "@/services/ProjectService";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
 
@@ -874,27 +875,34 @@ export function EditorLayout() {
     const projectId = searchParams.get('project');
     
     if (template && template !== 'default') {
-      return getTemplateFiles(template);
+      const templateFiles = getTemplateFiles(template);
+      // Initialize project state for new template
+      ProjectService.saveCurrentProject({ name: 'New Project', template }, templateFiles);
+      return templateFiles;
     }
     
     if (projectId) {
-      // Try to load project files
-      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
-      if (savedProjects) {
-        try {
-          const projects = JSON.parse(savedProjects);
-          const project = projects.find((p: any) => p.id === projectId);
-          if (project && project.files) {
-            return project.files;
-          }
-        } catch (error) {
-          console.error('Error loading project:', error);
-        }
+      const project = ProjectService.loadProject(projectId);
+      if (project) {
+        ProjectService.switchToProject(project);
+        return project.files;
       }
     }
     
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : defaultFiles;
+    // Load current project state or default
+    const projectState = ProjectService.getProjectState();
+    if (projectState) {
+      return projectState.files;
+    }
+    
+    // Initialize with default files
+    ProjectService.saveCurrentProject({ name: 'Untitled Project', template: 'vanilla' }, defaultFiles);
+    return defaultFiles;
+  });
+
+  const [projectName, setProjectName] = useState<string>(() => {
+    const projectState = ProjectService.getProjectState();
+    return projectState?.projectName || 'Untitled Project';
   });
   
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
@@ -902,38 +910,27 @@ export function EditorLayout() {
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
   const [terminalSessions, setTerminalSessions] = useState<{ id: string; title: string; active: boolean }[]>([]);
   const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<string>(() => {
+    const projectState = ProjectService.getProjectState();
+    return projectState?.lastSaved || new Date().toISOString();
+  });
 
   // Auto-save functionality with project updates
   useEffect(() => {
     const saveTimer = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
-      
-      // Update project metadata if this is a project
-      const projectId = searchParams.get('project');
-      if (projectId) {
-        const savedProjects = localStorage.getItem('tutorials-dojo-projects');
-        if (savedProjects) {
-          try {
-            const projects = JSON.parse(savedProjects);
-            const projectIndex = projects.findIndex((p: any) => p.id === projectId);
-            if (projectIndex >= 0) {
-              projects[projectIndex] = {
-                ...projects[projectIndex],
-                files: files,
-                fileCount: files.length,
-                lastModified: new Date().toISOString()
-              };
-              localStorage.setItem('tutorials-dojo-projects', JSON.stringify(projects));
-            }
-          } catch (error) {
-            console.error('Error updating project:', error);
-          }
-        }
-      }
+      const currentProject = ProjectService.getCurrentProject();
+      ProjectService.saveCurrentProject(
+        { 
+          name: projectName, 
+          template: currentProject?.template || 'vanilla' 
+        }, 
+        files
+      );
+      setLastSaved(new Date().toISOString());
     }, 1000);
     
     return () => clearTimeout(saveTimer);
-  }, [files, searchParams]);
+  }, [files, projectName]);
 
   // Select first file on mount
   useEffect(() => {
@@ -1070,12 +1067,25 @@ export function EditorLayout() {
   }, [files, selectedFile, toast]);
 
   const handleSave = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+    const currentProject = ProjectService.getCurrentProject();
+    ProjectService.saveCurrentProject(
+      { 
+        name: projectName, 
+        template: currentProject?.template || 'vanilla' 
+      }, 
+      files
+    );
+    setLastSaved(new Date().toISOString());
     toast({
       title: "Project saved",
       description: "Your project has been saved locally.",
     });
-  }, [files, toast]);
+  }, [files, projectName, toast]);
+
+  const handleProjectNameChange = useCallback((newName: string) => {
+    setProjectName(newName);
+    ProjectService.renameProject('current', newName);
+  }, []);
 
   const handleRun = useCallback(() => {
     toast({
@@ -1173,10 +1183,12 @@ export function EditorLayout() {
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header 
-        projectName="Tutorials Dojo Project"
+        projectName={projectName}
         onSave={handleSave}
         onRun={handleRun}
         onShare={handleShare}
+        onProjectNameChange={handleProjectNameChange}
+        lastSaved={lastSaved}
       />
       
       <div className="flex-1 flex overflow-hidden">
