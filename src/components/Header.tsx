@@ -3,6 +3,7 @@ import { Save, Share, Play, Settings, User, FileText, Moon, Sun, CheckCircle, Ed
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useState, useEffect } from "react";
+import { EditableProjectTitle } from './EditableProjectTitle';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,9 +19,11 @@ interface HeaderProps {
   onToggleTerminal?: () => void;
   isSaving?: boolean;
   onProjectNameChange?: (name: string) => void;
+  projectTitle?: string;
+  onProjectTitleChange?: (newTitle: string) => void;
 }
 
-export function Header({ projectName, onSave, onRun, onShare, onTogglePackageManager, onToggleTerminal, isSaving, onProjectNameChange }: HeaderProps) {
+export function Header({ projectName, onSave, onRun, onShare, onTogglePackageManager, onToggleTerminal, isSaving, onProjectNameChange, projectTitle = projectName, onProjectTitleChange }: HeaderProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -52,7 +55,10 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">TD</span>
           </div>
-          <span className="font-semibold text-foreground">Tutorials Dojo</span>
+          <EditableProjectTitle 
+            title={projectTitle}
+            onTitleChange={onProjectTitleChange || (() => {})}
+          />
         </div>
         
         <Button 

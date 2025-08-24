@@ -905,6 +905,8 @@ export function EditorLayout() {
     return projectState?.projectName || 'Untitled Project';
   });
   
+  const [projectTitle, setProjectTitle] = useState("TUTORIALS DOJO");
+  
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
@@ -1182,6 +1184,8 @@ export function EditorLayout() {
         onRun={handleRun}
         onShare={handleShare}
         onProjectNameChange={handleProjectNameChange}
+        projectTitle={projectTitle}
+        onProjectTitleChange={setProjectTitle}
       />
       
       <div className="flex-1 flex overflow-hidden">
@@ -1191,13 +1195,15 @@ export function EditorLayout() {
             <div className="h-full bg-sidebar border-r border-sidebar-border flex flex-col">
               {/* File Explorer */}
               <div className="flex-1 min-h-0">
-                <VSCodeFileExplorer
+                <VSCodeFileExplorer 
                   files={files}
                   selectedFile={selectedFile}
                   onFileSelect={handleFileSelect}
                   onFileCreate={handleFileCreate}
                   onFileDelete={handleFileDelete}
                   onFileRename={handleFileRename}
+                  projectTitle={projectTitle}
+                  onProjectTitleChange={setProjectTitle}
                 />
               </div>
               

@@ -1,21 +1,14 @@
-import React, { useState } from "react";
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  File, 
-  Folder, 
-  FolderOpen,
-  Plus,
-  Search,
-  Trash2,
-  Edit
-} from "lucide-react";
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown, ChevronRight, Folder, FolderOpen, File, Plus, MoreHorizontal, Trash2, Edit, FileText, Type, Hash, Database, Settings, Search } from 'lucide-react';
+import { FileNode } from '../types/FileTypes';
+import { getFileIcon } from '../utils/fileIcons';
+import { FileContextMenu } from './FileContextMenu';
+import { FileCreateDialog } from './FileCreateDialog';
+import { EditableProjectTitle } from './EditableProjectTitle';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { FileNode } from "../types/FileTypes";
 import { PackageService, Package } from "../services/PackageService";
-import { FileCreateDialog } from "./FileCreateDialog";
 import { FileIcon } from "@/utils/fileIcons";
 
 interface VSCodeFileExplorerProps {
@@ -25,6 +18,8 @@ interface VSCodeFileExplorerProps {
   onFileCreate: (name: string, type: 'file' | 'folder', content?: string, parentId?: string) => void;
   onFileDelete: (fileId: string) => void;
   onFileRename: (fileId: string, newName: string) => void;
+  projectTitle?: string;
+  onProjectTitleChange?: (newTitle: string) => void;
 }
 
 interface FileTreeItemProps {
@@ -219,7 +214,9 @@ export function VSCodeFileExplorer({
   onFileSelect,
   onFileCreate,
   onFileDelete,
-  onFileRename
+  onFileRename,
+  projectTitle = "TUTORIALS DOJO",
+  onProjectTitleChange
 }: VSCodeFileExplorerProps) {
   // Debug logging and safety check
   console.log('VSCodeFileExplorer received files:', files, 'Type:', typeof files, 'Is array:', Array.isArray(files));
@@ -274,7 +271,10 @@ export function VSCodeFileExplorer({
           <div className="flex items-center text-sm font-medium py-1">
             <ChevronDown className="w-4 h-4 mr-1" />
             <Folder className="w-4 h-4 mr-2 text-blue-400" />
-            <span>TUTORIALS DOJO</span>
+            <EditableProjectTitle 
+              title={projectTitle}
+              onTitleChange={onProjectTitleChange || (() => {})}
+            />
           </div>
           
           {/* File Tree */}
