@@ -1015,9 +1015,6 @@ export class WebTerminalService {
 
   private getHelpText(): string {
     return `
-Virtual Terminal Help - CodeSandbox Style Implementation
-========================================================
-
 File System Commands:
   ls, dir           List directory contents (-la for detailed)
   cd <path>         Change directory
