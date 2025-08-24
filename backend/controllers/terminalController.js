@@ -1,6 +1,9 @@
-const { spawn } = require('child_process');
+const { spawn, pty } = require('child_process');
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
 const gcpFirecrackerService = require('../services/gcpFirecrackerService');
 const { Project, File } = require('../models');
 
@@ -169,23 +172,46 @@ class TerminalController {
   }
 
   async connectToVMTerminal(vmId) {
-    // Connect to the Firecracker VM terminal
-    // This would use the VM's console or SSH connection
+    // Create a working directory for this session
+    const sessionDir = path.join(os.tmpdir(), `terminal-${vmId}`);
+    if (!fs.existsSync(sessionDir)) {
+      fs.mkdirSync(sessionDir, { recursive: true });
+      
+      // Initialize as git repository
+      const initProcess = spawn('git', ['init'], { cwd: sessionDir });
+      await new Promise((resolve) => initProcess.on('close', resolve));
+    }
+
+    // Start shell with proper environment
+    const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/bash';
+    const shellArgs = process.platform === 'win32' ? [] : ['--login'];
     
-    // For now, simulate with a local bash process (replace with actual VM connection)
-    const terminalProcess = spawn('bash', [], {
+    const terminalProcess = spawn(shell, shellArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
+      cwd: sessionDir,
       env: {
         ...process.env,
         TERM: 'xterm-256color',
-        PS1: `\\[\\033[32m\\]developer@firecracker-${vmId.slice(0,8)}\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ `
+        COLORTERM: 'truecolor',
+        PS1: `\\[\\033[32m\\]developer@sandbox-${vmId.slice(0,8)}\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ `,
+        HOME: sessionDir,
+        PATH: process.env.PATH,
+        SHELL: shell
       }
     });
+
+    // Send initial welcome message
+    setTimeout(() => {
+      terminalProcess.stdin.write('clear\n');
+      terminalProcess.stdin.write('echo "Welcome to Git Bash Terminal - Tutorials Dojo"\n');
+      terminalProcess.stdin.write('echo "Git repository initialized in: $(pwd)"\n');
+      terminalProcess.stdin.write('git --version\n');
+    }, 100);
 
     return terminalProcess;
   }
 
-  async executeCommand(sessionId, command, ws) {
+  async executeCommand(sessionId, data, ws) {
     try {
       const session = this.activeSessions.get(sessionId);
       
@@ -193,11 +219,26 @@ class TerminalController {
         throw new Error('Terminal session not found');
       }
 
-      // Send command to terminal process
-      session.process.stdin.write(command + '\n');
+      // Handle different types of input
+      if (typeof data === 'string') {
+        // Direct command input
+        session.process.stdin.write(data);
+      } else if (data.type === 'input') {
+        // Character-by-character input for real-time interaction
+        session.process.stdin.write(data.data);
+      } else if (data.type === 'signal') {
+        // Handle Ctrl+C, Ctrl+Z etc
+        if (data.signal === 'SIGINT') {
+          session.process.kill('SIGINT');
+        } else if (data.signal === 'SIGTERM') {
+          session.process.kill('SIGTERM');
+        }
+      }
 
-      // Log command execution
-      console.log(`Command executed in session ${sessionId}: ${command}`);
+      // Log command execution (only log actual commands, not individual characters)
+      if (typeof data === 'string' && data.includes('\n')) {
+        console.log(`Command executed in session ${sessionId}: ${data.trim()}`);
+      }
 
     } catch (error) {
       console.error('Execute command error:', error);

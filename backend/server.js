@@ -20,7 +20,14 @@ const startServer = async () => {
       console.log(`🚀 Server running on port ${config.port}`);
       console.log(`📱 Environment: ${config.environment}`);
       console.log(`🔗 API: http://localhost:${config.port}/api`);
+      console.log(`🖥️  Terminal WebSocket: ws://localhost:${config.port}/terminal`);
     });
+
+    // Initialize terminal WebSocket server
+    if (app.terminalController) {
+      app.terminalController.initializeWebSocketServer(server);
+      console.log('✅ Terminal WebSocket server initialized');
+    }
 
     // Graceful shutdown
     process.on('SIGTERM', () => {

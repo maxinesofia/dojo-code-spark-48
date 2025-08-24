@@ -168,4 +168,7 @@ process.on('SIGINT', async () => {
 
 startServer();
 
+// Initialize terminal WebSocket server when app starts
+app.terminalController = terminalController;
+
 module.exports = app;
