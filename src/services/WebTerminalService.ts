@@ -85,8 +85,16 @@ export class WebTerminalService {
   }
 
   getSessionInitMessage(): string {
+<<<<<<< HEAD
   // Minimal silent initialization (enable bracketed paste & set title) with no banner text
   return '\x1b[?2004h\x1b]0;Terminal\x07';
+=======
+    if (this.sessionInitialized) {
+      return ''; // Don't show banner again
+    }
+    this.sessionInitialized = true;
+    return 'Virtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
+>>>>>>> 6b1f8314125260fd1e2ff82e289dbea265dd3fab
   }
 
   getPrompt(): string {
@@ -159,7 +167,7 @@ export class WebTerminalService {
 
         case 'clear':
         case 'cls':
-          return '\x1b[2J\x1b[H'; // ANSI clear screen codes
+          return '\x1b[2J\x1b[H';
 
         case 'cp':
         case 'copy':
