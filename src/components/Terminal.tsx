@@ -101,37 +101,18 @@ export function Terminal({
     wsService.onError((error: string) => {
       console.error('❌ Terminal error:', error);
       setError(error);
-<<<<<<< HEAD
-      
-      // Fall back to virtual terminal after a short delay
-      if (!isInitializedRef.current) {
-        setTimeout(() => {
-          setupVirtualTerminal();
-        }, 1000);
-=======
       if (!isInitializedRef.current) {
         console.log('Failed to connect to real terminal, falling back to virtual');
         setupVirtualTerminal();
->>>>>>> 6b1f8314125260fd1e2ff82e289dbea265dd3fab
       }
     });
     
     wsService.onConnectionFailed(() => {
-<<<<<<< HEAD
-      console.log('❌ Failed to connect to real terminal, falling back to virtual');
-      setError('Real terminal unavailable');
-      
-      // Immediate fallback to virtual terminal
-      setTimeout(() => {
-        setupVirtualTerminal();
-      }, 500);
-=======
       console.log('Failed to connect to real terminal, falling back to virtual');
       setError(null); // Clear error since we're falling back successfully
       if (!isInitializedRef.current) {
         setupVirtualTerminal();
       }
->>>>>>> 6b1f8314125260fd1e2ff82e289dbea265dd3fab
     });
     
     wsService.onDisconnected(() => {
@@ -196,15 +177,10 @@ export function Terminal({
     
     // Connect to WebSocket
     wsService.connect();
-<<<<<<< HEAD
-  }, []);  const setupVirtualTerminal = useCallback(() => {
-    if (!xtermRef.current) return;
-=======
   }, []);
 
   const setupVirtualTerminal = useCallback(() => {
     if (!xtermRef.current || isInitializedRef.current) return;
->>>>>>> 6b1f8314125260fd1e2ff82e289dbea265dd3fab
     
     // Clear any existing handlers
     if (terminalServiceRef.current && 'disconnect' in terminalServiceRef.current) {
