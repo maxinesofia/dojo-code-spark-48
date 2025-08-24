@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Header } from "./Header";
 import { VSCodeFileExplorer } from "./VSCodeFileExplorer";
 import { FileNode } from "../types/FileTypes";
+import { SplitEditor } from "./SplitEditor";
 import { CodeEditor } from "./CodeEditor";
 import { DynamicPreview } from "./DynamicPreview";
 import { PackageManager } from "./PackageManager";
@@ -959,12 +960,13 @@ export function EditorLayout() {
     }
   }, []);
 
-  const handleFileChange = useCallback((content: string | undefined) => {
-    if (!selectedFile || !content) return;
+  const handleFileChange = useCallback((content: string | undefined, fileId?: string) => {
+    const targetFileId = fileId || selectedFile?.id;
+    if (!targetFileId || content === undefined) return;
 
     const updateFileContent = (nodes: FileNode[]): FileNode[] => {
       return nodes.map(node => {
-        if (node.id === selectedFile.id) {
+        if (node.id === targetFileId) {
           return { ...node, content };
         }
         if (node.children) {
@@ -1345,21 +1347,11 @@ export function EditorLayout() {
               {/* Code Editor */}
               <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
                 <div className="h-full bg-background">
-                  {selectedFile ? (
-                    <CodeEditor
-                      value={selectedFile.content || ''}
-                      language="javascript"
-                      onChange={handleFileChange}
-                      fileName={selectedFile.name}
-                    />
-                  ) : (
-                  <div className="h-full flex items-center justify-center bg-background">
-                    <div className="text-center text-muted-foreground">
-                      <h2 className="text-2xl font-semibold mb-2">Welcome to Tutorials Dojo</h2>
-                      <p>Select a file from the explorer to start coding</p>
-                    </div>
-                  </div>
-                  )}
+                  <SplitEditor
+                    selectedFile={selectedFile}
+                    onFileChange={handleFileChange}
+                    files={files}
+                  />
                 </div>
               </ResizablePanel>
               
