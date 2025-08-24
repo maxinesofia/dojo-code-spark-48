@@ -910,10 +910,6 @@ export function EditorLayout() {
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
   const [terminalSessions, setTerminalSessions] = useState<{ id: string; title: string; active: boolean }[]>([]);
   const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
-  const [lastSaved, setLastSaved] = useState<string>(() => {
-    const projectState = ProjectService.getProjectState();
-    return projectState?.lastSaved || new Date().toISOString();
-  });
 
   // Auto-save functionality with project updates
   useEffect(() => {
@@ -926,7 +922,6 @@ export function EditorLayout() {
         }, 
         files
       );
-      setLastSaved(new Date().toISOString());
     }, 1000);
     
     return () => clearTimeout(saveTimer);
@@ -1075,7 +1070,6 @@ export function EditorLayout() {
       }, 
       files
     );
-    setLastSaved(new Date().toISOString());
     toast({
       title: "Project saved",
       description: "Your project has been saved locally.",
@@ -1188,7 +1182,6 @@ export function EditorLayout() {
         onRun={handleRun}
         onShare={handleShare}
         onProjectNameChange={handleProjectNameChange}
-        lastSaved={lastSaved}
       />
       
       <div className="flex-1 flex overflow-hidden">

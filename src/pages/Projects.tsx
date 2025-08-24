@@ -140,22 +140,49 @@ const Projects = () => {
       return;
     }
 
-    const projectFiles = getDefaultFiles(newProjectName.trim());
-    const newProject = ProjectService.createNewProject(
-      newProjectName.trim(),
-      'vanilla',
-      projectFiles
-    );
-    
-    loadProjects(); // Reload to get the updated list
-    
-    setNewProjectName("");
-    setIsCreateDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "New project created successfully!"
-    });
+    try {
+      // First, save the current project if it exists and has changes
+      const currentProject = ProjectService.getCurrentProject();
+      if (currentProject && currentProject.files.length > 0) {
+        // Save current project with a unique ID if it's still the default "current" project
+        if (currentProject.id === 'current' && currentProject.name !== 'Untitled Project') {
+          const savedProject = ProjectService.createNewProject(
+            currentProject.name,
+            currentProject.template,
+            currentProject.files
+          );
+          console.log('Saved current project as:', savedProject.name);
+        }
+      }
+
+      // Now create the new project
+      const projectFiles = getDefaultFiles(newProjectName.trim());
+      const newProject = ProjectService.createNewProject(
+        newProjectName.trim(),
+        'vanilla',
+        projectFiles
+      );
+
+      // Switch to the new project
+      ProjectService.switchToProject(newProject);
+      
+      loadProjects(); // Reload to get the updated list
+      
+      setNewProjectName("");
+      setIsCreateDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "New project created successfully!"
+      });
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create project",
+        variant: "destructive"
+      });
+    }
   };
 
   const renameProject = (projectId: string, newName: string) => {

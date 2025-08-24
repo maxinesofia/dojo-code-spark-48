@@ -17,11 +17,10 @@ interface HeaderProps {
   onTogglePackageManager?: () => void;
   onToggleTerminal?: () => void;
   isSaving?: boolean;
-  lastSaved?: string;
   onProjectNameChange?: (name: string) => void;
 }
 
-export function Header({ projectName, onSave, onRun, onShare, onTogglePackageManager, onToggleTerminal, isSaving, lastSaved, onProjectNameChange }: HeaderProps) {
+export function Header({ projectName, onSave, onRun, onShare, onTogglePackageManager, onToggleTerminal, isSaving, onProjectNameChange }: HeaderProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -121,12 +120,6 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           {isSaving ? "Saving..." : "Save"}
         </Button>
         
-        {lastSaved && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <CheckCircle className="w-3 h-3 text-green-500" />
-            <span>Auto-saved {new Date(lastSaved).toLocaleTimeString()}</span>
-          </div>
-        )}
         <Button variant="default" size="sm" onClick={onRun}>
           <Play className="w-4 h-4 mr-2" />
           Run
