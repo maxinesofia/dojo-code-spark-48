@@ -1256,8 +1256,9 @@ export function EditorLayout() {
               {/* Terminal Panel - Always render but hide when closed */}
               <ResizableHandle style={{ display: isTerminalOpen ? 'flex' : 'none' }} />
               <ResizablePanel 
-                defaultSize={40} 
-                minSize={25}
+                defaultSize={isTerminalOpen ? 40 : 0} 
+                minSize={isTerminalOpen ? 15 : 0}
+                maxSize={isTerminalOpen ? 70 : 0}
                 style={{ display: isTerminalOpen ? 'block' : 'none' }}
               >
                 <div className="h-full bg-background flex flex-col">
