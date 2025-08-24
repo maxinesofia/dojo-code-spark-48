@@ -916,7 +916,7 @@ const Projects = () => {
     }
 
     try {
-      // Create the NEW project with selected template - SIMPLIFIED!
+      // Create the NEW project with selected template
       const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
       const projectFiles = selectedTemplate.files(newProjectName.trim());
       
@@ -933,11 +933,15 @@ const Projects = () => {
         files: projectFiles
       };
 
-      // Save the new project 
-      ProjectService.saveProject(newProject);
-      
-      // Switch to it (this will auto-save current project without duplicates)
+      // ONLY switch to it, don't save separately (switchToProject will handle everything)
       ProjectService.switchToProject(newProject);
+      
+      // Add to projects list manually to avoid duplication
+      const projects = ProjectService.getAllProjects();
+      if (!projects.some(p => p.id === newProject.id)) {
+        projects.unshift(newProject);
+        localStorage.setItem('tutorials-dojo-projects', JSON.stringify(projects));
+      }
       
       loadProjects();
       
