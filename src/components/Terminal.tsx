@@ -28,6 +28,8 @@ export function Terminal({
   sessionId
 }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
+  const terminalInstanceRef = useRef<XTerm | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
   const isInitializedRef = useRef(false);
   const webTerminalService = useRef<WebTerminalService | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -38,8 +40,6 @@ export function Terminal({
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [connectionState, setConnectionState] = useState({ connected: false, error: null as string | null });
 
-  let terminal: XTerm;
-  let fitAddon: FitAddon;
 
   // Set up terminal WebSocket connection for real commands
   const setupRealTerminal = useCallback(async () => {
@@ -72,20 +72,30 @@ export function Terminal({
         
         switch (message.type) {
           case 'session_init':
-            terminal.writeln('\x1b[32m✓ Terminal session initialized\x1b[0m');
+            if (terminalInstanceRef.current) {
+              terminalInstanceRef.current.writeln('\x1b[32m✓ Terminal session initialized\x1b[0m');
+            }
             break;
           case 'terminal_started':
-            terminal.writeln('\x1b[32m✓ Real terminal ready - you can now type commands!\x1b[0m');
-            terminal.writeln('\x1b[36mTry: ls, pwd, git status, node --version, npm --version\x1b[0m');
+            if (terminalInstanceRef.current) {
+              terminalInstanceRef.current.writeln('\x1b[32m✓ Real terminal ready - you can now type commands!\x1b[0m');
+              terminalInstanceRef.current.writeln('\x1b[36mTry: ls, pwd, git status, node --version, npm --version\x1b[0m');
+            }
             break;
           case 'output':
-            terminal.write(message.data);
+            if (terminalInstanceRef.current) {
+              terminalInstanceRef.current.write(message.data);
+            }
             break;
           case 'error':
-            terminal.writeln(`\x1b[31m❌ Error: ${message.data}\x1b[0m`);
+            if (terminalInstanceRef.current) {
+              terminalInstanceRef.current.writeln(`\x1b[31m❌ Error: ${message.data}\x1b[0m`);
+            }
             break;
           case 'process_exit':
-            terminal.writeln(`\x1b[33m⚠️ Process exited with code ${message.code}\x1b[0m`);
+            if (terminalInstanceRef.current) {
+              terminalInstanceRef.current.writeln(`\x1b[33m⚠️ Process exited with code ${message.code}\x1b[0m`);
+            }
             break;
         }
       };
@@ -116,9 +126,11 @@ export function Terminal({
       webTerminalService.current.setupVirtualFS(files);
     }
 
-    terminal.writeln('\x1b[33m⚠️ Using virtual terminal (commands simulated)\x1b[0m');
-    terminal.writeln('\x1b[36mTry: ls, cd, mkdir, touch, cat, npm, git commands\x1b[0m');
-    terminal.write(webTerminalService.current.getPrompt());
+    if (terminalInstanceRef.current) {
+      terminalInstanceRef.current.writeln('\x1b[33m⚠️ Using virtual terminal (commands simulated)\x1b[0m');
+      terminalInstanceRef.current.writeln('\x1b[36mTry: ls, cd, mkdir, touch, cat, npm, git commands\x1b[0m');
+      terminalInstanceRef.current.write(webTerminalService.current.getPrompt());
+    }
   }, [files, onFileSystemChange]);
 
   // Set up input handler for both real and virtual terminal
@@ -144,7 +156,9 @@ export function Terminal({
           setCommandHistory(prev => [...prev, command]);
           
           webTerminalService.current!.executeCommand(command).then(output => {
-            terminal.writeln('\r' + output);
+            if (terminalInstanceRef.current) {
+              terminalInstanceRef.current.writeln('\r' + output);
+            }
             
             if (onCommandExecuted) {
               onCommandExecuted(command);
@@ -159,20 +173,28 @@ export function Terminal({
           
           setCurrentCommand('');
         } else {
-          terminal.writeln('\r' + webTerminalService.current!.getPrompt());
+          if (terminalInstanceRef.current) {
+            terminalInstanceRef.current.writeln('\r' + webTerminalService.current!.getPrompt());
+          }
         }
       } else if (data === '\u007F') { // Backspace
         if (currentCommand.length > 0) {
           setCurrentCommand(prev => prev.slice(0, -1));
-          terminal.write('\b \b');
+          if (terminalInstanceRef.current) {
+            terminalInstanceRef.current.write('\b \b');
+          }
         }
       } else if (data === '\u0003') { // Ctrl+C
-        terminal.writeln('^C');
-        terminal.write('\r' + webTerminalService.current!.getPrompt());
+        if (terminalInstanceRef.current) {
+          terminalInstanceRef.current.writeln('^C');
+          terminalInstanceRef.current.write('\r' + webTerminalService.current!.getPrompt());
+        }
         setCurrentCommand('');
       } else if (data.charCodeAt(0) >= 32) { // Printable characters
         setCurrentCommand(prev => prev + data);
-        terminal.write(data);
+        if (terminalInstanceRef.current) {
+          terminalInstanceRef.current.write(data);
+        }
       }
     };
 
@@ -187,7 +209,7 @@ export function Terminal({
     console.log('🚀 Initializing terminal');
 
     // Initialize terminal
-    terminal = new XTerm({
+    const terminal = new XTerm({
       theme: {
         background: '#1e1e1e',
         foreground: '#d4d4d4',
@@ -222,7 +244,7 @@ export function Terminal({
       convertEol: true
     });
 
-    fitAddon = new FitAddon();
+    const fitAddon = new FitAddon();
     const webLinksAddon = new WebLinksAddon();
 
     terminal.loadAddon(fitAddon);
@@ -231,10 +253,17 @@ export function Terminal({
     terminal.open(terminalRef.current);
     fitAddon.fit();
 
+    // Store references
+    terminalInstanceRef.current = terminal;
+    fitAddonRef.current = fitAddon;
+
     isInitializedRef.current = true;
 
     // Set up input handling
     setupInputHandler(terminal);
+
+    // Focus the terminal so it can receive input
+    terminal.focus();
 
     // Try to connect to real terminal first, fallback to virtual
     setupRealTerminal().catch(() => {
@@ -244,13 +273,13 @@ export function Terminal({
 
     // Handle resize
     const handleResize = () => {
-      if (fitAddon) {
-        fitAddon.fit();
+      if (fitAddonRef.current && terminalInstanceRef.current) {
+        fitAddonRef.current.fit();
         const ws = wsRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({
             type: 'resize',
-            data: { cols: terminal.cols, rows: terminal.rows }
+            data: { cols: terminalInstanceRef.current.cols, rows: terminalInstanceRef.current.rows }
           }));
         }
       }
@@ -269,17 +298,21 @@ export function Terminal({
       }
       
       // Dispose terminal
-      if (terminal) {
-        terminal.dispose();
+      if (terminalInstanceRef.current) {
+        terminalInstanceRef.current.dispose();
+        terminalInstanceRef.current = null;
       }
+      
+      fitAddonRef.current = null;
     };
   }, [setupRealTerminal, setupVirtualTerminal, setupInputHandler]);
 
   // Handle minimized state resize
   useEffect(() => {
-    if (!isMinimized && fitAddon) {
+    if (!isMinimized && fitAddonRef.current && terminalInstanceRef.current) {
       setTimeout(() => {
-        fitAddon.fit();
+        fitAddonRef.current?.fit();
+        terminalInstanceRef.current?.focus(); // Refocus after resize
       }, 100);
     }
   }, [isMinimized]);
@@ -340,6 +373,12 @@ export function Terminal({
           ref={terminalRef} 
           className="flex-1 p-2"
           style={{ minHeight: '200px' }}
+          onClick={() => {
+            // Focus terminal when clicked
+            if (terminalInstanceRef.current) {
+              terminalInstanceRef.current.focus();
+            }
+          }}
         />
       )}
     </div>
