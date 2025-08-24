@@ -85,6 +85,18 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     }
   };
 
+  // Global drag state cleanup listener
+  useEffect(() => {
+    const handleClearDragStates = () => {
+      setIsDragOver(false);
+      setDropPosition(null);
+      setIsDragging(false);
+    };
+
+    window.addEventListener('clearAllDragStates', handleClearDragStates);
+    return () => window.removeEventListener('clearAllDragStates', handleClearDragStates);
+  }, []);
+
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', node.id);
@@ -169,12 +181,14 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 
   return (
     <div className="relative">
-      {/* Drop indicators */}
+      {/* Drop indicators - only show when actively dragging over */}
       {isDragOver && dropPosition === 'above' && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" 
+             style={{ pointerEvents: 'none' }} />
       )}
       {isDragOver && dropPosition === 'below' && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-full z-10"
+             style={{ pointerEvents: 'none' }} />
       )}
       
       <div
@@ -332,6 +346,29 @@ export function VSCodeFileExplorer({
   
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  // Global cleanup for drag states
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      // Force clear all drag states when any drag operation ends
+      const event = new CustomEvent('clearAllDragStates');
+      window.dispatchEvent(event);
+    };
+
+    const handleClearDragStates = () => {
+      // This will be caught by individual FileTreeItems to clear their states
+    };
+
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    document.addEventListener('drop', handleGlobalDragEnd);
+    window.addEventListener('clearAllDragStates', handleClearDragStates);
+    
+    return () => {
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+      document.removeEventListener('drop', handleGlobalDragEnd);
+      window.removeEventListener('clearAllDragStates', handleClearDragStates);
+    };
+  }, []);
 
   // Get package service and analyze dependencies
   const packageService = PackageService.getInstance();

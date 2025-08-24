@@ -1102,12 +1102,6 @@ Utilities:
   help              Show this help
   exit, quit        Exit terminal
 
-Keyboard Shortcuts:
-  Ctrl+C            Interrupt command
-  Ctrl+L            Clear screen
-  Ctrl+\`            Toggle terminal
-  Ctrl+Shift+\`      New terminal
-
 `;
   }
 }
