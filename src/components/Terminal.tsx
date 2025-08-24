@@ -319,6 +319,13 @@ export function Terminal({
     };
   }, [setupRealTerminal]);
 
+  // Update virtual file system when files change
+  useEffect(() => {
+    if (isVirtual && terminalServiceRef.current && 'setupVirtualFS' in terminalServiceRef.current) {
+      (terminalServiceRef.current as WebTerminalService).setupVirtualFS(files);
+    }
+  }, [files, isVirtual]);
+
   // Trigger resize when minimized state changes
   useEffect(() => {
     if (fitAddonRef.current) {
