@@ -142,10 +142,12 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
   const connectTerminal = useCallback((tab: TerminalTab) => {
     // Use the correct WebSocket URL for the backend
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname === 'localhost' ? 'localhost:5000' : window.location.host;
+    const host = window.location.hostname === 'localhost' 
+      ? 'localhost:5000' 
+      : window.location.host.replace(':3000', ':5000'); // Development fallback
     const wsUrl = `${protocol}//${host}/terminal`;
     
-    console.log('Connecting to terminal WebSocket:', wsUrl);
+    console.log('🔌 Connecting to terminal WebSocket:', wsUrl);
     const ws = new WebSocket(wsUrl);
     wsConnections.current.set(tab.id, ws);
 
@@ -239,9 +241,10 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
       const ws = wsConnections.current.get(tab.id);
       if (!ws) return;
 
+      // Send raw input data to backend for proper command execution
       const message = {
         type: 'command',
-        data: data === '\x03' ? { type: 'signal', signal: 'SIGINT' } : { type: 'input', data }
+        data: { type: 'input', data }
       };
 
       if (!safeSend(ws, message)) {

@@ -4,8 +4,6 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const gcpFirecrackerService = require('../services/gcpFirecrackerService');
-const { Project, File } = require('../models');
 
 class TerminalController {
   constructor() {
@@ -88,47 +86,19 @@ class TerminalController {
 
   async startTerminalSession(sessionId, data, ws) {
     try {
-      const { projectId, userId } = data;
-
-      // Get project files for context
-      const project = await Project.findOne({
-        where: { id: projectId, userId },
-        include: [File]
-      });
-
-      if (!project) {
-        throw new Error('Project not found');
-      }
-
-      // Create or get VM for this project
-      let vmId = project.executionId;
+      console.log(`🚀 Starting terminal session ${sessionId} with data:`, data);
       
-      if (!vmId || project.executionStatus !== 'running') {
-        // Start new VM with project files
-        const files = {};
-        project.Files.forEach(file => {
-          files[file.name] = file.content;
-        });
-
-        const result = await gcpFirecrackerService.executeCode(files, 'terminal');
-        vmId = result.vmId;
-
-        // Update project with VM info
-        await project.update({
-          executionStatus: 'running',
-          executionId: vmId,
-          executionUrl: `http://34.75.79.84:8080/${vmId}`,
-          lastExecuted: new Date()
-        });
-      }
-
-      // Connect to VM terminal
+      // For now, create a simple session without requiring project/database
+      // This can be enhanced later to integrate with actual projects
+      const vmId = sessionId; // Use session ID as VM ID for simplicity
+      
+      // Connect to terminal
       const terminalProcess = await this.connectToVMTerminal(vmId);
       
       this.activeSessions.set(sessionId, {
         vmId,
-        projectId,
-        userId,
+        projectId: data?.projectId || 'default',
+        userId: data?.userId || 'default-user',
         process: terminalProcess,
         startTime: new Date()
       });
@@ -149,6 +119,7 @@ class TerminalController {
       });
 
       terminalProcess.on('close', (code) => {
+        console.log(`🔚 Terminal process for session ${sessionId} closed with code ${code}`);
         ws.send(JSON.stringify({
           type: 'process_exit',
           code
@@ -163,7 +134,7 @@ class TerminalController {
       }));
 
     } catch (error) {
-      console.error('Start terminal session error:', error);
+      console.error('❌ Start terminal session error:', error);
       ws.send(JSON.stringify({
         type: 'error',
         data: error.message
@@ -172,41 +143,52 @@ class TerminalController {
   }
 
   async connectToVMTerminal(vmId) {
-    // Create a working directory for this session
-    const sessionDir = path.join(os.tmpdir(), `terminal-${vmId}`);
+    // Create a working directory for this session in the project root
+    const projectRoot = process.cwd();
+    const sessionDir = path.join(projectRoot, 'workspace', vmId);
+    
     if (!fs.existsSync(sessionDir)) {
       fs.mkdirSync(sessionDir, { recursive: true });
       
       // Initialize as git repository
       try {
-        const initProcess = spawn('git', ['init'], { cwd: sessionDir });
-        await new Promise((resolve) => initProcess.on('close', resolve));
+        const { execSync } = require('child_process');
+        execSync('git init', { cwd: sessionDir });
+        execSync('git config user.name "Developer"', { cwd: sessionDir });
+        execSync('git config user.email "dev@tutorials-dojo.com"', { cwd: sessionDir });
         
-        // Set basic git config
-        spawn('git', ['config', 'user.name', 'Developer'], { cwd: sessionDir });
-        spawn('git', ['config', 'user.email', 'dev@example.com'], { cwd: sessionDir });
+        // Create a basic README
+        fs.writeFileSync(path.join(sessionDir, 'README.md'), '# Tutorials Dojo Project\n\nWelcome to your project workspace!\n');
+        console.log(`✅ Git repository initialized in ${sessionDir}`);
       } catch (error) {
-        console.log('Git not available, skipping repository initialization');
+        console.log('⚠️ Git not available, skipping repository initialization');
       }
     }
 
-    // Determine shell based on platform
+    // Determine the best shell for the platform
     let shell, shellArgs;
     if (process.platform === 'win32') {
-      // Use Git Bash on Windows if available, otherwise cmd
-      const gitBashPath = 'C:\\Program Files\\Git\\bin\\bash.exe';
-      if (fs.existsSync(gitBashPath)) {
-        shell = gitBashPath;
-        shellArgs = ['--login'];
+      // Try Git Bash first, then PowerShell, then cmd
+      const gitBashPaths = [
+        'C:\\Program Files\\Git\\bin\\bash.exe',
+        'C:\\Program Files (x86)\\Git\\bin\\bash.exe',
+        process.env.PROGRAMFILES + '\\Git\\bin\\bash.exe'
+      ];
+      
+      const gitBash = gitBashPaths.find(p => fs.existsSync(p));
+      if (gitBash) {
+        shell = gitBash;
+        shellArgs = ['--login', '-i'];
       } else {
-        shell = 'cmd.exe';
-        shellArgs = [];
+        shell = 'powershell.exe';
+        shellArgs = ['-NoExit', '-Command', '-'];
       }
     } else {
-      // Use bash on Unix-like systems
       shell = '/bin/bash';
-      shellArgs = ['--login'];
+      shellArgs = ['-i']; // Interactive mode
     }
+    
+    console.log(`🐚 Starting shell: ${shell} with args: ${shellArgs.join(' ')}`);
     
     const terminalProcess = spawn(shell, shellArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -215,26 +197,41 @@ class TerminalController {
         ...process.env,
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
-        PS1: '\\[\\033[32m\\]developer@tutorials-dojo\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ ',
+        PS1: '\\[\\033[32m\\]tutorials-dojo\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ ',
         HOME: sessionDir,
-        PATH: process.env.PATH,
+        PWD: sessionDir,
         SHELL: shell,
-        TERM_PROGRAM: 'tutorials-dojo'
+        TERM_PROGRAM: 'tutorials-dojo-terminal',
+        FORCE_COLOR: '1'
       }
     });
 
-    // Send initial commands to set up the environment
+    // Handle process errors
+    terminalProcess.on('error', (error) => {
+      console.error('❌ Terminal process error:', error);
+    });
+
+    terminalProcess.on('close', (code, signal) => {
+      console.log(`🔚 Terminal process closed with code ${code}, signal ${signal}`);
+    });
+
+    // Send initial setup commands
     setTimeout(() => {
       if (process.platform !== 'win32') {
         terminalProcess.stdin.write('clear\n');
       }
-      terminalProcess.stdin.write('echo "Welcome to Tutorials Dojo Terminal"\n');
-      terminalProcess.stdin.write('echo "Type \'help\' for available commands"\n');
+      terminalProcess.stdin.write('echo "🚀 Welcome to Tutorials Dojo Terminal"\n');
+      terminalProcess.stdin.write('echo "📁 Current directory: $(pwd)"\n');
       terminalProcess.stdin.write('pwd\n');
+      
       if (fs.existsSync(path.join(sessionDir, '.git'))) {
-        terminalProcess.stdin.write('git status\n');
+        terminalProcess.stdin.write('git --version 2>/dev/null && echo "✅ Git is available" || echo "❌ Git not found"\n');
+        terminalProcess.stdin.write('git status 2>/dev/null || echo "📝 Initialize git with: git add . && git commit -m \'Initial commit\'"\n');
       }
-    }, 500);
+      
+      terminalProcess.stdin.write('which node 2>/dev/null && echo "✅ Node.js: $(node --version)" || echo "❌ Node.js not found"\n');
+      terminalProcess.stdin.write('which npm 2>/dev/null && echo "✅ npm: $(npm --version)" || echo "❌ npm not found"\n');
+    }, 1000);
 
     return terminalProcess;
   }
@@ -249,13 +246,21 @@ class TerminalController {
 
       // Handle different types of input
       if (typeof data === 'string') {
-        // Direct command input
+        // Direct command input - write exactly as received
         session.process.stdin.write(data);
-      } else if (data.type === 'input') {
+        console.log(`📝 Command input in session ${sessionId}: ${data.replace(/\r?\n/g, '\\n')}`);
+      } else if (data && data.type === 'input') {
         // Character-by-character input for real-time interaction
-        session.process.stdin.write(data.data);
-      } else if (data.type === 'signal') {
+        const input = data.data;
+        session.process.stdin.write(input);
+        
+        // Log only complete commands (when enter is pressed)
+        if (input === '\r' || input === '\n') {
+          console.log(`⏎ Command executed in session ${sessionId}`);
+        }
+      } else if (data && data.type === 'signal') {
         // Handle Ctrl+C, Ctrl+Z etc
+        console.log(`🔔 Signal sent to session ${sessionId}: ${data.signal}`);
         if (data.signal === 'SIGINT') {
           session.process.kill('SIGINT');
         } else if (data.signal === 'SIGTERM') {
@@ -263,13 +268,8 @@ class TerminalController {
         }
       }
 
-      // Log command execution (only log actual commands, not individual characters)
-      if (typeof data === 'string' && data.includes('\n')) {
-        console.log(`Command executed in session ${sessionId}: ${data.trim()}`);
-      }
-
     } catch (error) {
-      console.error('Execute command error:', error);
+      console.error('❌ Execute command error:', error);
       ws.send(JSON.stringify({
         type: 'error',
         data: error.message
