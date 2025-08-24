@@ -94,6 +94,8 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 
   const handleDragEnd = () => {
     setIsDragging(false);
+    setIsDragOver(false);
+    setDropPosition(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -383,6 +385,10 @@ export function VSCodeFileExplorer({
             // Drop to root level (no parent)
             onFileMove?.(draggedFileId, undefined);
           }
+        }}
+        onDragEnd={(e) => {
+          // Global cleanup to ensure all drag states are cleared
+          e.preventDefault();
         }}
       >
         <div className="px-2 py-1">
