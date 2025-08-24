@@ -207,6 +207,33 @@ export class ProjectService {
 
   static switchToProject(project: Project): void {
     try {
+      // FIRST: Save current project if it exists and has content
+      const currentProject = this.getCurrentProject();
+      if (currentProject && currentProject.files.length > 0 && currentProject.name) {
+        // Only save if it's not already in the projects list
+        const existingProjects = this.getAllProjects();
+        const alreadyExists = existingProjects.some(p => 
+          p.name === currentProject.name && 
+          p.lastModified === currentProject.lastModified
+        );
+        
+        if (!alreadyExists) {
+          const savedProject = {
+            id: `project-${Date.now()}-saved`,
+            name: currentProject.name,
+            description: currentProject.description || 'Saved project',
+            template: currentProject.template,
+            isPublic: false,
+            isForked: false,
+            lastModified: currentProject.lastModified,
+            fileCount: currentProject.files.length,
+            files: currentProject.files
+          };
+          this.saveProject(savedProject);
+        }
+      }
+
+      // SECOND: Set the new project as current
       const state: ProjectState = {
         currentProject: project,
         projectName: project.name,

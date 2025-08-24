@@ -334,6 +334,545 @@ button:hover {
 }`
       }
     ]
+  },
+  vue: {
+    name: 'Vue 3 + TypeScript',
+    description: 'Vue.js 3 with Composition API and TypeScript',
+    icon: '🟢',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'index.html',
+        name: 'index.html',
+        type: 'file',
+        content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>`
+      },
+      {
+        id: 'src',
+        name: 'src',
+        type: 'folder',
+        children: [
+          {
+            id: 'main.ts',
+            name: 'main.ts',
+            type: 'file',
+            content: `import { createApp } from 'vue'
+import App from './App.vue'
+import './style.css'
+
+createApp(App).mount('#app')`
+          },
+          {
+            id: 'App.vue',
+            name: 'App.vue',
+            type: 'file',
+            content: `<template>
+  <div class="app">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    <button @click="increment">Count: {{ count }}</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const title = '${projectName}'
+const message = 'Welcome to Vue 3 + TypeScript!'
+const count = ref(0)
+
+const increment = () => {
+  count.value++
+}
+</script>
+
+<style scoped>
+.app {
+  text-align: center;
+  padding: 2rem;
+}
+
+h1 {
+  color: #42b883;
+  font-size: 3rem;
+}
+
+button {
+  background: #42b883;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: #369870;
+  transform: translateY(-2px);
+}
+</style>`
+          },
+          {
+            id: 'style.css',
+            name: 'style.css',
+            type: 'file',
+            content: `body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #42b883 0%, #35495e 100%);
+  min-height: 100vh;
+  color: white;
+}`
+          }
+        ]
+      }
+    ]
+  },
+  svelte: {
+    name: 'Svelte + TypeScript',
+    description: 'Svelte with TypeScript for reactive apps',
+    icon: '🧡',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'index.html',
+        name: 'index.html',
+        type: 'file',
+        content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>`
+      },
+      {
+        id: 'src',
+        name: 'src',
+        type: 'folder',
+        children: [
+          {
+            id: 'main.ts',
+            name: 'main.ts',
+            type: 'file',
+            content: `import App from './App.svelte'
+import './app.css'
+
+const app = new App({
+  target: document.getElementById('app')!,
+})
+
+export default app`
+          },
+          {
+            id: 'App.svelte',
+            name: 'App.svelte',
+            type: 'file',
+            content: `<script lang="ts">
+  let count: number = 0
+  let name: string = '${projectName}'
+
+  function increment() {
+    count += 1
+  }
+</script>
+
+<main>
+  <h1>Welcome to {name}!</h1>
+  <p>Svelte + TypeScript is awesome!</p>
+  
+  <button on:click={increment}>
+    count is {count}
+  </button>
+</main>
+
+<style>
+  main {
+    text-align: center;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    color: #ff3e00;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  button {
+    background: #ff3e00;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  button:hover {
+    background: #e6330a;
+    transform: translateY(-2px);
+  }
+</style>`
+          },
+          {
+            id: 'app.css',
+            name: 'app.css',
+            type: 'file',
+            content: `body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #ff3e00 0%, #ff6b35 100%);
+  min-height: 100vh;
+  color: white;
+}`
+          }
+        ]
+      }
+    ]
+  },
+  node_express: {
+    name: 'Node.js + Express',
+    description: 'Backend API with Express and TypeScript',
+    icon: '🟢',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'server.ts',
+        name: 'server.ts',
+        type: 'file',
+        content: `import express from 'express'
+import cors from 'cors'
+
+const app = express()
+const PORT = process.env.PORT || 3000
+
+// Middleware
+app.use(cors())
+app.use(express.json())
+
+// Routes
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Welcome to ${projectName} API!',
+    version: '1.0.0',
+    endpoints: ['/api/health', '/api/users']
+  })
+})
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() })
+})
+
+app.get('/api/users', (req, res) => {
+  res.json([
+    { id: 1, name: 'John Doe', email: 'john@example.com' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+  ])
+})
+
+app.listen(PORT, () => {
+  console.log(\`🚀 ${projectName} server running on http://localhost:\${PORT}\`)
+})`
+      },
+      {
+        id: 'package.json',
+        name: 'package.json',
+        type: 'file',
+        content: `{
+  "name": "${projectName.toLowerCase().replace(/\s+/g, '-')}",
+  "version": "1.0.0",
+  "description": "Node.js Express API",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/cors": "^2.8.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  }
+}`
+      }
+    ]
+  },
+  python_flask: {
+    name: 'Python + Flask',
+    description: 'Python web application with Flask',
+    icon: '🐍',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'app.py',
+        name: 'app.py',
+        type: 'file',
+        content: `from flask import Flask, jsonify, render_template_string
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>${projectName}</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; 
+                   background: linear-gradient(135deg, #3776ab 0%, #ffd43b 100%); color: white; }
+            h1 { font-size: 3rem; margin-bottom: 1rem; }
+            .btn { background: #3776ab; color: white; padding: 12px 24px; 
+                   border: none; border-radius: 8px; text-decoration: none; 
+                   display: inline-block; margin: 10px; }
+        </style>
+    </head>
+    <body>
+        <h1>🐍 Welcome to ${projectName}!</h1>
+        <p>Your Flask application is running!</p>
+        <a href="/api/data" class="btn">View API Data</a>
+        <a href="/api/users" class="btn">View Users</a>
+    </body>
+    </html>
+    ''')
+
+@app.route('/api/data')
+def get_data():
+    return jsonify({
+        'message': 'Hello from ${projectName} API!',
+        'status': 'success',
+        'data': [1, 2, 3, 4, 5]
+    })
+
+@app.route('/api/users')
+def get_users():
+    return jsonify([
+        {'id': 1, 'name': 'Alice', 'email': 'alice@example.com'},
+        {'id': 2, 'name': 'Bob', 'email': 'bob@example.com'}
+    ])
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)`
+      },
+      {
+        id: 'requirements.txt',
+        name: 'requirements.txt',
+        type: 'file',
+        content: `Flask==2.3.3
+python-dotenv==1.0.0`
+      }
+    ]
+  },
+  bootstrap: {
+    name: 'Bootstrap 5',
+    description: 'Responsive web app with Bootstrap 5',
+    icon: '🅱️',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'index.html',
+        name: 'index.html',
+        type: 'file',
+        content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">${projectName}</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+                <h1 class="display-4 fw-bold text-primary">Welcome to ${projectName}!</h1>
+                <p class="lead">Built with Bootstrap 5 for responsive design</p>
+                <button class="btn btn-primary btn-lg" id="clickMe">Click Me!</button>
+                <div class="mt-4">
+                    <div class="alert alert-info" role="alert" id="status">
+                        Ready to go! Click the button above.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>`
+      },
+      {
+        id: 'styles.css',
+        name: 'styles.css',
+        type: 'file',
+        content: `body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.btn-primary {
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+}`
+      },
+      {
+        id: 'script.js',
+        name: 'script.js',
+        type: 'file',
+        content: `// ${projectName} JavaScript with Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('clickMe');
+    const status = document.getElementById('status');
+    let clickCount = 0;
+    
+    button.addEventListener('click', function() {
+        clickCount++;
+        status.textContent = \`Button clicked \${clickCount} time\${clickCount !== 1 ? 's' : ''}! Bootstrap is awesome!\`;
+        status.className = 'alert alert-success';
+        
+        // Add some Bootstrap animation
+        button.classList.add('btn-outline-primary');
+        setTimeout(() => {
+            button.classList.remove('btn-outline-primary');
+        }, 200);
+    });
+});`
+      }
+    ]
+  },
+  tailwind: {
+    name: 'Tailwind CSS',
+    description: 'Utility-first CSS framework project',
+    icon: '💨',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'index.html',
+        name: 'index.html',
+        type: 'file',
+        content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen">
+    <div class="container mx-auto px-4 py-16">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-6xl font-bold text-white mb-8 drop-shadow-lg">
+                Welcome to ${projectName}!
+            </h1>
+            <p class="text-xl text-blue-100 mb-12 max-w-2xl mx-auto">
+                Built with Tailwind CSS for rapid UI development and beautiful designs
+            </p>
+            
+            <div class="space-x-4 mb-12">
+                <button id="clickMe" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transform hover:scale-105 transition-all duration-200 shadow-lg">
+                    Click Me!
+                </button>
+                <button class="bg-purple-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-600 transform hover:scale-105 transition-all duration-200 shadow-lg">
+                    Learn More
+                </button>
+            </div>
+            
+            <div id="status" class="bg-white/20 backdrop-blur-sm rounded-lg p-6 text-white max-w-md mx-auto">
+                <p class="text-lg">Ready to explore Tailwind CSS!</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>`
+      },
+      {
+        id: 'script.js',
+        name: 'script.js',
+        type: 'file',
+        content: `// ${projectName} with Tailwind CSS
+document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('clickMe');
+    const status = document.getElementById('status');
+    let clickCount = 0;
+    
+    button.addEventListener('click', function() {
+        clickCount++;
+        
+        status.innerHTML = \`
+            <p class="text-lg font-semibold">Clicked \${clickCount} time\${clickCount !== 1 ? 's' : ''}!</p>
+            <p class="text-sm opacity-80">Tailwind makes styling so easy! 🎨</p>
+        \`;
+        
+        // Add some nice animation
+        status.classList.add('animate-pulse');
+        setTimeout(() => {
+            status.classList.remove('animate-pulse');
+        }, 1000);
+    });
+});`
+      }
+    ]
   }
 };
 
@@ -377,13 +916,13 @@ const Projects = () => {
     }
 
     try {
-      // Create the NEW project with selected template - DON'T touch current project!
+      // Create the NEW project with selected template - SIMPLIFIED!
       const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
       const projectFiles = selectedTemplate.files(newProjectName.trim());
       
-      // Create new project with UNIQUE ID (not 'current')
+      // Create new project with UNIQUE ID
       const newProject = {
-        id: `project-${Date.now()}`, // Unique ID - NOT 'current'
+        id: `project-${Date.now()}`,
         name: newProjectName.trim(),
         description: selectedTemplate.description,
         template: newProjectTemplate,
@@ -394,13 +933,13 @@ const Projects = () => {
         files: projectFiles
       };
 
-      // Save the new project as a separate project
+      // Save the new project 
       ProjectService.saveProject(newProject);
       
-      // Now switch to the new project (this will preserve current as a saved project)
+      // Switch to it (this will auto-save current project without duplicates)
       ProjectService.switchToProject(newProject);
       
-      loadProjects(); // Reload to show updated projects list
+      loadProjects();
       
       setNewProjectName("");
       setNewProjectTemplate("vanilla");
@@ -408,10 +947,9 @@ const Projects = () => {
       
       toast({
         title: "Success", 
-        description: `New ${selectedTemplate.name} project "${newProjectName.trim()}" created! Your previous project is still saved.`
+        description: `New ${selectedTemplate.name} project created!`
       });
       
-      // Navigate to the editor to work on the new project
       navigate('/');
       
     } catch (error) {
