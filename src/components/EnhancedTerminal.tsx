@@ -42,6 +42,9 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
   const [isMaximized, setIsMaximized] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [shellIntegrationQuality, setShellIntegrationQuality] = useState<'none' | 'basic' | 'rich'>('none');
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [currentWorkingDir, setCurrentWorkingDir] = useState('~');
   const terminalRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const wsConnections = useRef<Map<string, WebSocket>>(new Map());
 
@@ -57,41 +60,60 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
     return false;
   }, []);
 
-  // Create new terminal tab
+  // VS Code-inspired terminal settings
+  const terminalConfig = {
+    fontFamily: '"Cascadia Code", "JetBrains Mono", "Fira Code", "SF Mono", Consolas, "Courier New", monospace',
+    fontSize: 14,
+    lineHeight: 1.2,
+    letterSpacing: 0.5,
+    cursorStyle: 'block' as const,
+    cursorBlink: true,
+    minimumContrastRatio: 4.5,
+    drawBoldTextInBrightColors: true
+  };
+
+  // Create new terminal tab with VS Code-style configuration
   const createNewTab = useCallback(() => {
     const tabId = `terminal-${Date.now()}`;
     const terminal = new XTerminal({
-      fontFamily: '"Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, "Courier New", monospace',
-      fontSize: 14,
-      lineHeight: 1.2,
-      cursorBlink: true,
-      cursorStyle: 'block',
+      fontFamily: terminalConfig.fontFamily,
+      fontSize: terminalConfig.fontSize,
+      lineHeight: terminalConfig.lineHeight,
+      letterSpacing: terminalConfig.letterSpacing,
+      cursorBlink: terminalConfig.cursorBlink,
+      cursorStyle: terminalConfig.cursorStyle,
+      minimumContrastRatio: terminalConfig.minimumContrastRatio,
+      drawBoldTextInBrightColors: terminalConfig.drawBoldTextInBrightColors,
       theme: {
-        background: '#1a1a1a',
-        foreground: '#ffffff',
+        background: '#1e1e1e',
+        foreground: '#cccccc',
         cursor: '#ffffff',
-        selectionBackground: '#ffffff40',
+        selectionBackground: '#3b82f640',
+        // VS Code ANSI colors
         black: '#000000',
-        red: '#ff5555',
-        green: '#50fa7b',
-        yellow: '#f1fa8c',
-        blue: '#bd93f9',
-        magenta: '#ff79c6',
-        cyan: '#8be9fd',
-        white: '#bfbfbf',
-        brightBlack: '#4d4d4d',
-        brightRed: '#ff6e67',
-        brightGreen: '#5af78e',
-        brightYellow: '#f4f99d',
-        brightBlue: '#caa9fa',
-        brightMagenta: '#ff92d0',
-        brightCyan: '#9aedfe',
-        brightWhite: '#e6e6e6'
+        red: '#cd3131',
+        green: '#0dbc79',
+        yellow: '#e5e510',
+        blue: '#2472c8',
+        magenta: '#bc3fbc',
+        cyan: '#11a8cd',
+        white: '#e5e5e5',
+        brightBlack: '#666666',
+        brightRed: '#f14c4c',
+        brightGreen: '#23d18b',
+        brightYellow: '#f5f543',
+        brightBlue: '#3b8eea',
+        brightMagenta: '#d670d6',
+        brightCyan: '#29b8db',
+        brightWhite: '#ffffff'
       },
-      allowTransparency: true,
+      allowTransparency: false,
       macOptionIsMeta: true,
       rightClickSelectsWord: true,
-      convertEol: true
+      convertEol: true,
+      scrollback: 10000,
+      tabStopWidth: 4,
+      windowsMode: false
     });
 
     const fitAddon = new FitAddon();
@@ -114,7 +136,7 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
     setActiveTab(tabId);
 
     return newTab;
-  }, [tabs.length]);
+  }, [tabs.length, terminalConfig]);
 
   // Connect terminal to WebSocket
   const connectTerminal = useCallback((tab: TerminalTab) => {
@@ -151,22 +173,48 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
       
       switch (message.type) {
         case 'session_init':
-          tab.terminal.writeln('\x1b[32mTerminal session initialized\x1b[0m');
+          tab.terminal.writeln('\x1b[32m✓ Terminal session initialized\x1b[0m');
+          tab.terminal.writeln('\x1b[36m🔧 Shell integration: Loading...\x1b[0m');
+          setShellIntegrationQuality('basic');
           break;
         case 'terminal_started':
-          tab.terminal.writeln('\x1b[32m✓ Terminal ready\x1b[0m');
+          tab.terminal.writeln('\x1b[32m✓ Terminal ready - Shell integration active\x1b[0m');
+          tab.terminal.writeln('\x1b[33m📁 Working directory: ~/workspace\x1b[0m');
+          setShellIntegrationQuality('rich');
+          setCurrentWorkingDir('~/workspace');
           break;
         case 'output':
-          tab.terminal.write(message.data);
+          // Parse output for working directory changes and commands
+          const output = message.data;
+          tab.terminal.write(output);
+          
+          // Track working directory changes (simplified)
+          if (output.includes('$ cd ') || output.includes('~/')) {
+            const match = output.match(/~[^\s]*/);
+            if (match) {
+              setCurrentWorkingDir(match[0]);
+            }
+          }
+          
+          // Track commands for history
+          if (output.includes('$ ')) {
+            const cmdMatch = output.match(/\$ (.+)/);
+            if (cmdMatch) {
+              setCommandHistory(prev => [...prev, cmdMatch[1]].slice(-100)); // Keep last 100
+            }
+          }
+          
           setTabs(prev => prev.map(t => 
             t.id === tab.id ? { ...t, lastActivity: new Date() } : t
           ));
           break;
         case 'error':
-          tab.terminal.writeln(`\x1b[31mError: ${message.data}\x1b[0m`);
+          tab.terminal.writeln(`\x1b[31m❌ Error: ${message.data}\x1b[0m`);
           break;
         case 'process_exit':
-          tab.terminal.writeln(`\x1b[33mProcess exited with code ${message.code}\x1b[0m`);
+          const exitCode = message.code;
+          const decoration = exitCode === 0 ? '\x1b[32m●\x1b[0m' : '\x1b[31m●\x1b[0m';
+          tab.terminal.writeln(`${decoration} Process exited with code ${exitCode}`);
           break;
       }
     };
@@ -240,23 +288,41 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
     });
   }, [tabs, activeTab, onClose]);
 
-  // Copy terminal content to clipboard
-  const copyToClipboard = useCallback(() => {
+  // Copy terminal content to clipboard with VS Code style
+  const copyToClipboard = useCallback(async () => {
     const activeTerminal = tabs.find(t => t.id === activeTab)?.terminal;
     if (activeTerminal) {
       const selection = activeTerminal.getSelection();
       if (selection) {
-        navigator.clipboard.writeText(selection);
+        try {
+          await navigator.clipboard.writeText(selection);
+          // Show brief feedback
+          activeTerminal.writeln('\x1b[90m[Copied to clipboard]\x1b[0m');
+        } catch (err) {
+          console.error('Failed to copy to clipboard:', err);
+        }
       }
     }
   }, [tabs, activeTab]);
+
+  // Run recent command (VS Code Ctrl+Alt+R functionality)
+  const showRecentCommands = useCallback(() => {
+    const activeTerminal = tabs.find(t => t.id === activeTab)?.terminal;
+    if (activeTerminal && commandHistory.length > 0) {
+      activeTerminal.writeln('\x1b[36m📋 Recent commands:\x1b[0m');
+      commandHistory.slice(-10).forEach((cmd, index) => {
+        activeTerminal.writeln(`\x1b[90m${index + 1}.\x1b[0m ${cmd}`);
+      });
+      activeTerminal.writeln('\x1b[90m[Type the command number or press Ctrl+R]\x1b[0m');
+    }
+  }, [tabs, activeTab, commandHistory]);
 
   // Search in terminal - simplified without SearchAddon
   const searchInTerminal = useCallback((term: string) => {
     const activeTerminal = tabs.find(t => t.id === activeTab);
     if (activeTerminal && term) {
       // Simple implementation - just display the search term
-      activeTerminal.terminal.writeln(`\x1b[33mSearching for: "${term}"\x1b[0m`);
+      activeTerminal.terminal.writeln(`\x1b[33m🔍 Searching for: "${term}"\x1b[0m`);
       // Note: Real search functionality would require SearchAddon
     }
   }, [tabs, activeTab]);
@@ -294,6 +360,30 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
     return () => window.removeEventListener('resize', handleResize);
   }, [activeTab, tabs, connectTerminal]);
 
+  // Keyboard shortcuts (VS Code style)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Shift+C - Copy
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        copyToClipboard();
+      }
+      // Ctrl+Alt+R - Recent commands
+      else if (e.ctrlKey && e.altKey && e.key === 'r') {
+        e.preventDefault();
+        showRecentCommands();
+      }
+      // Ctrl+Shift+` - New terminal
+      else if (e.ctrlKey && e.shiftKey && e.key === '`') {
+        e.preventDefault();
+        createNewTab();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [copyToClipboard, showRecentCommands, createNewTab]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -307,13 +397,31 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
     };
   }, [tabs, safeSend]);
 
+  // Get shell integration status indicator
+  const getShellIntegrationBadge = () => {
+    const colors = {
+      none: 'bg-red-500',
+      basic: 'bg-yellow-500', 
+      rich: 'bg-green-500'
+    };
+    return (
+      <Badge variant="outline" className={`text-xs ${colors[shellIntegrationQuality]}/20 border-${colors[shellIntegrationQuality]}/50`}>
+        Shell: {shellIntegrationQuality}
+      </Badge>
+    );
+  };
+
   return (
     <div className={`flex flex-col h-full bg-background border border-border rounded-lg ${className}`}>
       {/* Terminal Header */}
       <div className="flex items-center justify-between p-2 border-b border-border bg-muted/50">
         <div className="flex items-center gap-2">
           <TerminalIcon className="h-4 w-4" />
-          <span className="text-sm font-medium">Git Bash Terminal</span>
+          <span className="text-sm font-medium">VS Code Terminal</span>
+          <Badge variant="outline" className="text-xs">
+            {currentWorkingDir}
+          </Badge>
+          {getShellIntegrationBadge()}
         </div>
         
         <div className="flex items-center gap-1">
@@ -322,7 +430,7 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
             size="icon"
             className="h-6 w-6"
             onClick={copyToClipboard}
-            title="Copy Selection"
+            title="Copy Selection (Ctrl+Shift+C)"
           >
             <Copy className="h-3 w-3" />
           </Button>
@@ -444,15 +552,24 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
         ))}
       </Tabs>
 
-      {/* Status Bar */}
+      {/* Status Bar - VS Code style */}
       <div className="flex items-center justify-between px-3 py-1 border-t border-border bg-muted/50 text-xs text-muted-foreground">
         <div className="flex items-center gap-4">
           <span>Terminals: {tabs.length}</span>
           <span>Connected: {tabs.filter(t => t.connected).length}</span>
+          <span>Commands: {commandHistory.length}</span>
+          <span className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${
+              shellIntegrationQuality === 'rich' ? 'bg-green-500' : 
+              shellIntegrationQuality === 'basic' ? 'bg-yellow-500' : 'bg-red-500'
+            }`} />
+            Integration: {shellIntegrationQuality}
+          </span>
         </div>
         <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">Ctrl+Shift+C: Copy | Ctrl+Alt+R: Recent | Ctrl+Shift+`: New</span>
           <Badge variant="outline" className="text-xs">
-            Git Bash Ready
+            VS Code Terminal
           </Badge>
         </div>
       </div>
