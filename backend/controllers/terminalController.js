@@ -1,4 +1,4 @@
-const pty = require('node-pty');
+const { spawn } = require('child_process');
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
@@ -102,66 +102,80 @@ class TerminalController {
       const sessionWorkspace = path.join(this.workspaceDir, sessionId);
       await fs.mkdir(sessionWorkspace, { recursive: true });
 
-      // Initialize git repository in the workspace
-      const ptyProcess = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
-        name: 'xterm-color',
-        cols: 80,
-        rows: 24,
+      // Create a shell process (cross-platform)
+      const shell = process.platform === 'win32' ? 'cmd.exe' : 'bash';
+      const shellArgs = process.platform === 'win32' ? [] : [];
+      
+      const shellProcess = spawn(shell, shellArgs, {
         cwd: sessionWorkspace,
+        stdio: ['pipe', 'pipe', 'pipe'],
         env: {
           ...process.env,
           TERM: 'xterm-256color',
           COLORTERM: 'truecolor',
           PS1: process.platform === 'win32' ? undefined : '\\[\\033[32m\\]git-bash\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ ',
           HOME: sessionWorkspace,
-          USER: 'developer',
-          SHELL: process.platform === 'win32' ? 'cmd.exe' : '/bin/bash'
+          USER: 'developer'
         }
       });
 
       this.activeSessions.set(sessionId, {
         projectId,
         userId,
-        process: ptyProcess,
+        process: shellProcess,
         workspace: sessionWorkspace,
         startTime: new Date(),
         cols: 80,
         rows: 24
       });
 
-      // Handle PTY data (stdout/stderr combined)
-      ptyProcess.onData((data) => {
+      // Handle process output
+      shellProcess.stdout.on('data', (data) => {
         ws.send(JSON.stringify({
           type: 'output',
-          data: data
+          data: data.toString()
         }));
       });
 
-      // Handle PTY exit
-      ptyProcess.onExit(({ exitCode, signal }) => {
-        console.log(`Terminal process exited: ${exitCode}, signal: ${signal}`);
+      shellProcess.stderr.on('data', (data) => {
+        ws.send(JSON.stringify({
+          type: 'output',
+          data: data.toString()
+        }));
+      });
+
+      // Handle process exit
+      shellProcess.on('close', (exitCode) => {
+        console.log(`Shell process exited: ${exitCode}`);
         ws.send(JSON.stringify({
           type: 'process_exit',
-          exitCode,
-          signal
+          exitCode
         }));
         this.cleanup(sessionId);
       });
 
-      // Initialize with welcome message and git setup
+      shellProcess.on('error', (error) => {
+        console.error('Shell process error:', error);
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: error.message
+        }));
+      });
+
+      // Send welcome message
       setTimeout(() => {
-        const welcomeCmd = process.platform === 'win32' 
-          ? 'echo Welcome to Git Bash Terminal! & git --version & echo. & echo Ready for Git operations...\r\n'
-          : 'echo "Welcome to Git Bash Terminal!" && git --version && echo "Ready for Git operations..."\n';
-        
-        ptyProcess.write(welcomeCmd);
+        const welcomeMsg = '\x1b[32mWelcome to Git Bash Terminal!\x1b[0m\r\n';
+        ws.send(JSON.stringify({
+          type: 'output',
+          data: welcomeMsg
+        }));
       }, 100);
 
       ws.send(JSON.stringify({
         type: 'terminal_started',
         sessionId,
         workspace: sessionWorkspace,
-        message: 'Real terminal session started with Git support!'
+        message: 'Terminal session started with Git support!'
       }));
 
     } catch (error) {
@@ -181,8 +195,8 @@ class TerminalController {
         throw new Error('Terminal session not found');
       }
 
-      // Send input directly to PTY
-      session.process.write(input);
+      // Send input to shell process
+      session.process.stdin.write(input);
 
     } catch (error) {
       console.error('Send input error:', error);
@@ -202,12 +216,11 @@ class TerminalController {
         throw new Error('Terminal session not found');
       }
 
-      // Resize PTY
-      session.process.resize(cols, rows);
+      // Store terminal size (child_process doesn't support resize directly)
       session.cols = cols;
       session.rows = rows;
 
-      console.log(`Terminal resized for session ${sessionId}: ${cols}x${rows}`);
+      console.log(`Terminal size updated for session ${sessionId}: ${cols}x${rows}`);
 
     } catch (error) {
       console.error('Resize terminal error:', error);
@@ -241,10 +254,10 @@ class TerminalController {
     
     if (session) {
       try {
-        // Kill PTY process
-        session.process.kill();
+        // Kill shell process
+        session.process.kill('SIGTERM');
       } catch (error) {
-        console.error('Error killing PTY process:', error);
+        console.error('Error killing shell process:', error);
       }
       
       // Clean up workspace directory (optional - could keep for persistence)
