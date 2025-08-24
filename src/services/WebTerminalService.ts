@@ -1066,19 +1066,6 @@ Keyboard Shortcuts:
   Ctrl+\`            Toggle terminal
   Ctrl+Shift+\`      New terminal
 
-Features Implemented:
-✅ Native terminal functionality (like CodeSandbox)
-✅ Complete file system operations
-✅ Package manager support (npm, yarn, pnpm)
-✅ Git version control simulation
-✅ Development server commands
-✅ Python & Node.js environment
-✅ Network utilities (curl, wget)
-✅ Multiple terminal sessions with tabs
-
-Note: This is a fully functional virtual terminal simulation
-that matches CodeSandbox's VM sandbox terminal capabilities.
-All file operations affect the project's file structure.
 `;
   }
 }
