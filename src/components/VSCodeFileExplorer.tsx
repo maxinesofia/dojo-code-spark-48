@@ -7,7 +7,6 @@ import {
   FolderOpen,
   Plus,
   Search,
-  MoreHorizontal,
   Trash2,
   Edit
 } from "lucide-react";
@@ -264,9 +263,6 @@ export function VSCodeFileExplorer({
               onClick={() => setShowCreateDialog(true)}
             >
               <Plus className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-5 w-5 hover:bg-sidebar-accent">
-              <MoreHorizontal className="h-3 w-3" />
             </Button>
           </div>
         </div>
