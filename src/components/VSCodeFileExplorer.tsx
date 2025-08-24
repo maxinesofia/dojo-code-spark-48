@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { FileNode } from "../types/FileTypes";
 import { PackageService, Package } from "../services/PackageService";
 import { FileCreateDialog } from "./FileCreateDialog";
-import { FileIcon } from "../utils/fileIcons";
+import { FileIcon } from "@/utils/fileIcons";
 
 interface VSCodeFileExplorerProps {
   files: FileNode[];

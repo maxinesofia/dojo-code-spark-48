@@ -276,3 +276,6 @@ export function FileIcon({
     />
   );
 }
+
+// Default export for convenience
+export default FileIcon;
