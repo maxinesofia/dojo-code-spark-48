@@ -4,19 +4,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Edit3, Plus, Calendar, FileText, FolderOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ProjectService, Project } from "@/services/ProjectService";
 import { FileNode } from "@/types/FileTypes";
 
-// Default files for new projects
-const getDefaultFiles = (projectName: string): FileNode[] => [
-  {
-    id: 'index.html',
-    name: 'index.html',
-    type: 'file',
-    content: `<!DOCTYPE html>
+// Template configurations
+const templates = {
+  vanilla: {
+    name: 'Vanilla HTML/CSS/JS',
+    description: 'Basic HTML, CSS, and JavaScript project',
+    icon: '📄',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'index.html',
+        name: 'index.html',
+        type: 'file',
+        content: `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,12 +39,12 @@ const getDefaultFiles = (projectName: string): FileNode[] => [
     <script src="script.js"></script>
 </body>
 </html>`
-  },
-  {
-    id: 'styles.css',
-    name: 'styles.css',
-    type: 'file',
-    content: `body {
+      },
+      {
+        id: 'styles.css',
+        name: 'styles.css',
+        type: 'file',
+        content: `body {
     font-family: system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     margin: 0;
@@ -80,12 +86,12 @@ button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
 }`
-  },
-  {
-    id: 'script.js',
-    name: 'script.js',
-    type: 'file',
-    content: `// ${projectName} JavaScript
+      },
+      {
+        id: 'script.js',
+        name: 'script.js',
+        type: 'file',
+        content: `// ${projectName} JavaScript
 console.log('Welcome to ${projectName}!');
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -99,13 +105,243 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });`
+      }
+    ]
+  },
+  react: {
+    name: 'React + TypeScript',
+    description: 'Modern React with TypeScript setup',
+    icon: '⚛️',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'index.html',
+        name: 'index.html',
+        type: 'file',
+        content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>`
+      },
+      {
+        id: 'src',
+        name: 'src',
+        type: 'folder',
+        children: [
+          {
+            id: 'main.tsx',
+            name: 'main.tsx',
+            type: 'file',
+            content: `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)`
+          },
+          {
+            id: 'App.tsx',
+            name: 'App.tsx',
+            type: 'file',
+            content: `import { useState } from 'react'
+import './App.css'
+
+function App() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <div className="App">
+      <h1>${projectName}</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export default App`
+          },
+          {
+            id: 'App.css',
+            name: 'App.css',
+            type: 'file',
+            content: `.App {
+  text-align: center;
+  padding: 2rem;
+}
+
+.card {
+  padding: 2em;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  color: white;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: #646cff;
+}`
+          },
+          {
+            id: 'index.css',
+            name: 'index.css',
+            type: 'file',
+            content: `body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}`
+          }
+        ]
+      }
+    ]
+  },
+  vanilla_ts: {
+    name: 'TypeScript',
+    description: 'TypeScript project with modern tooling',
+    icon: '🔷',
+    files: (projectName: string): FileNode[] => [
+      {
+        id: 'index.html',
+        name: 'index.html',
+        type: 'file',
+        content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to ${projectName}!</h1>
+        <p>TypeScript project ready to go!</p>
+        <button id="clickMe">Click me!</button>
+    </div>
+    <script type="module" src="main.ts"></script>
+</body>
+</html>`
+      },
+      {
+        id: 'main.ts',
+        name: 'main.ts',
+        type: 'file',
+        content: `// ${projectName} TypeScript
+interface ButtonHandler {
+  element: HTMLElement;
+  clickCount: number;
+  handleClick(): void;
+}
+
+class ClickCounter implements ButtonHandler {
+  element: HTMLElement;
+  clickCount: number = 0;
+
+  constructor(element: HTMLElement) {
+    this.element = element;
+    this.element.addEventListener('click', () => this.handleClick());
   }
-];
+
+  handleClick(): void {
+    this.clickCount++;
+    this.element.textContent = \`Clicked \${this.clickCount} time\${this.clickCount !== 1 ? 's' : ''}!\`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const button = document.getElementById('clickMe') as HTMLButtonElement;
+  if (button) {
+    new ClickCounter(button);
+  }
+});`
+      },
+      {
+        id: 'styles.css',
+        name: 'styles.css',
+        type: 'file',
+        content: `body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, #fff, #ddd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+button {
+    background: #1e40af;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+}`
+      }
+    ]
+  }
+};
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectTemplate, setNewProjectTemplate] = useState("vanilla");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -141,14 +377,14 @@ const Projects = () => {
     }
 
     try {
-      // FIRST: Save the current project if it has content and isn't already saved
+      // FIRST: Save the current project if it has content
       const currentProject = ProjectService.getCurrentProject();
       if (currentProject && currentProject.files.length > 0) {
         // Save current project as a separate saved project with unique ID
         const savedCurrentProject = {
-          id: Date.now().toString() + '-saved', // Unique ID
+          id: `project-${Date.now()}`, // Unique ID
           name: currentProject.name,
-          description: currentProject.description || 'Project',
+          description: currentProject.description || 'Saved project',
           template: currentProject.template,
           isPublic: false,
           isForked: false,
@@ -157,18 +393,19 @@ const Projects = () => {
           files: currentProject.files
         };
         
-        // Save it to the projects list
+        // Save it to the projects list (NOT as current)
         ProjectService.saveProject(savedCurrentProject);
       }
 
-      // SECOND: Create the NEW project with fresh default files
-      const projectFiles = getDefaultFiles(newProjectName.trim());
+      // SECOND: Create the NEW project with selected template
+      const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
+      const projectFiles = selectedTemplate.files(newProjectName.trim());
       
       const newProject = {
         id: 'current', // This becomes the new current project
         name: newProjectName.trim(),
-        description: 'New project',
-        template: 'vanilla' as const,
+        description: selectedTemplate.description,
+        template: newProjectTemplate,
         isPublic: false,
         isForked: false,
         lastModified: new Date().toISOString(),
@@ -182,11 +419,12 @@ const Projects = () => {
       loadProjects(); // Reload to show updated projects list
       
       setNewProjectName("");
+      setNewProjectTemplate("vanilla");
       setIsCreateDialogOpen(false);
       
       toast({
         title: "Success",
-        description: `New project "${newProjectName.trim()}" created! Your previous project has been saved.`
+        description: `New ${selectedTemplate.name} project "${newProjectName.trim()}" created!`
       });
       
     } catch (error) {
@@ -306,6 +544,29 @@ const Projects = () => {
                       onKeyDown={(e) => e.key === 'Enter' && createNewProject()}
                     />
                   </div>
+                  
+                  <div>
+                    <Label htmlFor="template">Choose Template</Label>
+                    <Select value={newProjectTemplate} onValueChange={setNewProjectTemplate}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(templates).map(([key, template]) => (
+                          <SelectItem key={key} value={key}>
+                            <div className="flex items-center gap-2">
+                              <span>{template.icon}</span>
+                              <div>
+                                <div className="font-medium">{template.name}</div>
+                                <div className="text-sm text-muted-foreground">{template.description}</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       Cancel
