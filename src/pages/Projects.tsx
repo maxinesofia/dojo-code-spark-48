@@ -141,22 +141,31 @@ const Projects = () => {
     }
 
     try {
-      // First, save the current project if it exists and has changes
+      // FIRST: Save the current project if it has content and isn't already saved
       const currentProject = ProjectService.getCurrentProject();
-      if (currentProject && currentProject.files.length > 0 && currentProject.name !== 'Untitled Project') {
-        // Only save if it's the current project with actual content
-        if (currentProject.id === 'current') {
-          // Save current project with a unique ID before creating new one
-          ProjectService.saveCurrentProject(currentProject, currentProject.files);
-        }
+      if (currentProject && currentProject.files.length > 0) {
+        // Save current project as a separate saved project with unique ID
+        const savedCurrentProject = {
+          id: Date.now().toString() + '-saved', // Unique ID
+          name: currentProject.name,
+          description: currentProject.description || 'Project',
+          template: currentProject.template,
+          isPublic: false,
+          isForked: false,
+          lastModified: new Date().toISOString(),
+          fileCount: currentProject.files.length,
+          files: currentProject.files
+        };
+        
+        // Save it to the projects list
+        ProjectService.saveProject(savedCurrentProject);
       }
 
-      // Now create the new project with fresh default files
+      // SECOND: Create the NEW project with fresh default files
       const projectFiles = getDefaultFiles(newProjectName.trim());
       
-      // Create new project and immediately switch to it (this clears current state)
       const newProject = {
-        id: Date.now().toString(),
+        id: 'current', // This becomes the new current project
         name: newProjectName.trim(),
         description: 'New project',
         template: 'vanilla' as const,
@@ -167,18 +176,19 @@ const Projects = () => {
         files: projectFiles
       };
 
-      // Switch to the new project (this sets it as current)
+      // THIRD: Switch to the new project (replaces current project state)
       ProjectService.switchToProject(newProject);
       
-      loadProjects(); // Reload to get the updated list
+      loadProjects(); // Reload to show updated projects list
       
       setNewProjectName("");
       setIsCreateDialogOpen(false);
       
       toast({
         title: "Success",
-        description: "New project created successfully!"
+        description: `New project "${newProjectName.trim()}" created! Your previous project has been saved.`
       });
+      
     } catch (error) {
       console.error('Error creating project:', error);
       toast({
