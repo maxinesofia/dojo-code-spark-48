@@ -24,7 +24,6 @@ export class TerminalWebSocketService {
   private onConnectedCallback?: (sessionId: string) => void;
   private onDisconnectedCallback?: () => void;
   private onConnectionFailedCallback?: () => void;
-  private onCapabilitiesCallback?: (caps: any) => void;
 
   constructor() {
     // Don't auto-connect - let the component decide
@@ -35,16 +34,15 @@ export class TerminalWebSocketService {
       return; // Already connected
     }
     try {
-      // Connect to the backend server's WebSocket endpoint
+      // In production, this would be your backend WebSocket URL
       const wsUrl = process.env.NODE_ENV === 'production' 
         ? 'wss://your-backend-domain.com/terminal'
-        : 'ws://localhost:5000/terminal'; // Updated port to match backend
+        : 'ws://localhost:3000/terminal';
       
-      console.log(`Attempting to connect to: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('✅ Terminal WebSocket connected');
+        console.log('Terminal WebSocket connected');
         this.reconnectAttempts = 0;
       };
 
@@ -57,15 +55,11 @@ export class TerminalWebSocketService {
         }
       };
 
-      this.ws.onclose = (event) => {
-        console.log('Terminal WebSocket disconnected:', event.code, event.reason);
+      this.ws.onclose = () => {
+        console.log('Terminal WebSocket disconnected');
         this.session = null;
         this.onDisconnectedCallback?.();
-        
-        // Only attempt reconnect if not a normal closure
-        if (event.code !== 1000) {
-          this.attemptReconnect();
-        }
+        this.attemptReconnect();
       };
 
       this.ws.onerror = (error) => {
@@ -103,9 +97,6 @@ export class TerminalWebSocketService {
 
       case 'output':
         this.onOutputCallback?.(message.data);
-        break;
-      case 'terminal_capabilities':
-  this.onCapabilitiesCallback?.(message.data);
         break;
 
       case 'error':
@@ -210,10 +201,6 @@ export class TerminalWebSocketService {
 
   public onConnectionFailed(callback: () => void) {
     this.onConnectionFailedCallback = callback;
-  }
-
-  public onCapabilities(callback: (caps: any) => void) {
-    this.onCapabilitiesCallback = callback;
   }
 
   public getSession() {

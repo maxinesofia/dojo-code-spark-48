@@ -34,72 +34,42 @@ export function Terminal({
   const terminalServiceRef = useRef<TerminalWebSocketService | WebTerminalService | null>(null);
   const isInitializedRef = useRef(false);
   const dataHandlerRef = useRef<((data: string) => void) | null>(null);
-  const dataHandlerDisposableRef = useRef<{ dispose: () => void } | null>(null); // track current onData subscription
-  // Optional: enable simple line buffering for real backend shells to avoid per-char echo duplication when not using a PTY
-  const useLineBufferingRef = useRef<boolean>(true);
   
   const [isConnected, setIsConnected] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isVirtual, setIsVirtual] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [hasPty, setHasPty] = useState(false);
-  // Track last sent command to suppress echo duplication for non-pty mode
-  const pendingEchoRef = useRef<string | null>(null);
 
   const setupRealTerminal = useCallback(() => {
     if (!xtermRef.current || isInitializedRef.current) return;
     
     const terminal = xtermRef.current;
     
-    console.log('🔌 Attempting to connect to real terminal backend');
+    console.log('Attempting to connect to real terminal backend');
     setError(null);
     setIsVirtual(false);
     
-  const wsService = new TerminalWebSocketService();
+    const wsService = new TerminalWebSocketService();
     terminalServiceRef.current = wsService;
     
     // Set up event handlers
-    wsService.onConnected((receivedSessionId: string) => {
-      console.log('✅ Connected to real terminal:', receivedSessionId);
+    wsService.onConnected(() => {
+      console.log('Connected to real terminal');
       setIsConnected(true);
-      setCurrentSessionId(receivedSessionId);
       setError(null);
       isInitializedRef.current = true;
       
-      // Start terminal session with placeholder IDs or actual project data
+      // Start terminal session with placeholder IDs
       wsService.startTerminal('project-1', 'user-1');
-      
-      // Show welcome message
-      terminal.writeln('\x1b[32m🚀 Real Terminal Connected!\x1b[0m');
-      terminal.writeln('\x1b[36mType your commands below...\x1b[0m');
     });
     
     wsService.onOutput((data: string) => {
-      if (!hasPty) {
-        // Suppress immediate echo duplication in non-PTY mode
-        if (pendingEchoRef.current) {
-          // If output starts with the pending command, strip it once
-          const cmd = pendingEchoRef.current;
-            if (data.startsWith(cmd)) {
-              data = data.slice(cmd.length); // remove echoed command
-              pendingEchoRef.current = null;
-            }
-        }
-      }
       terminal.write(data);
-    });
-
-    wsService.onCapabilities(caps => {
-      setHasPty(!!caps?.pty);
-      // If PTY available, disable line buffering for real-time interaction
-      if (caps?.pty) {
-        useLineBufferingRef.current = false;
-      }
     });
     
     wsService.onError((error: string) => {
-      console.error('❌ Terminal error:', error);
+      console.error('Terminal error:', error);
       setError(error);
       if (!isInitializedRef.current) {
         console.log('Failed to connect to real terminal, falling back to virtual');
@@ -116,64 +86,19 @@ export function Terminal({
     });
     
     wsService.onDisconnected(() => {
-      console.log('🔌 Disconnected from real terminal');
+      console.log('Disconnected from real terminal');
       setIsConnected(false);
-      setCurrentSessionId(null);
-      
-      // Try to reconnect or fallback to virtual
-      if (isInitializedRef.current) {
-        setTimeout(() => {
-          setupVirtualTerminal();
-        }, 1000);
-      }
     });
     
     // Handle user input - send raw input to terminal
-    // Real terminal input handling (with optional line buffering)
-    let lineBuffer = '';
     const dataHandler = (data: string) => {
-      if (!wsService.isConnected()) return;
-      if (hasPty) {
-        // Raw passthrough to PTY
-        wsService.executeCommand(data);
-        return;
-      }
-      // Fallback non-PTY buffering
-      const code = data.charCodeAt(0);
-      if (useLineBufferingRef.current) {
-        if (code === 13) { // Enter
-          // Send full line with newline
-          wsService.executeCommand(lineBuffer + '\n');
-          pendingEchoRef.current = lineBuffer; // remember to suppress echo
-          // Manually print newline (remote will also send one; okay)
-          terminal.write('\r\n');
-          lineBuffer = '';
-        } else if (code === 127) { // Backspace
-          if (lineBuffer.length > 0) {
-            lineBuffer = lineBuffer.slice(0, -1);
-            // Update display: move backspace visually
-            terminal.write('\b \b');
-          }
-        } else if (code === 3) { // Ctrl+C
-          wsService.executeCommand('\x03');
-          lineBuffer = '';
-          terminal.write('^C\r\n');
-        } else {
-          lineBuffer += data;
-          // Echo locally so user sees typing
-          terminal.write(data);
-        }
-      } else {
+      if (wsService.isConnected()) {
         wsService.executeCommand(data);
       }
     };
-
-    // Dispose any previous handler to prevent duplicate echo
-    if (dataHandlerDisposableRef.current) {
-      dataHandlerDisposableRef.current.dispose();
-    }
+    
     dataHandlerRef.current = dataHandler;
-    dataHandlerDisposableRef.current = terminal.onData(dataHandler);
+    terminal.onData(dataHandler);
     
     // Connect to WebSocket
     wsService.connect();
@@ -276,12 +201,8 @@ export function Terminal({
     };
 
     // Store the handler reference and attach it
-    // Dispose any previous handler first to avoid duplicates when switching modes
-    if (dataHandlerDisposableRef.current) {
-      dataHandlerDisposableRef.current.dispose();
-    }
     dataHandlerRef.current = dataHandler;
-    dataHandlerDisposableRef.current = terminal.onData(dataHandler);
+    terminal.onData(dataHandler);
   }, [files, onCommandExecuted, onFileSystemChange]);
 
   useEffect(() => {
@@ -369,11 +290,6 @@ export function Terminal({
       clearTimeout(fallbackTimer);
       
       if (dataHandlerRef.current && terminal) {
-        // Dispose input handler explicitly
-        if (dataHandlerDisposableRef.current) {
-          dataHandlerDisposableRef.current.dispose();
-          dataHandlerDisposableRef.current = null;
-        }
         terminal.dispose();
       }
       
@@ -473,7 +389,7 @@ export function Terminal({
               onClick={handleClose}
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 hover:bg-red-500/20"
+              className="h-6 w-6 p-0 hover:bg-muted hover:bg-red-500/20"
             >
               <X className="h-3 w-3" />
             </Button>

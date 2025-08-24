@@ -23,7 +23,6 @@ const Projects = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -82,59 +81,8 @@ const Projects = () => {
       return;
     }
 
-    setIsCreatingProject(true);
-    
-    try {
-      // Step 1: Save the current project permanently before creating a new one
-    const currentProjectState = localStorage.getItem('tutorials-dojo-project-state');
-    let savedProjects = [];
-    
-    // Load existing saved projects
-    const existingProjectsData = localStorage.getItem('tutorials-dojo-projects');
-    if (existingProjectsData) {
-      try {
-        savedProjects = JSON.parse(existingProjectsData);
-      } catch (error) {
-        console.error('Error loading existing projects:', error);
-      }
-    }
-    
-    if (currentProjectState) {
-      try {
-        const currentState = JSON.parse(currentProjectState);
-        const currentProjectName = currentState.projectName || 'Untitled Project';
-        
-        // Only save the current project if:
-        // 1. It has files (not just default/empty state)
-        // 2. It's not already saved in the projects list
-        // 3. Its name is different from the new project we're creating
-        const hasValidFiles = currentState.files && currentState.files.length > 0;
-        const isDifferentFromNewProject = currentProjectName !== newProjectName.trim();
-        const notAlreadySaved = !savedProjects.find(p => p.name === currentProjectName && p.id !== 'current');
-        
-        if (hasValidFiles && isDifferentFromNewProject && notAlreadySaved) {
-          const permanentCurrentProject = {
-            id: `project_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-            name: currentProjectName,
-            description: 'Previously active project',
-            lastModified: currentState.lastSaved || new Date().toISOString(),
-            fileCount: currentState.files.length,
-            template: currentState.template || 'vanilla',
-            files: currentState.files
-          };
-          
-          savedProjects.unshift(permanentCurrentProject);
-          console.log('Saved current project as permanent:', permanentCurrentProject.name);
-        }
-      } catch (error) {
-        console.error('Error processing current project:', error);
-      }
-    }
-
-    // Step 2: Create the new project with completely fresh content
-    const newProjectId = `project_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const newProject = {
-      id: newProjectId,
+      id: Date.now().toString(),
       name: newProjectName.trim(),
       description: 'New project',
       lastModified: new Date().toISOString(),
@@ -232,26 +180,9 @@ document.addEventListener('DOMContentLoaded', function() {
       ]
     };
 
-    // Step 3: Add the new project to the saved projects list and update state
-    const newProjectsList = [newProject, ...savedProjects];
-    
-    // Save the updated projects list (excluding 'current' since we'll manage that separately)
-    localStorage.setItem('tutorials-dojo-projects', JSON.stringify(savedProjects));
-    
-    // Update the projects state for UI display
-    setProjects(newProjectsList);
-    
-    // Step 4: Set the new project as the current project state (this replaces the old current project)
-    const newProjectState = {
-      projectName: newProject.name,
-      template: newProject.template,
-      files: newProject.files,
-      lastSaved: new Date().toISOString()
-    };
-    
-    localStorage.setItem('tutorials-dojo-project-state', JSON.stringify(newProjectState));
-    console.log('Created new project and set as current:', newProject.name);
-    console.log('New project files:', newProject.files.map(f => f.name));
+    const updatedProjects = [newProject, ...projects.filter(p => p.id !== 'current')];
+    setProjects([...updatedProjects]);
+    saveProjects(updatedProjects);
     
     setNewProjectName("");
     setIsCreateDialogOpen(false);
@@ -260,25 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
       title: "Success",
       description: "New project created successfully!"
     });
-    
-    // Use setTimeout to ensure localStorage operations complete before navigation
-    setTimeout(() => {
-      // Reload projects to update the "current" project display
-      loadProjects();
-      // Navigate to the editor to start working on the new project
-      navigate('/editor');
-    }, 50);
-    
-    } catch (error) {
-      console.error('Error creating new project:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create new project. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreatingProject(false);
-    }
   };
 
   const renameProject = (projectId: string, newName: string) => {
@@ -435,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={createNewProject} disabled={isCreatingProject}>
-                      {isCreatingProject ? "Creating..." : "Create Project"}
+                    <Button onClick={createNewProject}>
+                      Create Project
                     </Button>
                   </div>
                 </div>

@@ -85,8 +85,11 @@ export class WebTerminalService {
   }
 
   getSessionInitMessage(): string {
-    // Minimal silent initialization (enable bracketed paste & set title) with no banner text
-    return '\x1b[?2004h\x1b]0;Terminal\x07';
+    if (this.sessionInitialized) {
+      return ''; // Don't show banner again
+    }
+    this.sessionInitialized = true;
+    return 'Virtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
   }
 
   getPrompt(): string {
@@ -366,8 +369,9 @@ export class WebTerminalService {
     if (items.length === 0) {
       return longFormat ? `total 0` : '';
     }
+    
     const result = items.sort().join('\n');
-  return longFormat ? `total ${items.length}\n${result}` : result + '\n';
+    return longFormat ? `total ${items.length}\n${result}` : result;
   }
 
   private handleCd(args: string[]): string {

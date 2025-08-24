@@ -76,17 +76,15 @@ const User = sequelize.define('User', {
   }
 });
 
-// Instance methods - only add if User has prototype (not in NO-DB mode)
-if (User.prototype) {
-  User.prototype.comparePassword = async function(candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
-  };
+// Instance methods
+User.prototype.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
-  User.prototype.toJSON = function() {
-    const values = Object.assign({}, this.get());
-    delete values.password;
-    return values;
-  };
-}
+User.prototype.toJSON = function() {
+  const values = Object.assign({}, this.get());
+  delete values.password;
+  return values;
+};
 
 module.exports = User;
