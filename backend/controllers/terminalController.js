@@ -1,13 +1,24 @@
-const { spawn } = require('child_process');
+const pty = require('node-pty');
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
-const gcpFirecrackerService = require('../services/gcpFirecrackerService');
+const path = require('path');
+const fs = require('fs').promises;
 const { Project, File } = require('../models');
 
 class TerminalController {
   constructor() {
     this.activeSessions = new Map();
     this.wsConnections = new Map();
+    this.workspaceDir = path.join(process.cwd(), 'workspace');
+    this.ensureWorkspaceDir();
+  }
+
+  async ensureWorkspaceDir() {
+    try {
+      await fs.mkdir(this.workspaceDir, { recursive: true });
+    } catch (error) {
+      console.error('Failed to create workspace directory:', error);
+    }
   }
 
   // Initialize WebSocket server for terminal sessions
@@ -50,7 +61,7 @@ class TerminalController {
       ws.send(JSON.stringify({ 
         type: 'session_init', 
         sessionId,
-        message: 'Terminal session initialized' 
+        message: 'Git Bash Terminal Ready - Type commands to interact!' 
       }));
     });
   }
@@ -63,8 +74,8 @@ class TerminalController {
         await this.startTerminalSession(sessionId, data, ws);
         break;
       
-      case 'command':
-        await this.executeCommand(sessionId, data, ws);
+      case 'input':
+        await this.sendInput(sessionId, data, ws);
         break;
       
       case 'resize':
@@ -85,78 +96,72 @@ class TerminalController {
 
   async startTerminalSession(sessionId, data, ws) {
     try {
-      const { projectId, userId } = data;
+      const { projectId = 'default', userId = 'default' } = data || {};
 
-      // Get project files for context
-      const project = await Project.findOne({
-        where: { id: projectId, userId },
-        include: [File]
+      // Create isolated workspace for this session
+      const sessionWorkspace = path.join(this.workspaceDir, sessionId);
+      await fs.mkdir(sessionWorkspace, { recursive: true });
+
+      // Initialize git repository in the workspace
+      const ptyProcess = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+        name: 'xterm-color',
+        cols: 80,
+        rows: 24,
+        cwd: sessionWorkspace,
+        env: {
+          ...process.env,
+          TERM: 'xterm-256color',
+          COLORTERM: 'truecolor',
+          PS1: process.platform === 'win32' ? undefined : '\\[\\033[32m\\]git-bash\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ ',
+          HOME: sessionWorkspace,
+          USER: 'developer',
+          SHELL: process.platform === 'win32' ? 'cmd.exe' : '/bin/bash'
+        }
       });
 
-      if (!project) {
-        throw new Error('Project not found');
-      }
-
-      // Create or get VM for this project
-      let vmId = project.executionId;
-      
-      if (!vmId || project.executionStatus !== 'running') {
-        // Start new VM with project files
-        const files = {};
-        project.Files.forEach(file => {
-          files[file.name] = file.content;
-        });
-
-        const result = await gcpFirecrackerService.executeCode(files, 'terminal');
-        vmId = result.vmId;
-
-        // Update project with VM info
-        await project.update({
-          executionStatus: 'running',
-          executionId: vmId,
-          executionUrl: `http://34.75.79.84:8080/${vmId}`,
-          lastExecuted: new Date()
-        });
-      }
-
-      // Connect to VM terminal
-      const terminalProcess = await this.connectToVMTerminal(vmId);
-      
       this.activeSessions.set(sessionId, {
-        vmId,
         projectId,
         userId,
-        process: terminalProcess,
-        startTime: new Date()
+        process: ptyProcess,
+        workspace: sessionWorkspace,
+        startTime: new Date(),
+        cols: 80,
+        rows: 24
       });
 
-      // Setup terminal process handlers
-      terminalProcess.stdout.on('data', (data) => {
+      // Handle PTY data (stdout/stderr combined)
+      ptyProcess.onData((data) => {
         ws.send(JSON.stringify({
           type: 'output',
-          data: data.toString()
+          data: data
         }));
       });
 
-      terminalProcess.stderr.on('data', (data) => {
-        ws.send(JSON.stringify({
-          type: 'output',
-          data: data.toString()
-        }));
-      });
-
-      terminalProcess.on('close', (code) => {
+      // Handle PTY exit
+      ptyProcess.onExit(({ exitCode, signal }) => {
+        console.log(`Terminal process exited: ${exitCode}, signal: ${signal}`);
         ws.send(JSON.stringify({
           type: 'process_exit',
-          code
+          exitCode,
+          signal
         }));
         this.cleanup(sessionId);
       });
 
+      // Initialize with welcome message and git setup
+      setTimeout(() => {
+        const welcomeCmd = process.platform === 'win32' 
+          ? 'echo Welcome to Git Bash Terminal! & git --version & echo. & echo Ready for Git operations...\r\n'
+          : 'echo "Welcome to Git Bash Terminal!" && git --version && echo "Ready for Git operations..."\n';
+        
+        ptyProcess.write(welcomeCmd);
+      }, 100);
+
       ws.send(JSON.stringify({
         type: 'terminal_started',
-        vmId,
-        message: 'Terminal session started successfully'
+        sessionId,
+        workspace: sessionWorkspace,
+        message: 'Real terminal session started with Git support!'
       }));
 
     } catch (error) {
@@ -168,24 +173,7 @@ class TerminalController {
     }
   }
 
-  async connectToVMTerminal(vmId) {
-    // Connect to the Firecracker VM terminal
-    // This would use the VM's console or SSH connection
-    
-    // For now, simulate with a local bash process (replace with actual VM connection)
-    const terminalProcess = spawn('bash', [], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        TERM: 'xterm-256color',
-        PS1: `\\[\\033[32m\\]developer@firecracker-${vmId.slice(0,8)}\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ `
-      }
-    });
-
-    return terminalProcess;
-  }
-
-  async executeCommand(sessionId, command, ws) {
+  async sendInput(sessionId, input, ws) {
     try {
       const session = this.activeSessions.get(sessionId);
       
@@ -193,20 +181,18 @@ class TerminalController {
         throw new Error('Terminal session not found');
       }
 
-      // Send command to terminal process
-      session.process.stdin.write(command + '\n');
-
-      // Log command execution
-      console.log(`Command executed in session ${sessionId}: ${command}`);
+      // Send input directly to PTY
+      session.process.write(input);
 
     } catch (error) {
-      console.error('Execute command error:', error);
+      console.error('Send input error:', error);
       ws.send(JSON.stringify({
         type: 'error',
         data: error.message
       }));
     }
   }
+
 
   async resizeTerminal(sessionId, { cols, rows }, ws) {
     try {
@@ -216,10 +202,12 @@ class TerminalController {
         throw new Error('Terminal session not found');
       }
 
-      // Resize terminal (if supported by the process)
-      if (session.process.resize) {
-        session.process.resize(cols, rows);
-      }
+      // Resize PTY
+      session.process.resize(cols, rows);
+      session.cols = cols;
+      session.rows = rows;
+
+      console.log(`Terminal resized for session ${sessionId}: ${cols}x${rows}`);
 
     } catch (error) {
       console.error('Resize terminal error:', error);
@@ -253,9 +241,17 @@ class TerminalController {
     
     if (session) {
       try {
-        session.process.kill('SIGTERM');
+        // Kill PTY process
+        session.process.kill();
       } catch (error) {
-        console.error('Error killing process:', error);
+        console.error('Error killing PTY process:', error);
+      }
+      
+      // Clean up workspace directory (optional - could keep for persistence)
+      if (session.workspace) {
+        fs.rmdir(session.workspace, { recursive: true }).catch(err => {
+          console.error('Error cleaning workspace:', err);
+        });
       }
       
       this.activeSessions.delete(sessionId);
@@ -269,10 +265,11 @@ class TerminalController {
     try {
       const sessions = Array.from(this.activeSessions.entries()).map(([id, session]) => ({
         sessionId: id,
-        vmId: session.vmId,
         projectId: session.projectId,
         startTime: session.startTime,
-        userId: session.userId
+        userId: session.userId,
+        workspace: session.workspace,
+        size: `${session.cols}x${session.rows}`
       }));
 
       res.json({

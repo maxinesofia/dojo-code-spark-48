@@ -24,6 +24,7 @@ export class TerminalWebSocketService {
   private onConnectedCallback?: (sessionId: string) => void;
   private onDisconnectedCallback?: () => void;
   private onConnectionFailedCallback?: () => void;
+  private onTerminalStartedCallback?: (data: any) => void;
 
   constructor() {
     // Don't auto-connect - let the component decide
@@ -37,7 +38,7 @@ export class TerminalWebSocketService {
       // In production, this would be your backend WebSocket URL
       const wsUrl = process.env.NODE_ENV === 'production' 
         ? 'wss://your-backend-domain.com/terminal'
-        : 'ws://localhost:3000/terminal';
+        : 'ws://localhost:5000/terminal';
       
       this.ws = new WebSocket(wsUrl);
       
@@ -93,6 +94,7 @@ export class TerminalWebSocketService {
           this.session.vmId = message.data?.vmId;
         }
         console.log('Terminal started:', message.data);
+        this.onTerminalStartedCallback?.(message.data);
         break;
 
       case 'output':
@@ -156,6 +158,18 @@ export class TerminalWebSocketService {
     });
   }
 
+  public sendInput(input: string) {
+    if (!this.session || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      this.onErrorCallback?.('Terminal session not active');
+      return;
+    }
+
+    this.send({
+      type: 'input',
+      data: input
+    });
+  }
+
   public resizeTerminal(cols: number, rows: number) {
     if (!this.session || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
       return;
@@ -165,6 +179,10 @@ export class TerminalWebSocketService {
       type: 'resize',
       data: { cols, rows }
     });
+  }
+
+  public sendResize(cols: number, rows: number) {
+    this.resizeTerminal(cols, rows);
   }
 
   public stopTerminal() {
@@ -201,6 +219,10 @@ export class TerminalWebSocketService {
 
   public onConnectionFailed(callback: () => void) {
     this.onConnectionFailedCallback = callback;
+  }
+
+  public onTerminalStarted(callback: (data: any) => void) {
+    this.onTerminalStartedCallback = callback;
   }
 
   public getSession() {

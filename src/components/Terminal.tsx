@@ -54,10 +54,11 @@ export function Terminal({
     terminalServiceRef.current = wsService;
     
     // Set up event handlers
-    wsService.onConnected(() => {
+    wsService.onConnected((sessionId: string) => {
       console.log('Connected to real terminal');
       setIsConnected(true);
       setError(null);
+      setCurrentSessionId(sessionId);
       isInitializedRef.current = true;
       
       // Start terminal session with placeholder IDs
@@ -66,6 +67,11 @@ export function Terminal({
     
     wsService.onOutput((data: string) => {
       terminal.write(data);
+    });
+
+    wsService.onTerminalStarted((data: any) => {
+      console.log('Terminal started:', data);
+      terminal.focus();
     });
     
     wsService.onError((error: string) => {
@@ -93,7 +99,7 @@ export function Terminal({
     // Handle user input - send raw input to terminal
     const dataHandler = (data: string) => {
       if (wsService.isConnected()) {
-        wsService.executeCommand(data);
+        wsService.sendInput(data);
       }
     };
     
@@ -254,6 +260,11 @@ export function Terminal({
     
     terminal.open(terminalRef.current);
     fitAddon.fit();
+    
+    // Focus terminal on click
+    terminalRef.current.addEventListener('click', () => {
+      terminal.focus();
+    });
 
     xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
@@ -273,7 +284,13 @@ export function Terminal({
 
     // Handle terminal resize when expanded/collapsed
     const handleResize = () => {
-      if (fitAddon) {
+      if (fitAddon && terminalServiceRef.current && 'sendResize' in terminalServiceRef.current) {
+        setTimeout(() => {
+          fitAddon.fit();
+          const { cols, rows } = terminal;
+          (terminalServiceRef.current as TerminalWebSocketService).sendResize(cols, rows);
+        }, 100);
+      } else if (fitAddon) {
         setTimeout(() => {
           fitAddon.fit();
         }, 100);
