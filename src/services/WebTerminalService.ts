@@ -85,11 +85,8 @@ export class WebTerminalService {
   }
 
   getSessionInitMessage(): string {
-    if (this.sessionInitialized) {
-      return ''; // Don't show banner again
-    }
     this.sessionInitialized = true;
-    return 'Virtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
+    return '';
   }
 
   getPrompt(): string {
