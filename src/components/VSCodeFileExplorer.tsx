@@ -96,23 +96,45 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (node.type === 'folder') {
-      e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       setIsDragOver(true);
+    } else {
+      e.dataTransfer.dropEffect = 'move';
     }
   };
 
-  const handleDragLeave = () => {
-    setIsDragOver(false);
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only clear drag over if we're actually leaving this element
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     const draggedFileId = e.dataTransfer.getData('text/plain');
     
-    if (draggedFileId !== node.id && node.type === 'folder') {
-      onMove?.(draggedFileId, node.id);
+    if (draggedFileId && draggedFileId !== node.id) {
+      if (node.type === 'folder') {
+        // Drop into folder
+        onMove?.(draggedFileId, node.id);
+      } else {
+        // This could be used for reordering in the future
+        console.log('Drop on file for reordering:', draggedFileId, 'onto', node.id);
+      }
     }
     
     setIsDragOver(false);
@@ -315,7 +337,21 @@ export function VSCodeFileExplorer({
       </div>
 
       {/* Project Folder - Scrollable File Tree */}
-      <div className="flex-1 overflow-y-auto">
+      <div 
+        className="flex-1 overflow-y-auto"
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          const draggedFileId = e.dataTransfer.getData('text/plain');
+          if (draggedFileId) {
+            // Drop to root level (no parent)
+            onFileMove?.(draggedFileId, undefined);
+          }
+        }}
+      >
         <div className="px-2 py-1">
           <div className="flex items-center text-sm font-medium py-1">
             <ChevronDown className="w-4 h-4 mr-1" />

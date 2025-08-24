@@ -1065,45 +1065,63 @@ export function EditorLayout() {
   }, [files, selectedFile, toast]);
 
   const handleFileMove = useCallback((fileId: string, newParentId?: string) => {
+    console.log('Moving file:', fileId, 'to parent:', newParentId);
+    
     // Find and remove the file from its current location
     let fileToMove: FileNode | null = null;
     
     const removeFile = (nodes: FileNode[]): FileNode[] => {
-      return nodes.filter(node => {
+      const result: FileNode[] = [];
+      
+      for (const node of nodes) {
         if (node.id === fileId) {
           fileToMove = node;
-          return false;
+          // Don't add this node to result - effectively removing it
+          continue;
         }
-        if (node.children) {
-          node.children = removeFile(node.children);
+        
+        if (node.children && Array.isArray(node.children)) {
+          // Recursively remove from children
+          const updatedChildren = removeFile(node.children);
+          result.push({ ...node, children: updatedChildren });
+        } else {
+          result.push(node);
         }
-        return true;
-      });
+      }
+      
+      return result;
     };
 
     // Add file to new location
     const addFileToParent = (nodes: FileNode[]): FileNode[] => {
       if (!newParentId) {
-        // Moving to root
+        // Moving to root - add fileToMove to the top level
         return [...nodes, fileToMove!];
       }
       
       return nodes.map(node => {
         if (node.id === newParentId && node.type === 'folder') {
-          return {
-            ...node,
-            children: [...(node.children || []), fileToMove!]
-          };
+          // Add to this folder's children
+          const updatedChildren = [...(node.children || []), fileToMove!];
+          return { ...node, children: updatedChildren };
         }
-        if (node.children) {
-          return { ...node, children: addFileToParent(node.children) };
+        
+        if (node.children && Array.isArray(node.children)) {
+          // Recursively check children
+          const updatedChildren = addFileToParent(node.children);
+          return { ...node, children: updatedChildren };
         }
+        
         return node;
       });
     };
 
+    console.log('Starting file removal process');
+    const updatedFiles = removeFile([...files]);
+    console.log('File to move:', fileToMove);
+    
     if (fileToMove) {
-      const updatedFiles = removeFile([...files]);
+      console.log('Adding file to new parent');
       const finalFiles = addFileToParent(updatedFiles);
       setFiles(finalFiles);
       
@@ -1111,6 +1129,8 @@ export function EditorLayout() {
         title: "File moved",
         description: `${fileToMove.name} has been moved successfully.`,
       });
+    } else {
+      console.log('File not found:', fileId);
     }
   }, [files, toast]);
 
