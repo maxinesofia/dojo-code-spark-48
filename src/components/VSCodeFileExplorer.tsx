@@ -18,6 +18,7 @@ interface VSCodeFileExplorerProps {
   onFileCreate: (name: string, type: 'file' | 'folder', content?: string, parentId?: string) => void;
   onFileDelete: (fileId: string) => void;
   onFileRename: (fileId: string, newName: string) => void;
+  onFileMove?: (fileId: string, newParentId?: string, newIndex?: number) => void;
   projectTitle?: string;
   onProjectTitleChange?: (newTitle: string) => void;
 }
@@ -32,6 +33,7 @@ interface FileTreeItemProps {
   onDelete?: (id: string) => void;
   onRename?: (id: string, newName: string) => void;
   onCreateInFolder?: (parentId: string, name: string, type: 'file' | 'folder', content?: string) => void;
+  onMove?: (fileId: string, newParentId?: string, newIndex?: number) => void;
   expandedFolders: Set<string>;
 }
 
@@ -45,11 +47,14 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   onDelete,
   onRename,
   onCreateInFolder,
+  onMove,
   expandedFolders
 }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameName, setRenameName] = useState(node.name);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Check if this folder is expanded
   const isExpanded = node.type === 'folder' && expandedFolders.has(node.id);
@@ -79,16 +84,58 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', node.id);
+    e.dataTransfer.effectAllowed = 'move';
+    setIsDragging(true);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (node.type === 'folder') {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const draggedFileId = e.dataTransfer.getData('text/plain');
+    
+    if (draggedFileId !== node.id && node.type === 'folder') {
+      onMove?.(draggedFileId, node.id);
+    }
+    
+    setIsDragOver(false);
+  };
+
   return (
     <div>
       <div
         className={cn(
           "flex items-center py-1 px-2 text-sm cursor-pointer hover:bg-muted/50 group relative",
           isSelected && "bg-primary/20 text-primary",
+          isDragging && "opacity-50",
+          isDragOver && node.type === 'folder' && "bg-blue-100 border border-blue-300 border-dashed",
           "transition-colors"
         )}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}
+        draggable={!isRenaming}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         {node.type === 'folder' ? (
           <>
@@ -199,6 +246,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
               onDelete={onDelete}
               onRename={onRename}
               onCreateInFolder={onCreateInFolder}
+              onMove={onMove}
               expandedFolders={expandedFolders}
             />
           )) : null}
@@ -215,6 +263,7 @@ export function VSCodeFileExplorer({
   onFileCreate,
   onFileDelete,
   onFileRename,
+  onFileMove,
   projectTitle = "TUTORIALS DOJO",
   onProjectTitleChange
 }: VSCodeFileExplorerProps) {
@@ -291,6 +340,7 @@ export function VSCodeFileExplorer({
                 onDelete={onFileDelete}
                 onRename={onFileRename}
                 onCreateInFolder={handleCreateInFolder}
+                onMove={onFileMove}
                 expandedFolders={expandedFolders}
               />
             ))}

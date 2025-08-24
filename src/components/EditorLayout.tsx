@@ -1064,6 +1064,56 @@ export function EditorLayout() {
     });
   }, [files, selectedFile, toast]);
 
+  const handleFileMove = useCallback((fileId: string, newParentId?: string) => {
+    // Find and remove the file from its current location
+    let fileToMove: FileNode | null = null;
+    
+    const removeFile = (nodes: FileNode[]): FileNode[] => {
+      return nodes.filter(node => {
+        if (node.id === fileId) {
+          fileToMove = node;
+          return false;
+        }
+        if (node.children) {
+          node.children = removeFile(node.children);
+        }
+        return true;
+      });
+    };
+
+    // Add file to new location
+    const addFileToParent = (nodes: FileNode[]): FileNode[] => {
+      if (!newParentId) {
+        // Moving to root
+        return [...nodes, fileToMove!];
+      }
+      
+      return nodes.map(node => {
+        if (node.id === newParentId && node.type === 'folder') {
+          return {
+            ...node,
+            children: [...(node.children || []), fileToMove!]
+          };
+        }
+        if (node.children) {
+          return { ...node, children: addFileToParent(node.children) };
+        }
+        return node;
+      });
+    };
+
+    if (fileToMove) {
+      const updatedFiles = removeFile([...files]);
+      const finalFiles = addFileToParent(updatedFiles);
+      setFiles(finalFiles);
+      
+      toast({
+        title: "File moved",
+        description: `${fileToMove.name} has been moved successfully.`,
+      });
+    }
+  }, [files, toast]);
+
   const handleSave = useCallback(() => {
     const currentProject = ProjectService.getCurrentProject();
     ProjectService.saveCurrentProject(
@@ -1207,6 +1257,7 @@ export function EditorLayout() {
                   onFileCreate={handleFileCreate}
                   onFileDelete={handleFileDelete}
                   onFileRename={handleFileRename}
+                  onFileMove={handleFileMove}
                   projectTitle={projectTitle}
                   onProjectTitleChange={setProjectTitle}
                 />
