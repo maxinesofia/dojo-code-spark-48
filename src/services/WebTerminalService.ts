@@ -1,4 +1,5 @@
 import { FileNode } from '../types/FileTypes';
+import { PackageManagerService } from './PackageManagerService';
 
 interface TerminalCommand {
   command: string;
@@ -21,9 +22,11 @@ export class WebTerminalService {
   private aliases: Map<string, string>;
   private onFileSystemChange?: (files: FileNode[]) => void;
   private sessionInitialized = false;
+  private packageManager: PackageManagerService;
 
   constructor(onFileSystemChange?: (files: FileNode[]) => void) {
     this.onFileSystemChange = onFileSystemChange;
+    this.packageManager = new PackageManagerService();
     this.vfs = {
       currentDirectory: '/',
       files: new Map(),
@@ -192,7 +195,7 @@ export class WebTerminalService {
         case 'npm':
         case 'yarn':
         case 'pnpm':
-          terminalCommand.output = this.handlePackageManager(cmd, args);
+          terminalCommand.output = await this.handlePackageManager(cmd, args);
           break;
 
         case 'node':
@@ -892,16 +895,60 @@ export class WebTerminalService {
     });
   }
 
-  private handlePackageManager(cmd: string, args: string[]): string {
+  private async handlePackageManager(cmd: string, args: string[]): Promise<string> {
     const command = args[0] || '';
     
     switch (command) {
       case 'install':
       case 'i':
         const packages = args.slice(1);
-        return packages.length > 0 
-          ? `${cmd}: Installing ${packages.join(', ')}...\n✓ Dependencies installed successfully!`
-          : `${cmd}: Reading package.json...\n✓ All dependencies installed!`;
+        if (packages.length === 0) {
+          return `${cmd}: Reading package.json...\n✓ All dependencies installed!`;
+        }
+        
+        // Install packages one by one
+        const results: string[] = [`${cmd}: Installing ${packages.join(', ')}...`];
+        for (const pkg of packages) {
+          try {
+            const installed = await this.packageManager.installPackage(pkg);
+            if (installed) {
+              results.push(`✓ ${pkg}@${installed.installedVersion} installed successfully`);
+            } else {
+              results.push(`✗ Failed to install ${pkg}`);
+            }
+          } catch (error) {
+            results.push(`✗ Error installing ${pkg}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+        return results.join('\n');
+      
+      case 'list':
+      case 'ls':
+        const installedPackages = this.packageManager.getInstalledPackages();
+        if (installedPackages.length === 0) {
+          return `${cmd}: No packages installed`;
+        }
+        const packageList = installedPackages
+          .map(pkg => `${pkg.name}@${pkg.installedVersion}`)
+          .join('\n');
+        return `${cmd}: Installed packages:\n${packageList}`;
+      
+      case 'uninstall':
+      case 'remove':
+        const toRemove = args.slice(1);
+        if (toRemove.length === 0) {
+          return `${cmd}: missing package name`;
+        }
+        const removeResults: string[] = [`${cmd}: Removing ${toRemove.join(', ')}...`];
+        for (const pkg of toRemove) {
+          const success = this.packageManager.uninstallPackage(pkg);
+          if (success) {
+            removeResults.push(`✓ ${pkg} removed successfully`);
+          } else {
+            removeResults.push(`✗ Package ${pkg} not found`);
+          }
+        }
+        return removeResults.join('\n');
       
       case 'run':
         const script = args[1];
@@ -927,7 +974,7 @@ export class WebTerminalService {
         return `${cmd} version 8.19.2`;
       
       default:
-        return `${cmd}: Available commands:\n  install, i       Install dependencies\n  run              Run script\n  start            Start development server\n  build            Build for production\n  test             Run tests\n  init             Initialize project`;
+        return `${cmd}: Available commands:\n  install, i       Install dependencies\n  uninstall        Remove dependencies\n  list, ls         List installed packages\n  run              Run script\n  start            Start development server\n  build            Build for production\n  test             Run tests\n  init             Initialize project`;
     }
   }
 

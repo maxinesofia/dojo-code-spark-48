@@ -910,6 +910,7 @@ export function EditorLayout() {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
+  const [packageManagerKey, setPackageManagerKey] = useState(0); // Force re-render of PackageManager
   const [terminalSessions, setTerminalSessions] = useState<{ id: string; title: string; active: boolean }[]>([]);
   const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
 
@@ -1099,6 +1100,10 @@ export function EditorLayout() {
 
   const handleCommandExecute = useCallback((command: string) => {
     console.log('Executing command:', command);
+    // Check if command affects packages and refresh PackageManager
+    if (command.trim().match(/^(npm|yarn|pnpm)\s+(install|i|uninstall|remove)/)) {
+      setPackageManagerKey(prev => prev + 1);
+    }
   }, []);
 
   const handleFileSystemChange = useCallback((newFiles: FileNode[]) => {
@@ -1385,6 +1390,7 @@ export function EditorLayout() {
       {/* Package Manager Modal */}
       {isPackageManagerOpen && (
         <PackageManager 
+          key={packageManagerKey}
           isOpen={isPackageManagerOpen}
           onClose={() => setIsPackageManagerOpen(false)}
         />
