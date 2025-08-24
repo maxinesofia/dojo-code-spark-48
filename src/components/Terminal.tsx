@@ -6,7 +6,7 @@ import { TerminalWebSocketService } from '../services/TerminalWebSocketService';
 import { WebTerminalService } from '../services/WebTerminalService';
 import { FileNode } from '../types/FileTypes';
 import { Button } from './ui/button';
-import { Minimize2, X } from 'lucide-react';
+import { Minimize2, X, Trash2 } from 'lucide-react';
 import 'xterm/css/xterm.css';
 
 interface TerminalProps {
@@ -326,14 +326,69 @@ export function Terminal({
     }
   }, [files, isVirtual]);
 
-  // Trigger resize when minimized state changes
+  // Enhanced resize handling for better responsiveness
   useEffect(() => {
-    if (fitAddonRef.current) {
-      setTimeout(() => {
-        fitAddonRef.current?.fit();
-      }, 300);
+    if (fitAddonRef.current && xtermRef.current) {
+      const resizeTerminal = () => {
+        setTimeout(() => {
+          fitAddonRef.current?.fit();
+          
+          // Send resize to backend if connected
+          if (terminalServiceRef.current && 'sendResize' in terminalServiceRef.current) {
+            const { cols, rows } = xtermRef.current!;
+            (terminalServiceRef.current as TerminalWebSocketService).sendResize(cols, rows);
+          }
+        }, 50); // Reduced timeout for more responsive resizing
+      };
+
+      // Observe container size changes with ResizeObserver for better responsiveness
+      const resizeObserver = new ResizeObserver(resizeTerminal);
+      if (terminalRef.current) {
+        resizeObserver.observe(terminalRef.current);
+      }
+
+      // Also listen to window resize
+      window.addEventListener('resize', resizeTerminal);
+      
+      // Initial resize
+      resizeTerminal();
+
+      return () => {
+        resizeObserver.disconnect();
+        window.removeEventListener('resize', resizeTerminal);
+      };
     }
-  }, [isMinimized]);
+  }, [isMinimized, xtermRef.current, fitAddonRef.current]);
+
+  // Clear terminal function
+  const handleClearTerminal = useCallback(async () => {
+    if (xtermRef.current) {
+      if (isVirtual && terminalServiceRef.current && 'executeCommand' in terminalServiceRef.current) {
+        // Use virtual terminal's clear command
+        const clearOutput = await (terminalServiceRef.current as WebTerminalService).executeCommand('clear');
+        xtermRef.current.write(clearOutput);
+        
+        // Show prompt after clear
+        const prompt = (terminalServiceRef.current as WebTerminalService).getPrompt();
+        xtermRef.current.write(`${prompt} `);
+      } else {
+        // Fallback to direct terminal clear
+        xtermRef.current.clear();
+      }
+    }
+  }, [isVirtual]);
+
+  // Listen for clear terminal events
+  useEffect(() => {
+    const handleClearEvent = (event: CustomEvent) => {
+      if (event.detail.sessionId === sessionId) {
+        handleClearTerminal();
+      }
+    };
+
+    window.addEventListener('clearTerminal', handleClearEvent as EventListener);
+    return () => window.removeEventListener('clearTerminal', handleClearEvent as EventListener);
+  }, [sessionId, handleClearTerminal]);
 
   const toggleMinimized = () => {
     setIsMinimized(!isMinimized);

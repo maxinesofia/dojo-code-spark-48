@@ -10,7 +10,7 @@ import { Terminal } from "./Terminal";
 import { useToast } from "@/hooks/use-toast";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
-import { Terminal as TerminalIcon, GitBranch, Settings, Package, X } from "lucide-react";
+import { Terminal as TerminalIcon, GitBranch, Settings, Package, X, Trash2 } from "lucide-react";
 import { ProjectService } from "@/services/ProjectService";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
@@ -1291,7 +1291,24 @@ export function EditorLayout() {
                       ))}
                     </div>
                     
-                    <div className="flex items-center px-2">
+                    <div className="flex items-center px-2 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          // Clear active terminal
+                          const activeSession = terminalSessions.find(s => s.active);
+                          if (activeSession) {
+                            // Trigger clear for active terminal - we'll need to implement this
+                            const event = new CustomEvent('clearTerminal', { detail: { sessionId: activeSession.id } });
+                            window.dispatchEvent(event);
+                          }
+                        }}
+                        title="Clear Terminal (Ctrl+L)"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
