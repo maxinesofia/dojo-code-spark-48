@@ -1248,81 +1248,81 @@ export function EditorLayout() {
                 </div>
               </ResizablePanel>
               
-              {/* Terminal Panel */}
-              {isTerminalOpen && (
-                <>
-                  <ResizableHandle />
-                  <ResizablePanel defaultSize={30} minSize={20}>
-                    <div className="h-full bg-background flex flex-col">
-                      {/* Terminal Tabs */}
-                      <div className="border-b border-border bg-muted/30 flex items-center justify-between">
-                        <div className="flex items-center">
-                          {terminalSessions.map((session) => (
-                            <div
-                              key={session.id}
-                              className={`
-                                flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-r border-border
-                                ${session.active ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}
-                              `}
-                              onClick={() => switchTerminal(session.id)}
-                            >
-                              <TerminalIcon className="w-3 h-3" />
-                              <span>{session.title}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-4 w-4 p-0 hover:bg-muted"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  closeTerminal(session.id);
-                                }}
-                              >
-                                <X className="h-2 w-2" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <div className="flex items-center px-2">
+              {/* Terminal Panel - Always render but hide when closed */}
+              <ResizableHandle style={{ display: isTerminalOpen ? 'flex' : 'none' }} />
+              <ResizablePanel 
+                defaultSize={30} 
+                minSize={20}
+                style={{ display: isTerminalOpen ? 'block' : 'none' }}
+              >
+                <div className="h-full bg-background flex flex-col">
+                  {/* Terminal Tabs */}
+                  <div className="border-b border-border bg-muted/30 flex items-center justify-between">
+                    <div className="flex items-center">
+                      {terminalSessions.map((session) => (
+                        <div
+                          key={session.id}
+                          className={`
+                            flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-r border-border
+                            ${session.active ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}
+                          `}
+                          onClick={() => switchTerminal(session.id)}
+                        >
+                          <TerminalIcon className="w-3 h-3" />
+                          <span>{session.title}</span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={createNewTerminal}
-                            title="New Terminal (Ctrl+Shift+`)"
+                            className="h-4 w-4 p-0 hover:bg-muted"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeTerminal(session.id);
+                            }}
                           >
-                            <TerminalIcon className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => setIsTerminalOpen(false)}
-                            title="Close Panel"
-                          >
-                            <X className="h-3 w-3" />
+                            <X className="h-2 w-2" />
                           </Button>
                         </div>
-                      </div>
-                      
-                      {/* Active Terminal */}
-                      <div className="flex-1">
-                        {activeTerminalId && (
-                          <Terminal
-                            key={activeTerminalId}
-                            files={files}
-                            onCommandExecuted={handleCommandExecute}
-                            onFileSystemChange={handleFileSystemChange}
-                            onClose={() => closeTerminal(activeTerminalId)}
-                            sessionId={activeTerminalId}
-                            showHeader={false}
-                          />
-                        )}
-                      </div>
+                      ))}
                     </div>
-                  </ResizablePanel>
-                </>
-              )}
+                    
+                    <div className="flex items-center px-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={createNewTerminal}
+                        title="New Terminal (Ctrl+Shift+`)"
+                      >
+                        <TerminalIcon className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => setIsTerminalOpen(false)}
+                        title="Close Panel"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Active Terminal - Always rendered to preserve state */}
+                  <div className="flex-1">
+                    {activeTerminalId && (
+                      <Terminal
+                        key={activeTerminalId}
+                        files={files}
+                        onCommandExecuted={handleCommandExecute}
+                        onFileSystemChange={handleFileSystemChange}
+                        onClose={() => closeTerminal(activeTerminalId)}
+                        sessionId={activeTerminalId}
+                        showHeader={false}
+                      />
+                    )}
+                  </div>
+                </div>
+              </ResizablePanel>
             </ResizablePanelGroup>
           </ResizablePanel>
           
