@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { FileNode } from "../types/FileTypes";
 import { PackageService, Package } from "../services/PackageService";
 import { FileCreateDialog } from "./FileCreateDialog";
+import { FileIcon } from "../utils/fileIcons";
 
 interface VSCodeFileExplorerProps {
   files: FileNode[];
@@ -74,32 +75,6 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     }
   };
 
-  const getFileIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'js': return '🟨';
-      case 'ts': return '🔷';
-      case 'jsx': return '⚛️';
-      case 'tsx': return '⚛️';
-      case 'html': return '🌐';
-      case 'css': return '🎨';
-      case 'json': return '📋';
-      case 'md': return '📝';
-      case 'py': return '🐍';
-      case 'java': return '☕';
-      case 'cpp': case 'c': return '⚙️';
-      case 'php': return '🐘';
-      case 'rb': return '💎';
-      case 'go': return '🐹';
-      case 'rs': return '🦀';
-      case 'swift': return '🍎';
-      case 'kt': return '🅺';
-      case 'dart': return '🎯';
-      case 'vue': return '💚';
-      case 'svelte': return '🧡';
-      default: return '📄';
-    }
-  };
 
   return (
     <div>
@@ -128,9 +103,11 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
         ) : (
           <>
             <div className="w-4 mr-1" />
-            <span className="w-4 h-4 mr-2 flex-shrink-0 text-xs">
-              {getFileIcon(node.name)}
-            </span>
+            <FileIcon 
+              fileName={node.name}
+              size={16}
+              className="mr-2 flex-shrink-0"
+            />
           </>
         )}
         

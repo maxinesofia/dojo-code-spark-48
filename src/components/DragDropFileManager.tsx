@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FileNode } from '../types/FileTypes';
+import { FileIcon } from '../utils/fileIcons';
 
 interface DragDropFileManagerProps {
   files: FileNode[];
@@ -124,38 +125,6 @@ export function DragDropFileManager({
     setRenameValue('');
   };
 
-  const getFileIcon = (file: FileNode) => {
-    if (file.type === 'folder') {
-      const isExpanded = expandedFolders.has(file.id);
-      return isExpanded ? '📁' : '📂';
-    }
-    
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'js':
-      case 'jsx':
-        return '📄';
-      case 'ts':
-      case 'tsx':
-        return '📘';
-      case 'css':
-        return '🎨';
-      case 'html':
-        return '🌐';
-      case 'json':
-        return '⚙️';
-      case 'md':
-        return '📝';
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'gif':
-      case 'svg':
-        return '🖼️';
-      default:
-        return '📄';
-    }
-  };
 
   const renderFileTree = (fileList: FileNode[], level = 0) => {
     return fileList.map(file => {
@@ -208,7 +177,12 @@ export function DragDropFileManager({
               </button>
             )}
             
-            <span className="text-lg">{getFileIcon(file)}</span>
+            <FileIcon 
+              fileName={file.name}
+              isFolder={file.type === 'folder'}
+              isExpanded={file.type === 'folder' ? expandedFolders.has(file.id) : false}
+              size={18}
+            />
             
             {isRenaming ? (
               <input
