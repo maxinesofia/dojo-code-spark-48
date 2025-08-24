@@ -1307,19 +1307,24 @@ export function EditorLayout() {
                     </div>
                   </div>
                   
-                  {/* Active Terminal - Always rendered to preserve state */}
-                  <div className="flex-1">
-                    {activeTerminalId && (
-                      <Terminal
-                        key={activeTerminalId}
-                        files={files}
-                        onCommandExecuted={handleCommandExecute}
-                        onFileSystemChange={handleFileSystemChange}
-                        onClose={() => closeTerminal(activeTerminalId)}
-                        sessionId={activeTerminalId}
-                        showHeader={false}
-                      />
-                    )}
+                  {/* All Terminal Sessions - Render all but only show active */}
+                  <div className="flex-1 relative">
+                    {terminalSessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="absolute inset-0"
+                        style={{ display: session.active ? 'block' : 'none' }}
+                      >
+                        <Terminal
+                          files={files}
+                          onCommandExecuted={handleCommandExecute}
+                          onFileSystemChange={handleFileSystemChange}
+                          onClose={() => closeTerminal(session.id)}
+                          sessionId={session.id}
+                          showHeader={false}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </ResizablePanel>
