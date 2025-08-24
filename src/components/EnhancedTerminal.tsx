@@ -140,9 +140,12 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
 
   // Connect terminal to WebSocket
   const connectTerminal = useCallback((tab: TerminalTab) => {
+    // Use the correct WebSocket URL for the backend
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/terminal`;
+    const host = window.location.hostname === 'localhost' ? 'localhost:5000' : window.location.host;
+    const wsUrl = `${protocol}//${host}/terminal`;
     
+    console.log('Connecting to terminal WebSocket:', wsUrl);
     const ws = new WebSocket(wsUrl);
     wsConnections.current.set(tab.id, ws);
 
@@ -417,11 +420,14 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
       <div className="flex items-center justify-between p-2 border-b border-border bg-muted/50">
         <div className="flex items-center gap-2">
           <TerminalIcon className="h-4 w-4" />
-          <span className="text-sm font-medium">VS Code Terminal</span>
+          <span className="text-sm font-medium">Git Bash Terminal</span>
           <Badge variant="outline" className="text-xs">
             {currentWorkingDir}
           </Badge>
           {getShellIntegrationBadge()}
+          <Badge variant="outline" className="text-xs bg-blue-500/20 border-blue-500/50">
+            Git Ready
+          </Badge>
         </div>
         
         <div className="flex items-center gap-1">
@@ -569,7 +575,7 @@ export function EnhancedTerminal({ projectId, userId, className, onClose }: Enha
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Ctrl+Shift+C: Copy | Ctrl+Alt+R: Recent | Ctrl+Shift+`: New</span>
           <Badge variant="outline" className="text-xs">
-            VS Code Terminal
+            Git Bash Ready
           </Badge>
         </div>
       </div>

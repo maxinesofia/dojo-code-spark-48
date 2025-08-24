@@ -911,7 +911,6 @@ export function EditorLayout() {
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
   const [terminalSessions, setTerminalSessions] = useState<{ id: string; title: string; active: boolean }[]>([]);
   const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
-  const [useEnhancedTerminal, setUseEnhancedTerminal] = useState(true);
 
   // Auto-save functionality with project updates
   useEffect(() => {
@@ -1304,25 +1303,13 @@ export function EditorLayout() {
                       {/* Active Terminal */}
                       <div className="flex-1">
                         {activeTerminalId && (
-                          useEnhancedTerminal ? (
-                            <EnhancedTerminal
-                              key={activeTerminalId}
-                              projectId={ProjectService.getCurrentProject()?.id}
-                              userId="current-user" // TODO: Get from auth context
-                              className="h-full"
-                              onClose={() => closeTerminal(activeTerminalId)}
-                            />
-                          ) : (
-                            <Terminal
-                              key={activeTerminalId}
-                              files={files}
-                              onCommandExecuted={handleCommandExecute}
-                              onFileSystemChange={handleFileSystemChange}
-                              onClose={() => closeTerminal(activeTerminalId)}
-                              sessionId={activeTerminalId}
-                              showHeader={false}
-                            />
-                          )
+                          <EnhancedTerminal
+                            key={activeTerminalId}
+                            projectId={ProjectService.getCurrentProject()?.id}
+                            userId="current-user"
+                            className="h-full"
+                            onClose={() => closeTerminal(activeTerminalId)}
+                          />
                         )}
                       </div>
                     </div>
@@ -1354,18 +1341,6 @@ export function EditorLayout() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-auto px-1 text-xs hover:bg-sidebar-accent/50"
-            onClick={() => setUseEnhancedTerminal(!useEnhancedTerminal)}
-            title={`Switch to ${useEnhancedTerminal ? 'Simple' : 'Git Bash'} Terminal`}
-          >
-            <TerminalIcon className="w-3 h-3 mr-1" />
-            <span className="text-sidebar-foreground">
-              {useEnhancedTerminal ? 'Git Bash' : 'Simple'}
-            </span>
-          </Button>
           <Button
             variant="ghost"
             size="icon"

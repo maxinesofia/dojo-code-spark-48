@@ -1,4 +1,4 @@
-const { spawn, pty } = require('child_process');
+const { spawn } = require('child_process');
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
@@ -178,13 +178,35 @@ class TerminalController {
       fs.mkdirSync(sessionDir, { recursive: true });
       
       // Initialize as git repository
-      const initProcess = spawn('git', ['init'], { cwd: sessionDir });
-      await new Promise((resolve) => initProcess.on('close', resolve));
+      try {
+        const initProcess = spawn('git', ['init'], { cwd: sessionDir });
+        await new Promise((resolve) => initProcess.on('close', resolve));
+        
+        // Set basic git config
+        spawn('git', ['config', 'user.name', 'Developer'], { cwd: sessionDir });
+        spawn('git', ['config', 'user.email', 'dev@example.com'], { cwd: sessionDir });
+      } catch (error) {
+        console.log('Git not available, skipping repository initialization');
+      }
     }
 
-    // Start shell with proper environment
-    const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/bash';
-    const shellArgs = process.platform === 'win32' ? [] : ['--login'];
+    // Determine shell based on platform
+    let shell, shellArgs;
+    if (process.platform === 'win32') {
+      // Use Git Bash on Windows if available, otherwise cmd
+      const gitBashPath = 'C:\\Program Files\\Git\\bin\\bash.exe';
+      if (fs.existsSync(gitBashPath)) {
+        shell = gitBashPath;
+        shellArgs = ['--login'];
+      } else {
+        shell = 'cmd.exe';
+        shellArgs = [];
+      }
+    } else {
+      // Use bash on Unix-like systems
+      shell = '/bin/bash';
+      shellArgs = ['--login'];
+    }
     
     const terminalProcess = spawn(shell, shellArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -193,20 +215,26 @@ class TerminalController {
         ...process.env,
         TERM: 'xterm-256color',
         COLORTERM: 'truecolor',
-        PS1: `\\[\\033[32m\\]developer@sandbox-${vmId.slice(0,8)}\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ `,
+        PS1: '\\[\\033[32m\\]developer@tutorials-dojo\\[\\033[0m\\]:\\[\\033[34m\\]\\w\\[\\033[0m\\]$ ',
         HOME: sessionDir,
         PATH: process.env.PATH,
-        SHELL: shell
+        SHELL: shell,
+        TERM_PROGRAM: 'tutorials-dojo'
       }
     });
 
-    // Send initial welcome message
+    // Send initial commands to set up the environment
     setTimeout(() => {
-      terminalProcess.stdin.write('clear\n');
-      terminalProcess.stdin.write('echo "Welcome to Git Bash Terminal - Tutorials Dojo"\n');
-      terminalProcess.stdin.write('echo "Git repository initialized in: $(pwd)"\n');
-      terminalProcess.stdin.write('git --version\n');
-    }, 100);
+      if (process.platform !== 'win32') {
+        terminalProcess.stdin.write('clear\n');
+      }
+      terminalProcess.stdin.write('echo "Welcome to Tutorials Dojo Terminal"\n');
+      terminalProcess.stdin.write('echo "Type \'help\' for available commands"\n');
+      terminalProcess.stdin.write('pwd\n');
+      if (fs.existsSync(path.join(sessionDir, '.git'))) {
+        terminalProcess.stdin.write('git status\n');
+      }
+    }, 500);
 
     return terminalProcess;
   }
