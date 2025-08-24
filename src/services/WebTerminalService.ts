@@ -85,8 +85,8 @@ export class WebTerminalService {
   }
 
   getSessionInitMessage(): string {
-    // Simulate PTY initialization with ANSI escape codes as described in terminal anatomy
-    return '\x1b[?2004h\x1b]0;Virtual Terminal\x07\x1b[mVirtual Terminal Mode — Fully Functional\nType "help" for available commands | Supports: npm, node, git, python, and more!\n';
+  // Minimal silent initialization (enable bracketed paste & set title) with no banner text
+  return '\x1b[?2004h\x1b]0;Terminal\x07';
   }
 
   getPrompt(): string {
@@ -366,9 +366,8 @@ export class WebTerminalService {
     if (items.length === 0) {
       return longFormat ? `total 0` : '';
     }
-    
     const result = items.sort().join('\n');
-    return longFormat ? `total ${items.length}\n${result}` : result;
+  return longFormat ? `total ${items.length}\n${result}` : result + '\n';
   }
 
   private handleCd(args: string[]): string {

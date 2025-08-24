@@ -1,7 +1,9 @@
+const http = require('http');
 const app = require('./app');
 const config = require('./config/config');
 const sequelize = require('./database/database');
 const { User, Project, File } = require('./models');
+const terminalController = require('./controllers/terminalController');
 
 const startServer = async () => {
   try {
@@ -15,11 +17,19 @@ const startServer = async () => {
       console.log('✅ Database models synchronized.');
     }
     
+    // Create HTTP server
+    const server = http.createServer(app);
+    
+    // Initialize WebSocket server for terminals
+    terminalController.initializeWebSocketServer(server);
+    console.log('✅ Terminal WebSocket server initialized');
+    
     // Start the server
-    const server = app.listen(config.port, () => {
+    server.listen(config.port, () => {
       console.log(`🚀 Server running on port ${config.port}`);
       console.log(`📱 Environment: ${config.environment}`);
       console.log(`🔗 API: http://localhost:${config.port}/api`);
+      console.log(`🖥️  Terminal WebSocket: ws://localhost:${config.port}/terminal`);
     });
 
     // Graceful shutdown

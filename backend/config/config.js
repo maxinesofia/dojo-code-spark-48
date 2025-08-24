@@ -2,10 +2,12 @@ require('dotenv').config();
 
 module.exports = {
   environment: process.env.NODE_ENV || 'development',
-  port: process.env.PORT || 3000,
+  port: process.env.PORT || 5000, // Changed from 3000 to 5000
   
   database: {
-    dialect: 'postgres',
+    // For quick local start fallback to sqlite if PG not installed
+    dialect: process.env.DB_DIALECT || 'sqlite',
+    storage: process.env.SQLITE_FILE || ':memory:',
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
     name: process.env.DB_NAME || 'tutorials_dojo',
@@ -38,5 +40,12 @@ module.exports = {
   uploads: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB
     allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'text/plain', 'application/json']
+  },
+  
+  terminal: {
+    workspaceDir: process.env.WORKSPACE_DIR || './workspaces',
+    maxSessions: parseInt(process.env.MAX_TERMINAL_SESSIONS) || 10,
+    sessionTimeout: parseInt(process.env.SESSION_TIMEOUT) || 30 * 60 * 1000, // 30 minutes
+    cleanupInterval: parseInt(process.env.CLEANUP_INTERVAL) || 5 * 60 * 1000 // 5 minutes
   }
 };

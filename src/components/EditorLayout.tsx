@@ -873,12 +873,13 @@ export function EditorLayout() {
     const template = searchParams.get('template');
     const projectId = searchParams.get('project');
     
+    // If template is specified, load template files
     if (template && template !== 'default') {
       return getTemplateFiles(template);
     }
     
-    if (projectId) {
-      // Try to load project files
+    // If specific project is requested, load it
+    if (projectId && projectId !== 'current') {
       const savedProjects = localStorage.getItem('tutorials-dojo-projects');
       if (savedProjects) {
         try {
@@ -893,24 +894,190 @@ export function EditorLayout() {
       }
     }
     
+    // Always try to load the most recent project state first
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : defaultFiles;
+    if (saved) {
+      try {
+        const parsedState = JSON.parse(saved);
+        // Handle both old format (just files array) and new format (object with files and metadata)
+        const loadedFiles = Array.isArray(parsedState) ? parsedState : (parsedState.files || null);
+        if (loadedFiles && loadedFiles.length > 0) {
+          return loadedFiles;
+        }
+      } catch (error) {
+        console.error('Error parsing saved state:', error);
+      }
+    }
+    
+    // Only fall back to default files if no project state exists
+    return defaultFiles;
   });
   
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+  const [projectName, setProjectName] = useState<string>(() => {
+    const template = searchParams.get('template');
+    const projectId = searchParams.get('project');
+    const templateName = searchParams.get('name');
+    
+    // If coming from template with name, use that
+    if (template && templateName) {
+      return decodeURIComponent(templateName);
+    }
+    
+    // If loading specific project, try to get name from projects list
+    if (projectId && projectId !== 'current') {
+      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+      if (savedProjects) {
+        try {
+          const projects = JSON.parse(savedProjects);
+          const project = projects.find((p: any) => p.id === projectId);
+          if (project && project.name) {
+            return project.name;
+          }
+        } catch (error) {
+          console.error('Error loading project name from projects list:', error);
+        }
+      }
+    }
+    
+    // Load project name from current project state
+    const projectState = localStorage.getItem(STORAGE_KEY);
+    if (projectState) {
+      try {
+        const state = JSON.parse(projectState);
+        return state.projectName || 'Tutorials Dojo Project';
+      } catch (error) {
+        console.error('Error loading project name from state:', error);
+      }
+    }
+    
+    return 'Tutorials Dojo Project';
+  });
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
   const [terminalSessions, setTerminalSessions] = useState<{ id: string; title: string; active: boolean }[]>([]);
   const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
 
+  // Handle URL parameter changes (when navigating to a specific project)
+  useEffect(() => {
+    const template = searchParams.get('template');
+    const projectId = searchParams.get('project');
+    const templateName = searchParams.get('name');
+    
+    // If template is specified and we haven't loaded it yet, load template files
+    if (template && template !== 'default') {
+      const templateFiles = getTemplateFiles(template);
+      if (JSON.stringify(files) !== JSON.stringify(templateFiles)) {
+        setFiles(templateFiles);
+        if (templateName) {
+          setProjectName(decodeURIComponent(templateName));
+        }
+      }
+      return;
+    }
+    
+    // If specific project is requested, ensure it's loaded
+    if (projectId && projectId !== 'current') {
+      const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+      if (savedProjects) {
+        try {
+          const projects = JSON.parse(savedProjects);
+          const project = projects.find((p: any) => p.id === projectId);
+          if (project && project.files) {
+            // Update both files and project name if they're different
+            if (JSON.stringify(files) !== JSON.stringify(project.files)) {
+              setFiles(project.files);
+            }
+            if (project.name !== projectName) {
+              setProjectName(project.name);
+            }
+            
+            // Also update the current project state so it becomes the "recent" project
+            localStorage.setItem('tutorials-dojo-project-state', JSON.stringify({
+              projectName: project.name,
+              template: project.template || 'vanilla',
+              files: project.files,
+              lastSaved: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading project from URL:', error);
+        }
+      }
+    }
+  }, [searchParams, files, projectName]);
+
+  // Handle reloading project state when no URL parameters (e.g., after creating new project)
+  useEffect(() => {
+    const hasUrlParams = searchParams.get('template') || searchParams.get('project');
+    
+    // Only reload from localStorage if there are no URL parameters
+    // This handles the case when navigating from /projects after creating a new project
+    if (!hasUrlParams) {
+      const reloadProjectState = () => {
+        const projectState = localStorage.getItem('tutorials-dojo-project-state');
+        if (projectState) {
+          try {
+            const state = JSON.parse(projectState);
+            
+            const storedFiles = state.files || [];
+            const storedProjectName = state.projectName || 'Tutorials Dojo Project';
+            
+            console.log('Reloading project state:', {
+              storedProjectName,
+              currentProjectName: projectName,
+              storedFileCount: storedFiles.length,
+              currentFileCount: files.length
+            });
+            
+            // Force reload if project name is different or if files are different
+            const projectNameChanged = storedProjectName !== projectName;
+            const filesChanged = JSON.stringify(storedFiles) !== JSON.stringify(files);
+            
+            if (projectNameChanged || filesChanged) {
+              console.log('Updating project state:', storedProjectName);
+              setFiles(storedFiles);
+              setProjectName(storedProjectName);
+            } else {
+              console.log('Project state is up to date');
+            }
+          } catch (error) {
+            console.error('Error reloading project state:', error);
+          }
+        }
+      };
+      
+      // Add a small delay to ensure localStorage write operations complete
+      const timeoutId = setTimeout(reloadProjectState, 100);
+      
+      // Also reload when window gains focus (in case project was changed in another tab)
+      const handleFocus = () => {
+        setTimeout(reloadProjectState, 50);
+      };
+      window.addEventListener('focus', handleFocus);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('focus', handleFocus);
+      };
+    }
+  }, [searchParams]); // Remove files and projectName from dependencies to avoid comparison issues
+
   // Auto-save functionality with project updates
   useEffect(() => {
     const saveTimer = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+      // Always save current project state
+      const projectState = {
+        files,
+        projectName,
+        template: 'vanilla', // Could be enhanced to detect actual template
+        lastSaved: new Date().toISOString()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projectState));
       
-      // Update project metadata if this is a project
+      // Update project metadata if this is a specific project
       const projectId = searchParams.get('project');
-      if (projectId) {
+      if (projectId && projectId !== 'current') {
         const savedProjects = localStorage.getItem('tutorials-dojo-projects');
         if (savedProjects) {
           try {
@@ -919,6 +1086,7 @@ export function EditorLayout() {
             if (projectIndex >= 0) {
               projects[projectIndex] = {
                 ...projects[projectIndex],
+                name: projectName,
                 files: files,
                 fileCount: files.length,
                 lastModified: new Date().toISOString()
@@ -929,11 +1097,42 @@ export function EditorLayout() {
             console.error('Error updating project:', error);
           }
         }
+      } else {
+        // For current/new projects, ensure there's always a "current" entry in projects list
+        const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+        let projects = [];
+        if (savedProjects) {
+          try {
+            projects = JSON.parse(savedProjects);
+          } catch (error) {
+            console.error('Error parsing projects:', error);
+          }
+        }
+        
+        // Update or add current project
+        const currentProjectIndex = projects.findIndex((p: any) => p.id === 'current');
+        const currentProjectData = {
+          id: 'current',
+          name: projectName,
+          description: 'Your current project',
+          lastModified: new Date().toISOString(),
+          fileCount: files.length,
+          template: 'vanilla',
+          files: files
+        };
+        
+        if (currentProjectIndex >= 0) {
+          projects[currentProjectIndex] = currentProjectData;
+        } else {
+          projects.unshift(currentProjectData); // Add at beginning
+        }
+        
+        localStorage.setItem('tutorials-dojo-projects', JSON.stringify(projects));
       }
     }, 1000);
     
     return () => clearTimeout(saveTimer);
-  }, [files, searchParams]);
+  }, [files, projectName, searchParams]);
 
   // Select first file on mount
   useEffect(() => {
@@ -1070,12 +1269,52 @@ export function EditorLayout() {
   }, [files, selectedFile, toast]);
 
   const handleSave = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+    // Save both files and project metadata
+    const projectState = {
+      files,
+      projectName,
+      template: 'vanilla', // or derive from current state
+      lastSaved: new Date().toISOString()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(projectState));
+    
     toast({
       title: "Project saved",
       description: "Your project has been saved locally.",
     });
-  }, [files, toast]);
+  }, [files, projectName, toast]);
+
+  const handleProjectNameChange = useCallback((newName: string) => {
+    setProjectName(newName);
+    
+    // Update the stored project state immediately
+    const currentState = localStorage.getItem(STORAGE_KEY);
+    if (currentState) {
+      try {
+        const state = JSON.parse(currentState);
+        state.projectName = newName;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        console.error('Error updating project name:', error);
+      }
+    }
+
+    // Also update the projects list if this project exists there
+    const savedProjects = localStorage.getItem('tutorials-dojo-projects');
+    if (savedProjects) {
+      try {
+        const projects = JSON.parse(savedProjects);
+        const updatedProjects = projects.map((project: any) => 
+          project.id === 'current' 
+            ? { ...project, name: newName, lastModified: new Date().toISOString() }
+            : project
+        );
+        localStorage.setItem('tutorials-dojo-projects', JSON.stringify(updatedProjects));
+      } catch (error) {
+        console.error('Error updating projects list:', error);
+      }
+    }
+  }, []);
 
   const handleRun = useCallback(() => {
     toast({
@@ -1173,10 +1412,11 @@ export function EditorLayout() {
   return (
     <div className="h-screen flex flex-col bg-background">
       <Header 
-        projectName="Tutorials Dojo Project"
+        projectName={projectName}
         onSave={handleSave}
         onRun={handleRun}
         onShare={handleShare}
+        onProjectNameChange={handleProjectNameChange}
       />
       
       <div className="flex-1 flex overflow-hidden">

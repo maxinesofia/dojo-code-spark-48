@@ -10,9 +10,11 @@ const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const fileRoutes = require('./routes/files');
 const executionRoutes = require('./routes/execution');
+const terminalRoutes = require('./routes/terminal');
 
-// Import database
-const sequelize = require('./config/database');
+// NOTE: Database connection & server startup moved to server.js to avoid double start
+// If you need sequelize instance import from './database/database'
+// const sequelize = require('./database/database');
 
 const app = express();
 
@@ -73,6 +75,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api', fileRoutes);
 app.use('/api/execution', executionRoutes);
+app.use('/api/terminal', terminalRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -125,47 +128,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Database connection and server startup
-const PORT = process.env.PORT || 5000;
-
-async function startServer() {
-  try {
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('✅ Database connection established successfully.');
-
-    // Sync database models
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Database models synchronized.');
-    }
-
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📋 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
-    });
-
-  } catch (error) {
-    console.error('❌ Unable to start server:', error);
-    process.exit(1);
-  }
-}
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  await sequelize.close();
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully...');
-  await sequelize.close();
-  process.exit(0);
-});
-
-startServer();
-
-module.exports = app;
+module.exports = app; // server.js will start the HTTP & WebSocket servers
