@@ -34,6 +34,7 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   }, [isEditing]);
 
   const handleSave = () => {
+    console.log('=== HANDLE SAVE CALLED ===');
     const trimmedValue = editValue.trim();
     
     if (!trimmedValue) {
@@ -132,6 +133,7 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   };
 
   const handleCancel = () => {
+    console.log('=== HANDLE CANCEL CALLED ===');
     setEditValue(title);
     setIsEditing(false);
   };
