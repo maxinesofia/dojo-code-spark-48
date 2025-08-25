@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import JSZip from 'jszip';
 import { ChevronDown, ChevronRight, Folder, FolderOpen, File, Plus, MoreHorizontal, Trash2, Edit, FileText, Type, Hash, Database, Settings, Search, Download } from 'lucide-react';
 import { FileNode } from '../types/FileTypes';
 import { getFileIcon } from '../utils/fileIcons';
@@ -347,34 +348,45 @@ export function VSCodeFileExplorer({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  const downloadProjectAsZip = () => {
-    // Create a simple zip-like structure by concatenating all files
-    const projectData = {
-      projectName: projectTitle || 'project',
-      files: safeFiles.map(file => ({
-        name: file.name,
-        content: file.content || ''
-      })),
-      timestamp: new Date().toISOString()
-    };
-
-    // Create a blob with all file contents
-    let zipContent = `# ${projectData.projectName}\nExported on: ${projectData.timestamp}\n\n`;
+  const downloadProjectAsZip = async () => {
+    const zip = new JSZip();
     
-    projectData.files.forEach(file => {
-      zipContent += `\n${'='.repeat(50)}\nFile: ${file.name}\n${'='.repeat(50)}\n`;
-      zipContent += file.content + '\n';
+    // Add all files to the ZIP
+    safeFiles.forEach(file => {
+      if (file.content) {
+        zip.file(file.name, file.content);
+      }
     });
+    
+    // Add a README file with project info
+    const readmeContent = `# ${projectTitle || 'Project'}
 
-    const blob = new Blob([zipContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${projectData.projectName}-export.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+This project was exported from Tutorials Dojo.
+
+## Files included:
+${safeFiles.map(file => `- ${file.name}`).join('\n')}
+
+Export date: ${new Date().toISOString()}
+`;
+    
+    zip.file('README.md', readmeContent);
+    
+    try {
+      // Generate the ZIP file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Create download link
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(projectTitle || 'project').replace(/[^a-z0-9]/gi, '-').toLowerCase()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error creating ZIP file:', error);
+    }
   };
 
   // Global cleanup for drag states
