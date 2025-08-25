@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Check, X, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { ProjectService, Project } from '@/services/ProjectService';
 
 interface EditableProjectTitleProps {
   title: string;
@@ -12,7 +15,10 @@ interface EditableProjectTitleProps {
 export function EditableProjectTitle({ title, onTitleChange, className = "" }: EditableProjectTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmData, setConfirmData] = useState<{newName: string, existingProject: Project} | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setEditValue(title);
@@ -27,12 +33,74 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
 
   const handleSave = () => {
     const trimmedValue = editValue.trim();
-    if (trimmedValue && trimmedValue !== title) {
-      onTitleChange(trimmedValue);
-    } else {
-      setEditValue(title); // Reset if empty or unchanged
+    
+    if (!trimmedValue) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid project name",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    if (trimmedValue === title) {
+      setIsEditing(false);
+      return;
+    }
+
+    // Check if another project already has this name
+    const existingProjects = ProjectService.getAllProjects();
+    const existingProject = existingProjects.find(p => p.name === trimmedValue);
+    
+    if (existingProject) {
+      // Show confirmation dialog
+      setConfirmData({ newName: trimmedValue, existingProject });
+      setIsConfirmOpen(true);
+      return;
+    }
+
+    // No conflict, proceed with rename
+    performRename(trimmedValue);
+  };
+
+  const performRename = (newName: string) => {
+    onTitleChange(newName);
     setIsEditing(false);
+    toast({
+      title: "Success",
+      description: "Project renamed successfully!"
+    });
+  };
+
+  const handleConfirm = () => {
+    if (confirmData) {
+      // Delete the existing project and rename the current one
+      ProjectService.deleteProject(confirmData.existingProject.id);
+      performRename(confirmData.newName);
+      
+      toast({
+        title: "Success",
+        description: `Project renamed and "${confirmData.existingProject.name}" was replaced`
+      });
+    }
+    setIsConfirmOpen(false);
+    setConfirmData(null);
+  };
+
+  const handleConfirmCancel = () => {
+    setIsConfirmOpen(false);
+    setConfirmData(null);
+    setEditValue(title); // Reset to original
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const handleCancel = () => {
@@ -81,16 +149,49 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
   }
 
   return (
-    <div className={`flex items-center gap-2 group ${className}`}>
-      <span className="font-medium text-sm">{title}</span>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() => setIsEditing(true)}
-        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted"
-      >
-        <Edit className="h-3 w-3" />
-      </Button>
-    </div>
+    <>
+      <div className={`flex items-center gap-2 group ${className}`}>
+        <span className="font-medium text-sm">{title}</span>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setIsEditing(true)}
+          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted"
+        >
+          <Edit className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A project named "{confirmData?.newName}" already exists. 
+              {confirmData?.existingProject && (
+                <>
+                  <br /><br />
+                  <strong>Existing project details:</strong>
+                  <br />• Template: {confirmData.existingProject.template}
+                  <br />• Files: {confirmData.existingProject.fileCount}
+                  <br />• Last modified: {formatDate(confirmData.existingProject.lastModified)}
+                  <br /><br />
+                  Do you want to replace it with the renamed project? This action cannot be undone.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleConfirmCancel}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Replace Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
