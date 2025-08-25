@@ -3,6 +3,7 @@ import { Check, X, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ProjectService, Project } from '@/services/ProjectService';
 
@@ -54,8 +55,13 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
     
     if (existingProject) {
       // Show confirmation dialog
+      console.log('Header rename - Setting confirm data:', { newName: trimmedValue, existingProject });
       setConfirmData({ newName: trimmedValue, existingProject });
-      setIsConfirmOpen(true);
+      // Use setTimeout to ensure state is set before opening dialog
+      setTimeout(() => {
+        setIsConfirmOpen(true);
+        console.log('Header rename dialog opened');
+      }, 10);
       return;
     }
 
@@ -73,6 +79,7 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
   };
 
   const handleConfirm = () => {
+    console.log('Header rename - Confirm clicked');
     if (confirmData) {
       // Delete the existing project and rename the current one
       ProjectService.deleteProject(confirmData.existingProject.id);
@@ -88,6 +95,7 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
   };
 
   const handleConfirmCancel = () => {
+    console.log('Header rename - Cancel clicked');
     setIsConfirmOpen(false);
     setConfirmData(null);
     setEditValue(title); // Reset to original
@@ -162,36 +170,51 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
         </Button>
       </div>
 
-      {/* Confirmation Dialog - Using portal to render outside current container */}
-      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogContent className="bg-background border z-[100] pointer-events-auto max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              A project named "{confirmData?.newName}" already exists. 
-              {confirmData?.existingProject && (
-                <>
-                  <br /><br />
-                  <strong>Existing project details:</strong>
-                  <br />• Template: {confirmData.existingProject.template}
-                  <br />• Files: {confirmData.existingProject.fileCount}
-                  <br />• Last modified: {formatDate(confirmData.existingProject.lastModified)}
-                  <br /><br />
-                  Do you want to replace it with the renamed project? This action cannot be undone.
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleConfirmCancel} className="pointer-events-auto">
+      {/* Confirmation Dialog - Using regular Dialog instead of AlertDialog */}
+      <Dialog 
+        open={isConfirmOpen} 
+        onOpenChange={(open) => {
+          console.log('Header dialog onOpenChange:', open);
+          if (!open) {
+            handleConfirmCancel();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Replace Existing Project?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              A project named "{confirmData?.newName}" already exists.
+            </p>
+            {confirmData?.existingProject && (
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm font-medium">Existing project details:</p>
+                <div className="text-sm text-muted-foreground mt-1">
+                  <div>• Template: {confirmData.existingProject.template}</div>
+                  <div>• Files: {confirmData.existingProject.fileCount}</div>
+                  <div>• Last modified: {formatDate(confirmData.existingProject.lastModified)}</div>
+                </div>
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Do you want to replace it with the renamed project? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleConfirmCancel}>
               Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-events-auto">
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirm}
+            >
               Replace Project
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

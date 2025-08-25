@@ -30,7 +30,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(projectName);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
   
   useEffect(() => {
     setEditedName(projectName);
@@ -162,51 +162,6 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
         >
           {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
-        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <Settings className="w-4 h-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Project Settings</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="projectNameSetting">Project Name</Label>
-                <Input
-                  id="projectNameSetting"
-                  value={projectName}
-                  onChange={(e) => onProjectNameChange?.(e.target.value)}
-                  placeholder="Enter project name..."
-                />
-              </div>
-              
-              <div>
-                <Label>Theme</Label>
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    variant={theme === "light" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setTheme("light")}
-                  >
-                    <Sun className="w-4 h-4 mr-2" />
-                    Light
-                  </Button>
-                  <Button
-                    variant={theme === "dark" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setTheme("dark")}
-                  >
-                    <Moon className="w-4 h-4 mr-2" />
-                    Dark
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </header>
   );
