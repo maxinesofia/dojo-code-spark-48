@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Folder, FolderOpen, File, Plus, MoreHorizontal, Trash2, Edit, FileText, Type, Hash, Database, Settings, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, Folder, FolderOpen, File, Plus, MoreHorizontal, Trash2, Edit, FileText, Type, Hash, Database, Settings, Search, Download } from 'lucide-react';
 import { FileNode } from '../types/FileTypes';
 import { getFileIcon } from '../utils/fileIcons';
 import { FileContextMenu } from './FileContextMenu';
@@ -347,6 +347,36 @@ export function VSCodeFileExplorer({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
+  const downloadProjectAsZip = () => {
+    // Create a simple zip-like structure by concatenating all files
+    const projectData = {
+      projectName: projectTitle || 'project',
+      files: safeFiles.map(file => ({
+        name: file.name,
+        content: file.content || ''
+      })),
+      timestamp: new Date().toISOString()
+    };
+
+    // Create a blob with all file contents
+    let zipContent = `# ${projectData.projectName}\nExported on: ${projectData.timestamp}\n\n`;
+    
+    projectData.files.forEach(file => {
+      zipContent += `\n${'='.repeat(50)}\nFile: ${file.name}\n${'='.repeat(50)}\n`;
+      zipContent += file.content + '\n';
+    });
+
+    const blob = new Blob([zipContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectData.projectName}-export.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Global cleanup for drag states
   useEffect(() => {
     const handleGlobalDragEnd = () => {
@@ -396,11 +426,21 @@ export function VSCodeFileExplorer({
         <div className="flex items-center justify-between">
           <span>Explorer</span>
           <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-5 w-5 hover:bg-sidebar-accent"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 opacity-60 hover:opacity-100 hover:bg-accent"
+              onClick={downloadProjectAsZip}
+              title="Download project as file"
+            >
+              <Download className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 opacity-60 hover:opacity-100 hover:bg-accent"
               onClick={() => setShowCreateDialog(true)}
+              title="Create new file"
             >
               <Plus className="h-3 w-3" />
             </Button>
