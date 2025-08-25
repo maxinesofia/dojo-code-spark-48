@@ -1530,7 +1530,7 @@ export function EditorLayout() {
             <GitBranch className="w-3 h-3 mr-1" />
             <span className="text-sidebar-foreground">main</span>
           </Button>
-          <span className="text-sidebar-foreground/70">Ready • Firecracker VM</span>
+          
         </div>
         
         <div className="flex items-center gap-3">
@@ -1556,9 +1556,6 @@ export function EditorLayout() {
               {isTerminalOpen ? 'Hide Terminal' : 'Show Terminal'}
               {terminalSessions.length > 0 && ` (${terminalSessions.length})`}
             </span>
-          </Button>
-          <Button variant="ghost" size="icon" className="h-5 w-5 hover:bg-sidebar-accent/50">
-            <Settings className="w-3 h-3 text-sidebar-foreground" />
           </Button>
         </div>
       </div>
