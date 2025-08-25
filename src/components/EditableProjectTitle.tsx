@@ -19,7 +19,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   const [editValue, setEditValue] = useState(title);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmData, setConfirmData] = useState<{newName: string, existingProject: Project} | null>(null);
-  const [isCancelling, setIsCancelling] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -133,10 +132,8 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   };
 
   const handleCancel = () => {
-    setIsCancelling(true);
     setEditValue(title);
     setIsEditing(false);
-    setTimeout(() => setIsCancelling(false), 100);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -155,11 +152,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={() => {
-            if (!isCancelling) {
-              handleSave();
-            }
-          }}
           className="h-6 text-sm font-medium px-2 py-1 min-w-[200px]"
           placeholder="Project name"
         />
