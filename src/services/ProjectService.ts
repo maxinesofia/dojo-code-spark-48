@@ -213,8 +213,11 @@ export class ProjectService {
         this.saveProject(project);
       }
       
+      // Make sure project is saved to the list
+      this.saveProject(project);
+      
       const state: ProjectState = {
-        currentProject: project,
+        currentProject: project, // Store the full project object
         projectName: project.name,
         template: project.template,
         files: project.files,

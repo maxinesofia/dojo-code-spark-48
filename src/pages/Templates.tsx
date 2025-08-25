@@ -389,6 +389,9 @@ ReactDOM.render(React.createElement(App), document.getElementById('root'));`
         description: `Created "${newProject.name}" successfully`,
       });
 
+      // Close dialog first
+      setIsCreateDialogOpen(false);
+
       // Navigate to editor
       navigate('/');
       
