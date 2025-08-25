@@ -3,7 +3,7 @@ import { FileNode } from '@/types/FileTypes';
 import { EditorPaneData } from './SplitEditor';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { X, MoreHorizontal, Copy, ExternalLink, SplitSquareHorizontal } from 'lucide-react';
+import { X, MoreHorizontal, SplitSquareHorizontal, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getFileIcon } from '@/utils/fileIcons';
 
@@ -31,7 +31,6 @@ export function FileTabs({
   onSplitWith
 }: FileTabsProps) {
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
-  const [dragOverPaneId, setDragOverPaneId] = useState<string | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const displayFiles = files.filter(f => f.type === 'file');
@@ -44,7 +43,6 @@ export function FileTabs({
 
   const handleDragEnd = () => {
     setDraggedFileId(null);
-    setDragOverPaneId(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -61,7 +59,6 @@ export function FileTabs({
     }
     
     setDraggedFileId(null);
-    setDragOverPaneId(null);
   };
 
   const renderTab = (file: FileNode) => {
@@ -72,11 +69,11 @@ export function FileTabs({
       <div
         key={file.id}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 border-b-2 cursor-pointer transition-colors group relative",
-          "hover:bg-muted/50 select-none min-w-0 max-w-[200px]",
+          "flex items-center gap-2 px-3 py-1.5 border-r border-border cursor-pointer transition-colors group relative",
+          "hover:bg-muted/50 select-none min-w-0 max-w-[160px] text-sm",
           isActive 
-            ? "bg-background border-primary text-foreground" 
-            : "bg-muted/20 border-transparent text-muted-foreground hover:text-foreground",
+            ? "bg-background text-foreground border-b-2 border-b-primary" 
+            : "bg-muted/20 text-muted-foreground hover:text-foreground",
           isDragged && "opacity-50"
         )}
         onClick={() => onFileSelect(file.id)}
@@ -90,33 +87,33 @@ export function FileTabs({
               const icon = getFileIcon(file.name);
               if (typeof icon === 'object' && 'icon' in icon) {
                 const IconComponent = icon.icon;
-                return <IconComponent className="w-4 h-4" style={{ color: icon.color }} />;
+                return <IconComponent className="w-3.5 h-3.5" style={{ color: icon.color }} />;
               }
               return icon;
             })()}
           </div>
-          <span className="truncate text-sm font-medium">
+          <span className="truncate font-medium">
             {file.name}
           </span>
         </div>
         
-        {displayFiles.length > 1 && (
+        {isActive && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted-foreground/20"
+                className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-40 bg-background border shadow-lg z-50">
               {showSplitOption && onSplitWith && (
                 <>
                   <DropdownMenuItem onClick={() => onSplitWith(file.id)}>
-                    <SplitSquareHorizontal className="w-4 h-4 mr-2" />
+                    <SplitSquareHorizontal className="w-3 h-3 mr-2" />
                     Split Right
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -127,23 +124,17 @@ export function FileTabs({
                 <>
                   {availablePanes
                     .filter(pane => pane.id !== paneId)
-                    .map(pane => (
+                    .map((pane, index) => (
                       <DropdownMenuItem
                         key={pane.id}
                         onClick={() => onMoveToPane(file.id, pane.id, paneId)}
                       >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Move to Pane {pane.id === 'main' ? '1' : pane.id.split('-')[1]}
+                        <ExternalLink className="w-3 h-3 mr-2" />
+                        Move to Editor {index + 2}
                       </DropdownMenuItem>
                     ))}
-                  <DropdownMenuSeparator />
                 </>
               )}
-              
-              <DropdownMenuItem>
-                <Copy className="w-4 h-4 mr-2" />
-                Copy Path
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -152,7 +143,7 @@ export function FileTabs({
   };
 
   return (
-    <div className="flex items-center justify-between border-b bg-muted/20">
+    <div className="flex items-center justify-between border-b bg-muted/10">
       <div 
         ref={tabsRef}
         className="flex flex-1 overflow-x-auto scrollbar-none"
@@ -168,9 +159,9 @@ export function FileTabs({
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="h-8 w-8 p-0 mx-1 hover:bg-destructive/20 hover:text-destructive"
+          className="h-6 w-6 p-0 mx-1 text-muted-foreground hover:text-foreground hover:bg-muted"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3 w-3" />
         </Button>
       )}
     </div>

@@ -79,7 +79,7 @@ export function SplitEditor({
     })));
   }, [files]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts - simplified
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
       const isCtrl = e.ctrlKey || e.metaKey;
@@ -87,23 +87,12 @@ export function SplitEditor({
       if (isCtrl && e.key === '\\') {
         e.preventDefault();
         handleSplitPane();
-      } else if (isCtrl && e.key === 'w') {
-        e.preventDefault();
-        if (panes.length > 1) {
-          handleClosePane(focusedPaneId);
-        }
-      } else if (isCtrl && /^[1-9]$/.test(e.key)) {
-        e.preventDefault();
-        const paneIndex = parseInt(e.key) - 1;
-        if (panes[paneIndex]) {
-          setFocusedPaneId(panes[paneIndex].id);
-        }
       }
     };
 
     window.addEventListener('keydown', handleKeydown);
     return () => window.removeEventListener('keydown', handleKeydown);
-  }, [panes, focusedPaneId]);
+  }, [panes]);
 
   const handleSplitPane = useCallback(() => {
     const newPaneId = `pane-${Date.now()}`;
@@ -171,17 +160,16 @@ export function SplitEditor({
             files={pane.files}
             activeFileId={pane.activeFileId}
             onFileSelect={(fileId) => handlePaneFileSelect(pane.id, fileId)}
-            onMoveToPane={handleMoveFileToPane}
-            availablePanes={panes}
             showSplitOption={true}
             onSplitWith={(fileId) => {
               handleSplitPane();
-              // After split, set the file in the new pane
               setTimeout(() => {
-                const newPane = panes[panes.length - 1];
-                if (newPane) {
-                  handlePaneFileSelect(newPane.id, fileId);
-                }
+                const newPanes = [...panes, {
+                  id: `pane-${Date.now()}`,
+                  files: files,
+                  activeFileId: fileId
+                }];
+                setPanes(newPanes);
               }, 10);
             }}
           />
@@ -190,7 +178,7 @@ export function SplitEditor({
             onFileChange={onFileChange}
             onFocus={() => setFocusedPaneId(pane.id)}
             isFocused={focusedPaneId === pane.id}
-            syncScrolling={syncScrolling}
+            syncScrolling={false}
             onStateChange={(updates) => {
               setPanes(prev => prev.map(p => 
                 p.id === pane.id ? { ...p, ...updates } : p
@@ -202,75 +190,73 @@ export function SplitEditor({
     }
 
     return (
-      <PanelGroup
-        ref={panelGroupRef}
-        direction={splitMode}
-        className="h-full"
-      >
-        {panes.map((pane, index) => (
-          <>
-            <Panel 
-              key={pane.id}
-              defaultSize={100 / panes.length}
-              minSize={20}
-              className="flex flex-col"
-            >
-              <FileTabs
-                paneId={pane.id}
-                files={pane.files}
-                activeFileId={pane.activeFileId}
-                onFileSelect={(fileId) => handlePaneFileSelect(pane.id, fileId)}
-                onMoveToPane={handleMoveFileToPane}
-                availablePanes={panes}
-                onClose={panes.length > 1 ? () => handleClosePane(pane.id) : undefined}
-              />
-              <EditorPane
-                pane={pane}
-                onFileChange={onFileChange}
-                onFocus={() => setFocusedPaneId(pane.id)}
-                isFocused={focusedPaneId === pane.id}
-                syncScrolling={syncScrolling}
-                onStateChange={(updates) => {
-                  setPanes(prev => prev.map(p => 
-                    p.id === pane.id ? { ...p, ...updates } : p
-                  ));
-                }}
-              />
-            </Panel>
-            {index < panes.length - 1 && (
-              <PanelResizeHandle className={cn(
-                "bg-border hover:bg-accent transition-colors",
-                splitMode === 'vertical' ? "w-1" : "h-1",
-                "flex items-center justify-center group"
-              )}>
-                <Grip className={cn(
-                  "text-muted-foreground group-hover:text-foreground transition-colors",
-                  splitMode === 'vertical' ? "w-3 h-4 rotate-90" : "w-4 h-3"
-                )} />
-              </PanelResizeHandle>
-            )}
-          </>
-        ))}
-      </PanelGroup>
+      <div className="h-full flex flex-col">
+        <SplitControls
+          paneCount={panes.length}
+          splitMode={splitMode}
+          onSplit={handleSplitPane}
+          onToggleSplitMode={toggleSplitMode}
+          onMergePanes={handleMergePanes}
+        />
+        <div className="flex-1">
+          <PanelGroup
+            ref={panelGroupRef}
+            direction={splitMode}
+            className="h-full"
+          >
+            {panes.map((pane, index) => (
+              <>
+                <Panel 
+                  key={pane.id}
+                  defaultSize={100 / panes.length}
+                  minSize={25}
+                  className="flex flex-col"
+                >
+                  <FileTabs
+                    paneId={pane.id}
+                    files={pane.files}
+                    activeFileId={pane.activeFileId}
+                    onFileSelect={(fileId) => handlePaneFileSelect(pane.id, fileId)}
+                    onMoveToPane={handleMoveFileToPane}
+                    availablePanes={panes}
+                    onClose={panes.length > 1 ? () => handleClosePane(pane.id) : undefined}
+                  />
+                  <EditorPane
+                    pane={pane}
+                    onFileChange={onFileChange}
+                    onFocus={() => setFocusedPaneId(pane.id)}
+                    isFocused={focusedPaneId === pane.id}
+                    syncScrolling={false}
+                    onStateChange={(updates) => {
+                      setPanes(prev => prev.map(p => 
+                        p.id === pane.id ? { ...p, ...updates } : p
+                      ));
+                    }}
+                  />
+                </Panel>
+                {index < panes.length - 1 && (
+                  <PanelResizeHandle className={cn(
+                    "bg-border hover:bg-accent transition-colors group",
+                    splitMode === 'vertical' ? "w-1" : "h-1",
+                    "flex items-center justify-center"
+                  )}>
+                    <div className={cn(
+                      "bg-muted-foreground/50 group-hover:bg-foreground/50 transition-colors",
+                      splitMode === 'vertical' ? "w-0.5 h-6" : "w-6 h-0.5"
+                    )} />
+                  </PanelResizeHandle>
+                )}
+              </>
+            ))}
+          </PanelGroup>
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className={cn("h-full flex flex-col", className)}>
-      <SplitControls
-        paneCount={panes.length}
-        splitMode={splitMode}
-        syncScrolling={syncScrolling}
-        onSplit={handleSplitPane}
-        onToggleSplitMode={toggleSplitMode}
-        onMergePanes={handleMergePanes}
-        onToggleSyncScrolling={() => setSyncScrolling(prev => !prev)}
-        focusedPaneId={focusedPaneId}
-        totalPanes={panes.length}
-      />
-      <div className="flex-1 min-h-0">
-        {renderPanes()}
-      </div>
+    <div className={cn("h-full", className)}>
+      {renderPanes()}
     </div>
   );
 }

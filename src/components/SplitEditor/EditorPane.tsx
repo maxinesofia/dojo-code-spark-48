@@ -159,8 +159,8 @@ export function EditorPane({
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground bg-background">
         <div className="text-center">
-          <p className="text-lg mb-2">No file selected</p>
-          <p className="text-sm">Choose a file from the explorer to start editing</p>
+          <p className="text-base">No file selected</p>
+          <p className="text-sm mt-1 opacity-60">Choose a file from the explorer to start editing</p>
         </div>
       </div>
     );
@@ -169,8 +169,8 @@ export function EditorPane({
   return (
     <div 
       className={cn(
-        "flex-1 min-h-0 border-2 border-transparent transition-colors",
-        isFocused && "border-primary/20"
+        "flex-1 min-h-0 transition-colors",
+        isFocused && "ring-1 ring-primary/20"
       )}
       onClick={onFocus}
     >
