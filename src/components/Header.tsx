@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useState, useEffect } from "react";
 import { EditableProjectTitle } from '@/components/EditableProjectTitle';
+import { ProjectService } from '@/services/ProjectService';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -30,11 +31,21 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(projectName);
-  
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   
   useEffect(() => {
     setEditedName(projectName);
   }, [projectName]);
+
+  // Get current project ID
+  useEffect(() => {
+    const projectState = ProjectService.getProjectState();
+    console.log('Header - Current project state:', projectState);
+    if (projectState?.currentProject?.id) {
+      setCurrentProjectId(projectState.currentProject.id);
+      console.log('Header - Set current project ID:', projectState.currentProject.id);
+    }
+  }, [projectTitle]); // Re-run when project title changes
   
   const handleProjectNameSubmit = () => {
     if (editedName.trim() && editedName !== projectName) {
@@ -58,6 +69,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           <EditableProjectTitle 
             title={projectTitle}
             onTitleChange={onProjectTitleChange || (() => {})}
+            currentProjectId={currentProjectId}
           />
         </div>
         

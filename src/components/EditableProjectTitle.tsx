@@ -11,9 +11,10 @@ interface EditableProjectTitleProps {
   title: string;
   onTitleChange: (newTitle: string) => void;
   className?: string;
+  currentProjectId?: string; // Add this to identify current project
 }
 
-export function EditableProjectTitle({ title, onTitleChange, className = "" }: EditableProjectTitleProps) {
+export function EditableProjectTitle({ title, onTitleChange, className = "", currentProjectId }: EditableProjectTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -51,11 +52,19 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
 
     // Check if another project already has this name
     const existingProjects = ProjectService.getAllProjects();
-    console.log('Header rename - All projects:', existingProjects);
+    console.log('Header rename - All projects:', existingProjects.map(p => ({ id: p.id, name: p.name })));
     console.log('Header rename - Looking for name:', trimmedValue);
     console.log('Header rename - Current title:', title);
+    console.log('Header rename - Current project ID:', currentProjectId);
     
-    const existingProject = existingProjects.find(p => p.name === trimmedValue);
+    // Find if there's a different project with the same name
+    const existingProject = existingProjects.find(p => {
+      const isDifferentProject = currentProjectId ? p.id !== currentProjectId : p.name !== title;
+      const hasSameName = p.name === trimmedValue;
+      console.log(`Checking project ${p.name} (${p.id}): isDifferent=${isDifferentProject}, hasSameName=${hasSameName}`);
+      return isDifferentProject && hasSameName;
+    });
+    
     console.log('Header rename - Found existing project:', existingProject);
     
     if (existingProject) {
