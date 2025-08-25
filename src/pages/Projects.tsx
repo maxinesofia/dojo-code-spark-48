@@ -922,31 +922,46 @@ const Projects = () => {
     }
 
     try {
-      // Create the NEW project with selected template
-      const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
-      const projectFiles = selectedTemplate.files(newProjectName.trim());
-      
-      // Create new project with UNIQUE ID
-      const newProject = {
-        id: `project-${Date.now()}`,
-        name: newProjectName.trim(),
-        description: selectedTemplate.description,
-        template: newProjectTemplate,
-        isPublic: false,
-        isForked: false,
-        lastModified: new Date().toISOString(),
-        fileCount: projectFiles.length,
-        files: projectFiles
-      };
+      // Check if project with same name and template already exists
+      const existingProjects = ProjectService.getAllProjects();
+      const existingProject = existingProjects.find(p => 
+        p.name === newProjectName.trim() && 
+        p.template === newProjectTemplate
+      );
 
-      // ONLY switch to it, don't save separately (switchToProject will handle everything)
-      ProjectService.switchToProject(newProject);
-      
-      // Add to projects list manually to avoid duplication
-      const projects = ProjectService.getAllProjects();
-      if (!projects.some(p => p.id === newProject.id)) {
-        projects.unshift(newProject);
-        localStorage.setItem('tutorials-dojo-projects', JSON.stringify(projects));
+      if (existingProject) {
+        // Just switch to existing project instead of creating duplicate
+        ProjectService.switchToProject(existingProject);
+        setCurrentProjectId(existingProject.id);
+        
+        toast({
+          title: "Switched to existing project",
+          description: `Now editing "${existingProject.name}"`,
+        });
+      } else {
+        // Create new project only if it doesn't exist
+        const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
+        const projectFiles = selectedTemplate.files(newProjectName.trim());
+        
+        const newProject = {
+          id: `project-${Date.now()}`,
+          name: newProjectName.trim(),
+          description: selectedTemplate.description,
+          template: newProjectTemplate,
+          isPublic: false,
+          isForked: false,
+          lastModified: new Date().toISOString(),
+          fileCount: projectFiles.length,
+          files: projectFiles
+        };
+
+        ProjectService.switchToProject(newProject);
+        setCurrentProjectId(newProject.id);
+        
+        toast({
+          title: "Project created",
+          description: `Created "${newProject.name}" successfully`,
+        });
       }
       
       loadProjects();
@@ -954,11 +969,6 @@ const Projects = () => {
       setNewProjectName("");
       setNewProjectTemplate("vanilla");
       setIsCreateDialogOpen(false);
-      
-      toast({
-        title: "Success", 
-        description: `New ${selectedTemplate.name} project created!`
-      });
       
       navigate('/');
       
