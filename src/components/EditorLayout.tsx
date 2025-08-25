@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Header } from "./Header";
 import { VSCodeFileExplorer } from "./VSCodeFileExplorer";
 import { FileNode } from "../types/FileTypes";
-import { CodeEditor } from "./CodeEditor";
+import { SplitEditor } from "./SplitEditor";
 import { DynamicPreview } from "./DynamicPreview";
 import { PackageManager } from "./PackageManager";
 import { Terminal } from "./Terminal";
@@ -940,6 +940,18 @@ export function EditorLayout() {
     }
   }, [files, selectedFile]);
 
+  // Helper function to find file by ID
+  const findFileById = (files: FileNode[], id: string): FileNode | null => {
+    for (const file of files) {
+      if (file.id === id) return file;
+      if (file.children) {
+        const found = findFileById(file.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   const findFirstFile = (nodes: FileNode[]): FileNode | null => {
     for (const node of nodes) {
       if (node.type === 'file') {
@@ -1345,21 +1357,20 @@ export function EditorLayout() {
               {/* Code Editor */}
               <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
                 <div className="h-full bg-background">
-                  {selectedFile ? (
-                    <CodeEditor
-                      value={selectedFile.content || ''}
-                      language="javascript"
-                      onChange={handleFileChange}
-                      fileName={selectedFile.name}
-                    />
-                  ) : (
-                  <div className="h-full flex items-center justify-center bg-background">
-                    <div className="text-center text-muted-foreground">
-                      <h2 className="text-2xl font-semibold mb-2">Welcome to Tutorials Dojo</h2>
-                      <p>Select a file from the explorer to start coding</p>
-                    </div>
-                  </div>
-                  )}
+                  <SplitEditor
+                    files={files}
+                    activeFileId={selectedFile?.id || null}
+                    onFileSelect={(fileId) => {
+                      const file = findFileById(files, fileId);
+                      if (file) {
+                        setSelectedFile(file);
+                      }
+                    }}
+                    onFileChange={(fileId, content) => {
+                      handleFileChange(content);
+                    }}
+                    className="h-full"
+                  />
                 </div>
               </ResizablePanel>
               
