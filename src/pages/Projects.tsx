@@ -895,6 +895,10 @@ const Projects = () => {
       const allProjects = ProjectService.getAllProjects();
       const currentState = ProjectService.getProjectState();
       
+      // Debug: Log what we're getting
+      console.log('All projects from storage:', allProjects);
+      console.log('Current state:', currentState);
+      
       // Just show all saved projects, mark which one is current
       setProjects(allProjects);
       
