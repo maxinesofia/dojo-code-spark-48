@@ -941,25 +941,35 @@ const Projects = () => {
     const existingProjects = ProjectService.getAllProjects();
     const baseNameTrimmed = baseName.trim();
     
-    // Check if base name is available
-    const existingWithSameName = existingProjects.filter(p => 
-      p.name.startsWith(baseNameTrimmed) && p.template === template
-    );
+    // Get all projects that start with the base name (including numbered ones)
+    const existingWithSameName = existingProjects
+      .filter(p => p.id !== 'current') // Exclude temporary 'current' project
+      .filter(p => {
+        // Check for exact match or numbered versions like "name (1)", "name (2)"
+        return p.name === baseNameTrimmed || 
+               p.name.match(new RegExp(`^${baseNameTrimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\(\\d+\\)$`));
+      });
     
-    if (!existingWithSameName.find(p => p.name === baseNameTrimmed)) {
+    // If no conflicts, use the original name
+    if (existingWithSameName.length === 0) {
       return baseNameTrimmed;
     }
     
-    // Generate numbered version
-    let counter = 1;
-    let uniqueName = `${baseNameTrimmed} (${counter})`;
+    // Find the highest number used
+    let maxNumber = 0;
+    existingWithSameName.forEach(project => {
+      if (project.name === baseNameTrimmed) {
+        maxNumber = Math.max(maxNumber, 0); // Original name counts as 0
+      } else {
+        const match = project.name.match(/\((\d+)\)$/);
+        if (match) {
+          maxNumber = Math.max(maxNumber, parseInt(match[1]));
+        }
+      }
+    });
     
-    while (existingWithSameName.find(p => p.name === uniqueName)) {
-      counter++;
-      uniqueName = `${baseNameTrimmed} (${counter})`;
-    }
-    
-    return uniqueName;
+    // Return the next available number
+    return `${baseNameTrimmed} (${maxNumber + 1})`;
   };
 
   const createNewProject = () => {
