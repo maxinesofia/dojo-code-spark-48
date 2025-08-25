@@ -1096,13 +1096,7 @@ const Projects = () => {
   const handleRenameCancel = () => {
     setIsRenameConfirmOpen(false);
     setRenameConfirmData(null);
-    // Reset the editing field to original name
-    if (editingProject) {
-      const originalProject = projects.find(p => p.id === editingProject.id);
-      if (originalProject) {
-        setEditingProject(originalProject);
-      }
-    }
+    // Keep the editing state - don't automatically reset
   };
 
   const deleteProject = (projectId: string) => {
@@ -1250,8 +1244,8 @@ const Projects = () => {
                         <Input
                           value={editingProject.name}
                           onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
-                          onBlur={() => renameProject(project.id, editingProject.name)}
                           onKeyDown={(e) => {
+                            e.stopPropagation(); // Prevent card click
                             if (e.key === 'Enter') {
                               renameProject(project.id, editingProject.name);
                             }
@@ -1259,6 +1253,7 @@ const Projects = () => {
                               setEditingProject(null);
                             }
                           }}
+                          onClick={(e) => e.stopPropagation()} // Prevent card click
                           autoFocus
                           className="text-lg font-semibold"
                         />
@@ -1282,7 +1277,7 @@ const Projects = () => {
                         variant="ghost"
                         size="sm"
                         onClick={(e) => {
-                          e.stopPropagation();
+                          e.stopPropagation(); // Prevent card click
                           setEditingProject(project);
                         }}
                       >
@@ -1293,7 +1288,7 @@ const Projects = () => {
                           variant="ghost"
                           size="sm"
                           onClick={(e) => {
-                            e.stopPropagation();
+                            e.stopPropagation(); // Prevent card click
                             deleteProject(project.id);
                           }}
                           className="text-destructive hover:text-destructive"
@@ -1307,7 +1302,15 @@ const Projects = () => {
                     <CardDescription>{project.description}</CardDescription>
                   )}
                 </CardHeader>
-                <CardContent className="space-y-3" onClick={() => openProject(project)}>
+                <CardContent 
+                  className="space-y-3" 
+                  onClick={(e) => {
+                    // Only open project if not in editing mode
+                    if (!editingProject || editingProject.id !== project.id) {
+                      openProject(project);
+                    }
+                  }}
+                >
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <FileText className="w-4 h-4" />
