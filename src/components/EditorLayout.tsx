@@ -10,7 +10,7 @@ import { Terminal } from "./Terminal";
 import { useToast } from "@/hooks/use-toast";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
-import { Terminal as TerminalIcon, GitBranch, Settings, Package, X, Trash2 } from "lucide-react";
+import { Terminal as TerminalIcon, GitBranch, Settings, Package, X, Trash2, SplitSquareVertical } from "lucide-react";
 import { ProjectService } from "@/services/ProjectService";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
@@ -1356,21 +1356,51 @@ export function EditorLayout() {
             <ResizablePanelGroup direction="vertical">
               {/* Code Editor */}
               <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
-                <div className="h-full bg-background">
-                  <SplitEditor
-                    files={files}
-                    activeFileId={selectedFile?.id || null}
-                    onFileSelect={(fileId) => {
-                      const file = findFileById(files, fileId);
-                      if (file) {
-                        setSelectedFile(file);
-                      }
-                    }}
-                    onFileChange={(fileId, content) => {
-                      handleFileChange(content);
-                    }}
-                    className="h-full"
-                  />
+                <div className="h-full bg-background flex flex-col">
+                  {/* Editor Toolbar */}
+                  <div className="h-8 bg-muted/30 border-b border-border flex items-center justify-between px-2 flex-shrink-0">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">Editor</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-auto px-2 text-xs"
+                        onClick={() => {
+                          // Trigger split editor programmatically
+                          const event = new KeyboardEvent('keydown', {
+                            key: '\\',
+                            ctrlKey: true,
+                            bubbles: true
+                          });
+                          window.dispatchEvent(event);
+                        }}
+                        title="Split Editor (Ctrl+\)"
+                      >
+                        <SplitSquareVertical className="w-3 h-3 mr-1" />
+                        Split
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Editor Content */}
+                  <div className="flex-1">
+                    <SplitEditor
+                      files={files}
+                      activeFileId={selectedFile?.id || null}
+                      onFileSelect={(fileId) => {
+                        const file = findFileById(files, fileId);
+                        if (file) {
+                          setSelectedFile(file);
+                        }
+                      }}
+                      onFileChange={(fileId, content) => {
+                        handleFileChange(content);
+                      }}
+                      className="h-full"
+                    />
+                  </div>
                 </div>
               </ResizablePanel>
               
