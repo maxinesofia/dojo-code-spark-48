@@ -975,19 +975,17 @@ const Projects = () => {
       ProjectService.switchToProject(newProject);
       setCurrentProjectId(newProject.id);
       
+      // Reload projects to show all including the new one
+      loadProjects();
+      
       toast({
         title: "Project created",
         description: `Created "${newProject.name}" successfully`,
       });
       
-      // Reload projects to show all including the new one
-      loadProjects();
-      
       setNewProjectName("");
       setNewProjectTemplate("vanilla");
       setIsCreateDialogOpen(false);
-      
-      // Don't navigate away - stay on projects page to see the new project
       
     } catch (error) {
       console.error('Error creating project:', error);
