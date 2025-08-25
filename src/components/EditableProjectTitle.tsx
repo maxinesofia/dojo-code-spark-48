@@ -51,7 +51,12 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
 
     // Check if another project already has this name
     const existingProjects = ProjectService.getAllProjects();
+    console.log('Header rename - All projects:', existingProjects);
+    console.log('Header rename - Looking for name:', trimmedValue);
+    console.log('Header rename - Current title:', title);
+    
     const existingProject = existingProjects.find(p => p.name === trimmedValue);
+    console.log('Header rename - Found existing project:', existingProject);
     
     if (existingProject) {
       // Show confirmation dialog
