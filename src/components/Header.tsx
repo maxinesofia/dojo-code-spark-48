@@ -29,13 +29,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState(projectName);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  
-  useEffect(() => {
-    setEditedName(projectName);
-  }, [projectName]);
 
   // Get current project ID
   useEffect(() => {
@@ -46,18 +40,6 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
       console.log('Header - Set current project ID:', projectState.currentProject.id);
     }
   }, [projectTitle]); // Re-run when project title changes
-  
-  const handleProjectNameSubmit = () => {
-    if (editedName.trim() && editedName !== projectName) {
-      onProjectNameChange?.(editedName.trim());
-      
-      toast({
-        title: "Success",
-        description: "Project renamed successfully!"
-      });
-    }
-    setIsEditingName(false);
-  };
   
   return (
     <header className="h-14 border-b border-editor-border bg-background flex items-center justify-between px-4">
@@ -96,36 +78,11 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
         
         <div className="text-muted-foreground">|</div>
         
-        {isEditingName ? (
-          <Input
-            value={editedName}
-            onChange={(e) => setEditedName(e.target.value)}
-            onBlur={handleProjectNameSubmit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleProjectNameSubmit();
-              if (e.key === 'Escape') {
-                setEditedName(projectName);
-                setIsEditingName(false);
-              }
-            }}
-            className="h-8 w-48"
-            autoFocus
-          />
-        ) : (
-          <div className="flex items-center gap-2 group">
-            <span className="text-foreground font-medium cursor-pointer" onClick={() => setIsEditingName(true)}>
-              {projectName}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditingName(true)}
-              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Edit3 className="w-3 h-3" />
-            </Button>
-          </div>
-        )}
+        <EditableProjectTitle 
+          title={projectName}
+          onTitleChange={onProjectNameChange || (() => {})}
+          currentProjectId={currentProjectId}
+        />
       </div>
 
       <div className="flex items-center gap-2">
