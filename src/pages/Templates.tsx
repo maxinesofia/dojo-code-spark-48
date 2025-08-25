@@ -3,8 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText, Component, Triangle, Box, FileCode, Layers, Star, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { ProjectService, Project } from "@/services/ProjectService";
+import { FileNode } from "@/types/FileTypes";
 
 interface Template {
   id: string;
@@ -113,7 +118,11 @@ const categories = [
 const Templates = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Popular");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [projectName, setProjectName] = useState("");
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -135,11 +144,262 @@ const Templates = () => {
     return count.toString();
   };
 
+  // Template file generators (copied from Projects.tsx)
+  const generateTemplateFiles = (templateId: string, projectName: string): FileNode[] => {
+    switch (templateId) {
+      case 'vanilla-js':
+      case 'html-css':
+        return [
+          {
+            id: 'index.html',
+            name: 'index.html',
+            type: 'file',
+            content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to ${projectName}!</h1>
+        <p>Start building your amazing project here.</p>
+        <button id="clickMe">Click me!</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>`
+          },
+          {
+            id: 'styles.css',
+            name: 'styles.css',
+            type: 'file',
+            content: `body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, #fff, #ddd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+button {
+    background: #1e40af;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+}`
+          },
+          {
+            id: 'script.js',
+            name: 'script.js',
+            type: 'file',
+            content: `// ${projectName} JavaScript
+console.log('Welcome to ${projectName}!');
+
+document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('clickMe');
+    let clickCount = 0;
+    
+    if (button) {
+        button.addEventListener('click', function() {
+            clickCount++;
+            button.textContent = \`Clicked \${clickCount} time\${clickCount !== 1 ? 's' : ''}!\`;
+        });
+    }
+});`
+          }
+        ];
+      
+      case 'react':
+      case 'react-ts':
+        return [
+          {
+            id: 'index.html',
+            name: 'index.html',
+            type: 'file',
+            content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel" src="App.js"></script>
+</body>
+</html>`
+          },
+          {
+            id: 'App.js',
+            name: 'App.js',
+            type: 'file',
+            content: `function App() {
+    const [count, setCount] = React.useState(0);
+
+    return React.createElement('div', { style: { padding: '20px', textAlign: 'center' } },
+        React.createElement('h1', null, '${projectName}'),
+        React.createElement('p', null, 'Welcome to React!'),
+        React.createElement('button', 
+            { 
+                onClick: () => setCount(count + 1),
+                style: {
+                    background: '#61dafb',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '5px',
+                    cursor: 'pointer'
+                }
+            }, 
+            \`Count: \${count}\`
+        )
+    );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById('root'));`
+          }
+        ];
+      
+      default:
+        return [
+          {
+            id: 'index.html',
+            name: 'index.html',
+            type: 'file',
+            content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+</head>
+<body>
+    <h1>Welcome to ${projectName}!</h1>
+    <p>Template: ${templateId}</p>
+</body>
+</html>`
+          }
+        ];
+    }
+  };
+
+  const generateUniqueName = (baseName: string, templateType: string): string => {
+    const existingProjects = ProjectService.getAllProjects();
+    const baseNameTrimmed = baseName.trim();
+    
+    // Check if base name is available
+    const existingWithSameName = existingProjects.filter(p => 
+      p.name.startsWith(baseNameTrimmed)
+    );
+    
+    if (!existingWithSameName.find(p => p.name === baseNameTrimmed)) {
+      return baseNameTrimmed;
+    }
+    
+    // Generate numbered version
+    let counter = 1;
+    let uniqueName = `${baseNameTrimmed} (${counter})`;
+    
+    while (existingWithSameName.find(p => p.name === uniqueName)) {
+      counter++;
+      uniqueName = `${baseNameTrimmed} (${counter})`;
+    }
+    
+    return uniqueName;
+  };
+
   const handleCreateProject = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
-    const projectName = `New ${template?.name || 'Project'}`;
-    // Navigate to editor with template
-    navigate(`/editor?template=${templateId}&name=${encodeURIComponent(projectName)}`);
+    if (template) {
+      setSelectedTemplate(template);
+      setProjectName(`New ${template.name} Project`);
+      setIsCreateDialogOpen(true);
+    }
+  };
+
+  const createProjectFromTemplate = () => {
+    if (!projectName.trim() || !selectedTemplate) {
+      toast({
+        title: "Error",
+        description: "Please enter a project name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Generate unique name
+      const uniqueName = generateUniqueName(projectName, selectedTemplate.id);
+      
+      // Generate template files
+      const templateFiles = generateTemplateFiles(selectedTemplate.id, uniqueName);
+      
+      // Create project object
+      const newProject: Project = {
+        id: `project-${Date.now()}`,
+        name: uniqueName,
+        description: selectedTemplate.description,
+        template: selectedTemplate.id,
+        isPublic: false,
+        isForked: false,
+        lastModified: new Date().toISOString(),
+        fileCount: templateFiles.length,
+        files: templateFiles
+      };
+
+      // Save and switch to project
+      ProjectService.saveProject(newProject);
+      ProjectService.switchToProject(newProject);
+
+      toast({
+        title: "Project created",
+        description: `Created "${newProject.name}" successfully`,
+      });
+
+      // Navigate to editor
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Error creating project from template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create project",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleBackToEditor = () => {
@@ -238,6 +498,46 @@ const Templates = () => {
             <p className="text-muted-foreground">Try adjusting your search or selecting a different category.</p>
           </div>
         )}
+
+        {/* Create Project Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Project from Template</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              {selectedTemplate && (
+                <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                  <selectedTemplate.icon className={`w-6 h-6 ${selectedTemplate.iconColor}`} />
+                  <div>
+                    <div className="font-medium">{selectedTemplate.name}</div>
+                    <div className="text-sm text-muted-foreground">{selectedTemplate.description}</div>
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <Label htmlFor="projectName">Project Name</Label>
+                <Input
+                  id="projectName"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="Enter project name..."
+                  onKeyDown={(e) => e.key === 'Enter' && createProjectFromTemplate()}
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={createProjectFromTemplate}>
+                  Create Project
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
