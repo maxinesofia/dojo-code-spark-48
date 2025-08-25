@@ -955,8 +955,7 @@ const Projects = () => {
           files: projectFiles
         };
 
-        // Save the new project first, then switch to it
-        ProjectService.saveProject(newProject);
+        // Only use switchToProject - it handles both saving and switching
         ProjectService.switchToProject(newProject);
         setCurrentProjectId(newProject.id);
         
