@@ -81,6 +81,12 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
         
         
         <div className="text-muted-foreground">|</div>
+        
+        <EditableProjectTitle 
+          title={projectName}
+          onTitleChange={onProjectNameChange || (() => {})}
+          currentProjectId={currentProjectId}
+        />
       </div>
 
       <div className="flex items-center gap-2">
