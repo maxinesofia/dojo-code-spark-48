@@ -905,7 +905,11 @@ export function EditorLayout() {
     return projectState?.projectName || 'Untitled Project';
   });
   
-  const [projectTitle, setProjectTitle] = useState("TUTORIALS DOJO");
+  const [projectTitle, setProjectTitle] = useState(() => {
+    const projectState = ProjectService.getProjectState();
+    const currentProject = ProjectService.getCurrentProject();
+    return currentProject?.name || projectState?.projectName || "TUTORIALS DOJO";
+  });
   
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);

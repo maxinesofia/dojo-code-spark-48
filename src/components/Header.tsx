@@ -53,7 +53,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
             <span className="text-primary-foreground font-bold text-sm">TD</span>
           </div>
           <EditableProjectTitle 
-            title={projectTitle}
+            title={projectTitle || "TUTORIALS DOJO"}
             onTitleChange={onProjectTitleChange || (() => {})}
             currentProjectId={currentProjectId}
             className="hover:bg-muted/50 rounded px-2 py-1 transition-colors"
