@@ -320,10 +320,10 @@ ReactDOM.render(React.createElement(App), document.getElementById('root'));`
     const existingProjects = ProjectService.getAllProjects();
     const baseNameTrimmed = baseName.trim();
     
-    // Check if base name is available
-    const existingWithSameName = existingProjects.filter(p => 
-      p.name.startsWith(baseNameTrimmed)
-    );
+    // Check if base name is available (filter out 'current' project)
+    const existingWithSameName = existingProjects
+      .filter(p => p.id !== 'current') // Exclude the temporary 'current' project
+      .filter(p => p.name.startsWith(baseNameTrimmed));
     
     if (!existingWithSameName.find(p => p.name === baseNameTrimmed)) {
       return baseNameTrimmed;
@@ -345,7 +345,8 @@ ReactDOM.render(React.createElement(App), document.getElementById('root'));`
     const template = templates.find(t => t.id === templateId);
     if (template) {
       setSelectedTemplate(template);
-      setProjectName(`New ${template.name} Project`);
+      // Use a more generic base name that will get auto-numbered
+      setProjectName(`${template.name} Project`);
       setIsCreateDialogOpen(true);
     }
   };
