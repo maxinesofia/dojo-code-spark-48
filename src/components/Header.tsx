@@ -38,6 +38,10 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
     if (projectState?.currentProject?.id) {
       setCurrentProjectId(projectState.currentProject.id);
       console.log('Header - Set current project ID:', projectState.currentProject.id);
+    } else {
+      // When editing the current unsaved project, use 'current' as the ID
+      setCurrentProjectId('current');
+      console.log('Header - Set current project ID to: current');
     }
   }, [projectTitle]); // Re-run when project title changes
   
