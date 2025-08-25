@@ -1058,8 +1058,10 @@ const Projects = () => {
     
     if (existingProject) {
       // Show confirmation dialog
+      console.log('Setting rename confirm data:', { projectId, newName: trimmedName, existingProject });
       setRenameConfirmData({ projectId, newName: trimmedName, existingProject });
       setIsRenameConfirmOpen(true);
+      console.log('Dialog should be open now');
       return;
     }
 
@@ -1094,6 +1096,7 @@ const Projects = () => {
   };
 
   const handleRenameCancel = () => {
+    console.log('Cancel clicked');
     setIsRenameConfirmOpen(false);
     setRenameConfirmData(null);
     // Keep the editing state - don't automatically reset
@@ -1335,8 +1338,15 @@ const Projects = () => {
       </div>
 
       {/* Rename Confirmation Dialog - Moved outside of container to avoid clipping */}
-      <AlertDialog open={isRenameConfirmOpen} onOpenChange={setIsRenameConfirmOpen}>
-        <AlertDialogContent className="bg-background border z-[100] pointer-events-auto max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+      <AlertDialog 
+        open={isRenameConfirmOpen} 
+        onOpenChange={(open) => {
+          console.log('Dialog onOpenChange:', open, 'renameConfirmData:', !!renameConfirmData);
+          // Always allow the dialog state to be set
+          setIsRenameConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent className="bg-background border z-[100] pointer-events-auto max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
