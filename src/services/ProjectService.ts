@@ -207,7 +207,12 @@ export class ProjectService {
 
   static switchToProject(project: Project): void {
     try {
-      // Simply switch to the new project without saving current as duplicate
+      // Make sure the project has a proper ID and is saved to the list
+      if (project.id === 'current' || !project.id) {
+        project.id = `project-${Date.now()}`;
+        this.saveProject(project);
+      }
+      
       const state: ProjectState = {
         currentProject: project,
         projectName: project.name,

@@ -895,20 +895,47 @@ const Projects = () => {
       const allProjects = ProjectService.getAllProjects();
       const currentState = ProjectService.getProjectState();
       
-      // Just show all saved projects, mark which one is current
-      setProjects(allProjects);
+      console.log('All projects loaded:', allProjects);
+      console.log('Current state:', currentState);
       
-      // Find current project by matching with project state
-      if (currentState) {
-        const currentProject = allProjects.find(p => 
-          p.name === currentState.projectName && 
-          p.template === currentState.template
-        );
-        setCurrentProjectId(currentProject?.id || null);
+      // Filter out the duplicate "current" project 
+      const filteredProjects = allProjects.filter(p => p.id !== 'current');
+      setProjects(filteredProjects);
+      
+      // Find current project by exact ID match if current project has real ID
+      if (currentState?.currentProject?.id && currentState.currentProject.id !== 'current') {
+        setCurrentProjectId(currentState.currentProject.id);
+      } else {
+        setCurrentProjectId(null);
       }
     } catch (error) {
       console.error('Error loading projects:', error);
     }
+  };
+
+  const generateUniqueName = (baseName: string, template: string): string => {
+    const existingProjects = ProjectService.getAllProjects();
+    const baseNameTrimmed = baseName.trim();
+    
+    // Check if base name is available
+    const existingWithSameName = existingProjects.filter(p => 
+      p.name.startsWith(baseNameTrimmed) && p.template === template
+    );
+    
+    if (!existingWithSameName.find(p => p.name === baseNameTrimmed)) {
+      return baseNameTrimmed;
+    }
+    
+    // Generate numbered version
+    let counter = 1;
+    let uniqueName = `${baseNameTrimmed} (${counter})`;
+    
+    while (existingWithSameName.find(p => p.name === uniqueName)) {
+      counter++;
+      uniqueName = `${baseNameTrimmed} (${counter})`;
+    }
+    
+    return uniqueName;
   };
 
   const createNewProject = () => {
@@ -922,58 +949,45 @@ const Projects = () => {
     }
 
     try {
-      // Check if project with same name and template already exists
-      const existingProjects = ProjectService.getAllProjects();
-      const existingProject = existingProjects.find(p => 
-        p.name === newProjectName.trim() && 
-        p.template === newProjectTemplate
-      );
-
-      if (existingProject) {
-        // Just switch to existing project instead of creating duplicate
-        ProjectService.switchToProject(existingProject);
-        setCurrentProjectId(existingProject.id);
-        
-        toast({
-          title: "Switched to existing project",
-          description: `Now editing "${existingProject.name}"`,
-        });
-      } else {
-        // Create new project only if it doesn't exist
-        const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
-        const projectFiles = selectedTemplate.files(newProjectName.trim());
-        
-        const newProject = {
-          id: `project-${Date.now()}`,
-          name: newProjectName.trim(),
-          description: selectedTemplate.description,
-          template: newProjectTemplate,
-          isPublic: false,
-          isForked: false,
-          lastModified: new Date().toISOString(),
-          fileCount: projectFiles.length,
-          files: projectFiles
-        };
-
-        // Only use switchToProject - it handles both saving and switching
-        ProjectService.switchToProject(newProject);
-        setCurrentProjectId(newProject.id);
-        
-        toast({
-          title: "Project created",
-          description: `Created "${newProject.name}" successfully`,
-        });
-      }
+      // Generate unique name with numbering if needed
+      const uniqueName = generateUniqueName(newProjectName, newProjectTemplate);
       
-      // Reload projects to show all including the new/existing one
+      // Create new project
+      const selectedTemplate = templates[newProjectTemplate as keyof typeof templates];
+      const projectFiles = selectedTemplate.files(uniqueName);
       
+      const newProject: Project = {
+        id: `project-${Date.now()}`,
+        name: uniqueName,
+        description: selectedTemplate.description,
+        template: newProjectTemplate,
+        isPublic: false,
+        isForked: false,
+        lastModified: new Date().toISOString(),
+        fileCount: projectFiles.length,
+        files: projectFiles
+      };
+
+      // Save the project to the list first
+      ProjectService.saveProject(newProject);
+      
+      // Then switch to it
+      ProjectService.switchToProject(newProject);
+      setCurrentProjectId(newProject.id);
+      
+      toast({
+        title: "Project created",
+        description: `Created "${newProject.name}" successfully`,
+      });
+      
+      // Reload projects to show all including the new one
       loadProjects();
       
       setNewProjectName("");
       setNewProjectTemplate("vanilla");
       setIsCreateDialogOpen(false);
       
-      navigate('/');
+      // Don't navigate away - stay on projects page to see the new project
       
     } catch (error) {
       console.error('Error creating project:', error);
