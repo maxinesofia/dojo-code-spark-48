@@ -1329,38 +1329,38 @@ const Projects = () => {
             ))}
           </div>
         )}
-
-        {/* Rename Confirmation Dialog */}
-        <AlertDialog open={isRenameConfirmOpen} onOpenChange={setIsRenameConfirmOpen}>
-          <AlertDialogContent className="bg-background border z-50 pointer-events-auto max-w-md">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
-              <AlertDialogDescription className="text-muted-foreground">
-                A project named "{renameConfirmData?.newName}" already exists. 
-                {renameConfirmData?.existingProject && (
-                  <>
-                    <br /><br />
-                    <strong>Existing project details:</strong>
-                    <br />• Template: {renameConfirmData.existingProject.template}
-                    <br />• Files: {renameConfirmData.existingProject.fileCount}
-                    <br />• Last modified: {formatDate(renameConfirmData.existingProject.lastModified)}
-                    <br /><br />
-                    Do you want to replace it with the renamed project? This action cannot be undone.
-                  </>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleRenameCancel} className="pointer-events-auto">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={handleRenameConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-events-auto">
-                Replace Project
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      {/* Rename Confirmation Dialog - Moved outside of container to avoid clipping */}
+      <AlertDialog open={isRenameConfirmOpen} onOpenChange={setIsRenameConfirmOpen}>
+        <AlertDialogContent className="bg-background border z-[100] pointer-events-auto max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              A project named "{renameConfirmData?.newName}" already exists. 
+              {renameConfirmData?.existingProject && (
+                <>
+                  <br /><br />
+                  <strong>Existing project details:</strong>
+                  <br />• Template: {renameConfirmData.existingProject.template}
+                  <br />• Files: {renameConfirmData.existingProject.fileCount}
+                  <br />• Last modified: {formatDate(renameConfirmData.existingProject.lastModified)}
+                  <br /><br />
+                  Do you want to replace it with the renamed project? This action cannot be undone.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleRenameCancel} className="pointer-events-auto">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleRenameConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-events-auto">
+              Replace Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

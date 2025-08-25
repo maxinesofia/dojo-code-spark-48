@@ -162,9 +162,9 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
         </Button>
       </div>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog - Using portal to render outside current container */}
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogContent className="bg-background border z-50 pointer-events-auto max-w-md">
+        <AlertDialogContent className="bg-background border z-[100] pointer-events-auto max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
