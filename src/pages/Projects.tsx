@@ -1332,10 +1332,10 @@ const Projects = () => {
 
         {/* Rename Confirmation Dialog */}
         <AlertDialog open={isRenameConfirmOpen} onOpenChange={setIsRenameConfirmOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent className="bg-background border z-50 pointer-events-auto max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogDescription className="text-muted-foreground">
                 A project named "{renameConfirmData?.newName}" already exists. 
                 {renameConfirmData?.existingProject && (
                   <>
@@ -1351,10 +1351,10 @@ const Projects = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleRenameCancel}>
+              <AlertDialogCancel onClick={handleRenameCancel} className="pointer-events-auto">
                 Cancel
               </AlertDialogCancel>
-              <AlertDialogAction onClick={handleRenameConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction onClick={handleRenameConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-events-auto">
                 Replace Project
               </AlertDialogAction>
             </AlertDialogFooter>

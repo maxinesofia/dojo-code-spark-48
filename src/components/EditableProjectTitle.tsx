@@ -164,10 +164,10 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
 
       {/* Confirmation Dialog */}
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-background border z-50 pointer-events-auto max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-muted-foreground">
               A project named "{confirmData?.newName}" already exists. 
               {confirmData?.existingProject && (
                 <>
@@ -183,10 +183,10 @@ export function EditableProjectTitle({ title, onTitleChange, className = "" }: E
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleConfirmCancel}>
+            <AlertDialogCancel onClick={handleConfirmCancel} className="pointer-events-auto">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-events-auto">
               Replace Project
             </AlertDialogAction>
           </AlertDialogFooter>
