@@ -965,16 +965,15 @@ const Projects = () => {
         description: `Created "${newProject.name}" successfully`,
       });
       
-      // Reload projects to show all including the new/existing one
-      
-      loadProjects();
-      
-      setNewProjectName("");
-      setNewProjectTemplate("vanilla");
-      setIsCreateDialogOpen(false);
-      
-      navigate('/');
-      
+       // Reload projects to show all including the new one
+       loadProjects();
+       
+       setNewProjectName("");
+       setNewProjectTemplate("vanilla");
+       setIsCreateDialogOpen(false);
+       
+       // Don't navigate away so user can see their new project
+       
     } catch (error) {
       console.error('Error creating project:', error);
       toast({
