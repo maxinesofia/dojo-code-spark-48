@@ -912,9 +912,23 @@ const Projects = () => {
       const filteredProjects = allProjects.filter(p => p.id !== 'current');
       setProjects(filteredProjects);
       
-      // Find current project by exact ID match if current project has real ID
+      // Find current project by ID from currentProject object, or fallback to name/template match
       if (currentState?.currentProject?.id && currentState.currentProject.id !== 'current') {
         setCurrentProjectId(currentState.currentProject.id);
+        console.log('Set current project ID:', currentState.currentProject.id);
+      } else if (currentState) {
+        // Fallback: find by name and template match
+        const currentProject = filteredProjects.find(p => 
+          p.name === currentState.projectName && 
+          p.template === currentState.template
+        );
+        if (currentProject) {
+          setCurrentProjectId(currentProject.id);
+          console.log('Found current project by name/template:', currentProject.id);
+        } else {
+          setCurrentProjectId(null);
+          console.log('No current project found');
+        }
       } else {
         setCurrentProjectId(null);
       }
