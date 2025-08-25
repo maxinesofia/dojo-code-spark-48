@@ -86,29 +86,19 @@ export function DynamicPreview({ files, language = 'javascript' }: DynamicPrevie
 
   const openInNewTab = () => {
     if (executionResult?.success && executionResult.html) {
-      // Create responsive HTML with viewport meta tag
-      const responsiveHtml = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Preview</title>
-          <style>
-            * { box-sizing: border-box; }
-            html { font-size: 16px; }
-            body { margin: 0; padding: 0; }
-          </style>
-        </head>
-        <body>
-          ${executionResult.html.replace(/<!DOCTYPE html>.*?<body[^>]*>/is, '').replace(/<\/body>.*?<\/html>/is, '')}
-        </body>
-        </html>
-      `;
+      // Just add viewport meta tag if it doesn't exist, otherwise use original HTML
+      let htmlContent = executionResult.html;
+      
+      if (!htmlContent.includes('viewport')) {
+        htmlContent = htmlContent.replace(
+          /<head>/i, 
+          '<head>\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">'
+        );
+      }
       
       const newWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
       if (newWindow) {
-        newWindow.document.write(responsiveHtml);
+        newWindow.document.write(htmlContent);
         newWindow.document.close();
         newWindow.focus();
       }
