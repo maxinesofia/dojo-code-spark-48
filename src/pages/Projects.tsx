@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Edit3, Plus, Calendar, FileText, FolderOpen } from "lucide-react";
@@ -883,6 +884,8 @@ const Projects = () => {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectTemplate, setNewProjectTemplate] = useState("vanilla");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isRenameConfirmOpen, setIsRenameConfirmOpen] = useState(false);
+  const [renameConfirmData, setRenameConfirmData] = useState<{projectId: string, newName: string, existingProject: Project} | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -1041,7 +1044,31 @@ const Projects = () => {
       return;
     }
 
-    ProjectService.renameProject(projectId, newName.trim());
+    const trimmedName = newName.trim();
+    const currentProject = projects.find(p => p.id === projectId);
+    
+    // If the name hasn't changed, just close the edit
+    if (currentProject && currentProject.name === trimmedName) {
+      setEditingProject(null);
+      return;
+    }
+
+    // Check if another project already has this name
+    const existingProject = projects.find(p => p.id !== projectId && p.name === trimmedName);
+    
+    if (existingProject) {
+      // Show confirmation dialog
+      setRenameConfirmData({ projectId, newName: trimmedName, existingProject });
+      setIsRenameConfirmOpen(true);
+      return;
+    }
+
+    // No conflict, proceed with rename
+    performRename(projectId, trimmedName);
+  };
+
+  const performRename = (projectId: string, newName: string) => {
+    ProjectService.renameProject(projectId, newName);
     loadProjects(); // Reload to get the updated list
     setEditingProject(null);
     
@@ -1049,6 +1076,33 @@ const Projects = () => {
       title: "Success",
       description: "Project renamed successfully!"
     });
+  };
+
+  const handleRenameConfirm = () => {
+    if (renameConfirmData) {
+      // Delete the existing project and rename the current one
+      ProjectService.deleteProject(renameConfirmData.existingProject.id);
+      performRename(renameConfirmData.projectId, renameConfirmData.newName);
+      
+      toast({
+        title: "Success",
+        description: `Project renamed and "${renameConfirmData.existingProject.name}" was replaced`
+      });
+    }
+    setIsRenameConfirmOpen(false);
+    setRenameConfirmData(null);
+  };
+
+  const handleRenameCancel = () => {
+    setIsRenameConfirmOpen(false);
+    setRenameConfirmData(null);
+    // Reset the editing field to original name
+    if (editingProject) {
+      const originalProject = projects.find(p => p.id === editingProject.id);
+      if (originalProject) {
+        setEditingProject(originalProject);
+      }
+    }
   };
 
   const deleteProject = (projectId: string) => {
@@ -1275,6 +1329,37 @@ const Projects = () => {
             ))}
           </div>
         )}
+
+        {/* Rename Confirmation Dialog */}
+        <AlertDialog open={isRenameConfirmOpen} onOpenChange={setIsRenameConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
+              <AlertDialogDescription>
+                A project named "{renameConfirmData?.newName}" already exists. 
+                {renameConfirmData?.existingProject && (
+                  <>
+                    <br /><br />
+                    <strong>Existing project details:</strong>
+                    <br />• Template: {renameConfirmData.existingProject.template}
+                    <br />• Files: {renameConfirmData.existingProject.fileCount}
+                    <br />• Last modified: {formatDate(renameConfirmData.existingProject.lastModified)}
+                    <br /><br />
+                    Do you want to replace it with the renamed project? This action cannot be undone.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleRenameCancel}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleRenameConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Replace Project
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
