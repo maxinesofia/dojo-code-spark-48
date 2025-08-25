@@ -152,6 +152,7 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={handleKeyDown}
+          onBlur={handleSave}
           className="h-6 text-sm font-medium px-2 py-1 min-w-[200px]"
           placeholder="Project name"
         />
