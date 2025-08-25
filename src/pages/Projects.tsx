@@ -890,6 +890,16 @@ const Projects = () => {
     loadProjects();
   }, []);
 
+  // Also reload when component mounts or when navigating back to this page
+  useEffect(() => {
+    const handleFocus = () => {
+      loadProjects(); // Refresh projects and current state when page regains focus
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   const loadProjects = () => {
     try {
       const allProjects = ProjectService.getAllProjects();
@@ -1030,6 +1040,8 @@ const Projects = () => {
   const openProject = (project: Project) => {
     // Switch to the selected project
     ProjectService.switchToProject(project);
+    // Update current project ID immediately
+    setCurrentProjectId(project.id);
     navigate('/');
   };
 
