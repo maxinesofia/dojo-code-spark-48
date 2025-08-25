@@ -86,6 +86,12 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   const performRename = (newName: string) => {
     onTitleChange(newName);
     setIsEditing(false);
+    
+    // Also update the project in the projects list if we have a currentProjectId
+    if (currentProjectId) {
+      ProjectService.renameProject(currentProjectId, newName);
+    }
+    
     toast({
       title: "Success",
       description: "Project renamed successfully!"
@@ -146,7 +152,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={handleSave}
           className="h-6 text-sm font-medium px-2 py-1 min-w-[200px]"
           placeholder="Project name"
         />
