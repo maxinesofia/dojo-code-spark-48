@@ -955,6 +955,8 @@ const Projects = () => {
           files: projectFiles
         };
 
+        // Save the new project first, then switch to it
+        ProjectService.saveProject(newProject);
         ProjectService.switchToProject(newProject);
         setCurrentProjectId(newProject.id);
         
@@ -963,6 +965,8 @@ const Projects = () => {
           description: `Created "${newProject.name}" successfully`,
         });
       }
+      
+      // Reload projects to show all including the new/existing one
       
       loadProjects();
       
