@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Edit3, Plus, Calendar, FileText, FolderOpen } from "lucide-react";
@@ -1060,8 +1059,11 @@ const Projects = () => {
       // Show confirmation dialog
       console.log('Setting rename confirm data:', { projectId, newName: trimmedName, existingProject });
       setRenameConfirmData({ projectId, newName: trimmedName, existingProject });
-      setIsRenameConfirmOpen(true);
-      console.log('Dialog should be open now');
+      // Use setTimeout to ensure state is set before opening dialog
+      setTimeout(() => {
+        setIsRenameConfirmOpen(true);
+        console.log('Dialog opened with setTimeout');
+      }, 10);
       return;
     }
 
@@ -1081,6 +1083,7 @@ const Projects = () => {
   };
 
   const handleRenameConfirm = () => {
+    console.log('Confirm clicked');
     if (renameConfirmData) {
       // Delete the existing project and rename the current one
       ProjectService.deleteProject(renameConfirmData.existingProject.id);
@@ -1091,6 +1094,7 @@ const Projects = () => {
         description: `Project renamed and "${renameConfirmData.existingProject.name}" was replaced`
       });
     }
+    // Close dialog and clear data
     setIsRenameConfirmOpen(false);
     setRenameConfirmData(null);
   };
@@ -1099,7 +1103,6 @@ const Projects = () => {
     console.log('Cancel clicked');
     setIsRenameConfirmOpen(false);
     setRenameConfirmData(null);
-    // Keep the editing state - don't automatically reset
   };
 
   const deleteProject = (projectId: string) => {
@@ -1337,43 +1340,51 @@ const Projects = () => {
         )}
       </div>
 
-      {/* Rename Confirmation Dialog - Moved outside of container to avoid clipping */}
-      <AlertDialog 
+      {/* Rename Confirmation Dialog - Using regular Dialog instead of AlertDialog */}
+      <Dialog 
         open={isRenameConfirmOpen} 
         onOpenChange={(open) => {
-          console.log('Dialog onOpenChange:', open, 'renameConfirmData:', !!renameConfirmData);
-          // Always allow the dialog state to be set
-          setIsRenameConfirmOpen(open);
+          console.log('Dialog onOpenChange:', open);
+          if (!open) {
+            handleRenameCancel();
+          }
         }}
       >
-        <AlertDialogContent className="bg-background border z-[100] pointer-events-auto max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Replace Existing Project?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              A project named "{renameConfirmData?.newName}" already exists. 
-              {renameConfirmData?.existingProject && (
-                <>
-                  <br /><br />
-                  <strong>Existing project details:</strong>
-                  <br />• Template: {renameConfirmData.existingProject.template}
-                  <br />• Files: {renameConfirmData.existingProject.fileCount}
-                  <br />• Last modified: {formatDate(renameConfirmData.existingProject.lastModified)}
-                  <br /><br />
-                  Do you want to replace it with the renamed project? This action cannot be undone.
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleRenameCancel} className="pointer-events-auto">
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Replace Existing Project?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              A project named "{renameConfirmData?.newName}" already exists.
+            </p>
+            {renameConfirmData?.existingProject && (
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm font-medium">Existing project details:</p>
+                <div className="text-sm text-muted-foreground mt-1">
+                  <div>• Template: {renameConfirmData.existingProject.template}</div>
+                  <div>• Files: {renameConfirmData.existingProject.fileCount}</div>
+                  <div>• Last modified: {formatDate(renameConfirmData.existingProject.lastModified)}</div>
+                </div>
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Do you want to replace it with the renamed project? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleRenameCancel}>
               Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleRenameConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-events-auto">
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRenameConfirm}
+            >
               Replace Project
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
