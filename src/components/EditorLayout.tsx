@@ -1311,7 +1311,14 @@ export function EditorLayout() {
         onShare={handleShare}
         onProjectNameChange={handleProjectNameChange}
         projectTitle={projectTitle}
-        onProjectTitleChange={setProjectTitle}
+        onProjectTitleChange={(newTitle) => {
+          setProjectTitle(newTitle);
+          // Also update the project state to persist the change
+          const currentState = ProjectService.getProjectState();
+          if (currentState) {
+            ProjectService.saveCurrentProject({ ...currentState, name: newTitle }, files);
+          }
+        }}
       />
       
       <div className="flex-1 flex overflow-hidden">
