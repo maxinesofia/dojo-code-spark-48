@@ -56,6 +56,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
             title={projectTitle}
             onTitleChange={onProjectTitleChange || (() => {})}
             currentProjectId={currentProjectId}
+            className="hover:bg-muted/50 rounded px-2 py-1 transition-colors"
           />
         </div>
         
