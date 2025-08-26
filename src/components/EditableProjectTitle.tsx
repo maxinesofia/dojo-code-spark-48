@@ -56,7 +56,10 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
     
     // Find if there's a different project with the same name
     const existingProject = existingProjects.find(p => {
-      const isDifferentProject = currentProjectId ? p.id !== currentProjectId : p.name !== title;
+      // For unsaved projects (currentProjectId === 'current'), check against any project with same name
+      // For saved projects, check against projects with different IDs
+      const isDifferentProject = currentProjectId === 'current' ? true : 
+        (currentProjectId ? p.id !== currentProjectId : p.name !== title);
       const hasSameName = p.name === trimmedValue;
       return isDifferentProject && hasSameName;
     });
