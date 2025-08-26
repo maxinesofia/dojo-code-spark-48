@@ -54,7 +54,12 @@ export function SplitEditor({
       try {
         const { panes: savedPanes, splitMode: savedSplitMode } = JSON.parse(savedLayout);
         if (savedPanes?.length > 0) {
-          setPanes(savedPanes);
+          // Ensure all panes have openFiles property
+          const validatedPanes = savedPanes.map((pane: any) => ({
+            ...pane,
+            openFiles: pane.openFiles || []
+          }));
+          setPanes(validatedPanes);
           setSplitMode(savedSplitMode || 'vertical');
         }
       } catch (error) {
@@ -87,9 +92,11 @@ export function SplitEditor({
       setPanes(prev => prev.map((pane, index) => {
         // Only update the main/first pane for external file selections
         if (index === 0) {
-          const openFiles = pane.openFiles.includes(activeFileId) 
-            ? pane.openFiles 
-            : [...pane.openFiles, activeFileId];
+          // Ensure openFiles is always an array
+          const currentOpenFiles = pane.openFiles || [];
+          const openFiles = currentOpenFiles.includes(activeFileId) 
+            ? currentOpenFiles 
+            : [...currentOpenFiles, activeFileId];
           
           return { 
             ...pane, 
@@ -147,10 +154,12 @@ export function SplitEditor({
   const handlePaneFileSelect = useCallback((paneId: string, fileId: string) => {
     setPanes(prev => prev.map(pane => {
       if (pane.id === paneId) {
+        // Ensure openFiles is always an array
+        const currentOpenFiles = pane.openFiles || [];
         // Add file to openFiles if not already there
-        const openFiles = pane.openFiles.includes(fileId) 
-          ? pane.openFiles 
-          : [...pane.openFiles, fileId];
+        const openFiles = currentOpenFiles.includes(fileId) 
+          ? currentOpenFiles 
+          : [...currentOpenFiles, fileId];
         
         return { 
           ...pane, 
@@ -166,7 +175,9 @@ export function SplitEditor({
   const handleFileClose = useCallback((paneId: string, fileId: string) => {
     setPanes(prev => prev.map(pane => {
       if (pane.id === paneId) {
-        const newOpenFiles = pane.openFiles.filter(id => id !== fileId);
+        // Ensure openFiles is always an array
+        const currentOpenFiles = pane.openFiles || [];
+        const newOpenFiles = currentOpenFiles.filter(id => id !== fileId);
         let newActiveFileId = pane.activeFileId;
         
         // If we're closing the active file, switch to another open file
