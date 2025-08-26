@@ -11,6 +11,7 @@ export interface EditorPaneData {
   id: string;
   files: FileNode[];
   activeFileId: string | null;
+  openFiles: string[]; // Track which files are open as tabs
   cursorPosition?: { lineNumber: number; column: number };
   scrollPosition?: { scrollTop: number; scrollLeft: number };
 }
@@ -36,7 +37,8 @@ export function SplitEditor({
     {
       id: 'main',
       files: files,
-      activeFileId: activeFileId
+      activeFileId: activeFileId,
+      openFiles: activeFileId ? [activeFileId] : [] // Only show tab if there's an active file
     }
   ]);
   
@@ -101,7 +103,8 @@ export function SplitEditor({
     const newPane: EditorPaneData = {
       id: newPaneId,
       files: files,
-      activeFileId: focusedPane?.activeFileId || activeFileId
+      activeFileId: focusedPane?.activeFileId || activeFileId,
+      openFiles: focusedPane?.activeFileId ? [focusedPane.activeFileId] : []
     };
 
     setPanes(prev => [...prev, newPane]);
@@ -121,13 +124,44 @@ export function SplitEditor({
   }, [panes, focusedPaneId]);
 
   const handlePaneFileSelect = useCallback((paneId: string, fileId: string) => {
-    setPanes(prev => prev.map(pane => 
-      pane.id === paneId 
-        ? { ...pane, activeFileId: fileId }
-        : pane
-    ));
+    setPanes(prev => prev.map(pane => {
+      if (pane.id === paneId) {
+        // Add file to openFiles if not already there
+        const openFiles = pane.openFiles.includes(fileId) 
+          ? pane.openFiles 
+          : [...pane.openFiles, fileId];
+        
+        return { 
+          ...pane, 
+          activeFileId: fileId,
+          openFiles 
+        };
+      }
+      return pane;
+    }));
     onFileSelect(fileId);
   }, [onFileSelect]);
+
+  const handleFileClose = useCallback((paneId: string, fileId: string) => {
+    setPanes(prev => prev.map(pane => {
+      if (pane.id === paneId) {
+        const newOpenFiles = pane.openFiles.filter(id => id !== fileId);
+        let newActiveFileId = pane.activeFileId;
+        
+        // If we're closing the active file, switch to another open file
+        if (pane.activeFileId === fileId) {
+          newActiveFileId = newOpenFiles.length > 0 ? newOpenFiles[newOpenFiles.length - 1] : null;
+        }
+        
+        return {
+          ...pane,
+          openFiles: newOpenFiles,
+          activeFileId: newActiveFileId
+        };
+      }
+      return pane;
+    }));
+  }, []);
 
   const handleMoveFileToPane = useCallback((fileId: string, targetPaneId: string, sourcePaneId?: string) => {
     // If moving from one pane to another, this would be for drag-and-drop
@@ -160,6 +194,8 @@ export function SplitEditor({
             files={pane.files}
             activeFileId={pane.activeFileId}
             onFileSelect={(fileId) => handlePaneFileSelect(pane.id, fileId)}
+            onFileClose={(fileId) => handleFileClose(pane.id, fileId)}
+            openFiles={pane.openFiles}
             showSplitOption={true}
             onSplitWith={(fileId) => {
               handleSplitPane();
@@ -167,7 +203,8 @@ export function SplitEditor({
                 const newPanes = [...panes, {
                   id: `pane-${Date.now()}`,
                   files: files,
-                  activeFileId: fileId
+                  activeFileId: fileId,
+                  openFiles: [fileId]
                 }];
                 setPanes(newPanes);
               }, 10);
@@ -217,9 +254,11 @@ export function SplitEditor({
                     files={pane.files}
                     activeFileId={pane.activeFileId}
                     onFileSelect={(fileId) => handlePaneFileSelect(pane.id, fileId)}
+                    onFileClose={(fileId) => handleFileClose(pane.id, fileId)}
                     onMoveToPane={handleMoveFileToPane}
                     availablePanes={panes}
                     onClose={panes.length > 1 ? () => handleClosePane(pane.id) : undefined}
+                    openFiles={pane.openFiles}
                   />
                   <EditorPane
                     pane={pane}

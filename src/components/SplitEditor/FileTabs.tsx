@@ -1,9 +1,9 @@
+
 import { useState, useRef } from 'react';
 import { FileNode } from '@/types/FileTypes';
 import { EditorPaneData } from './SplitEditor';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { X, MoreHorizontal, SplitSquareHorizontal, ExternalLink } from 'lucide-react';
+import { X, SplitSquareHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getFileIcon } from '@/utils/fileIcons';
 
@@ -12,11 +12,13 @@ interface FileTabsProps {
   files: FileNode[];
   activeFileId: string | null;
   onFileSelect: (fileId: string) => void;
+  onFileClose?: (fileId: string) => void;
   onMoveToPane?: (fileId: string, targetPaneId: string, sourcePaneId?: string) => void;
   availablePanes?: EditorPaneData[];
   onClose?: () => void;
   showSplitOption?: boolean;
   onSplitWith?: (fileId: string) => void;
+  openFiles?: string[]; // List of file IDs that should show as tabs
 }
 
 export function FileTabs({
@@ -24,16 +26,19 @@ export function FileTabs({
   files,
   activeFileId,
   onFileSelect,
+  onFileClose,
   onMoveToPane,
   availablePanes = [],
   onClose,
   showSplitOption = false,
-  onSplitWith
+  onSplitWith,
+  openFiles = []
 }: FileTabsProps) {
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const displayFiles = files.filter(f => f.type === 'file');
+  // Only show files that are in the openFiles array
+  const displayFiles = files.filter(f => f.type === 'file' && openFiles.includes(f.id));
 
   const handleDragStart = (e: React.DragEvent, fileId: string) => {
     setDraggedFileId(fileId);
@@ -59,6 +64,13 @@ export function FileTabs({
     }
     
     setDraggedFileId(null);
+  };
+
+  const handleCloseTab = (e: React.MouseEvent, fileId: string) => {
+    e.stopPropagation();
+    if (onFileClose) {
+      onFileClose(fileId);
+    }
   };
 
   const renderTab = (file: FileNode) => {
@@ -97,50 +109,23 @@ export function FileTabs({
           </span>
         </div>
         
-        {isActive && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 bg-background border shadow-lg z-50">
-              {showSplitOption && onSplitWith && (
-                <>
-                  <DropdownMenuItem onClick={() => onSplitWith(file.id)}>
-                    <SplitSquareHorizontal className="w-3 h-3 mr-2" />
-                    Split Right
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              
-              {availablePanes.length > 1 && onMoveToPane && (
-                <>
-                  {availablePanes
-                    .filter(pane => pane.id !== paneId)
-                    .map((pane, index) => (
-                      <DropdownMenuItem
-                        key={pane.id}
-                        onClick={() => onMoveToPane(file.id, pane.id, paneId)}
-                      >
-                        <ExternalLink className="w-3 h-3 mr-2" />
-                        Move to Editor {index + 2}
-                      </DropdownMenuItem>
-                    ))}
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {/* Close button with X icon */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted-foreground/20"
+          onClick={(e) => handleCloseTab(e, file.id)}
+        >
+          <X className="h-3 w-3" />
+        </Button>
       </div>
     );
   };
+
+  // Don't render the tabs container if there are no open files
+  if (displayFiles.length === 0) {
+    return null;
+  }
 
   return (
     <div className="flex items-center justify-between border-b bg-muted/10">
