@@ -121,6 +121,9 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   const handleCancel = () => {
     setEditValue(title);
     setIsEditing(false);
+    // Ensure dialog is closed when canceling
+    setIsConfirmOpen(false);
+    setConfirmData(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
