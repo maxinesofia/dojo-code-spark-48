@@ -81,6 +81,27 @@ export function SplitEditor({
     })));
   }, [files]);
 
+  // Update panes when activeFileId changes from outside (e.g., file explorer clicks)
+  useEffect(() => {
+    if (activeFileId) {
+      setPanes(prev => prev.map((pane, index) => {
+        // Only update the main/first pane for external file selections
+        if (index === 0) {
+          const openFiles = pane.openFiles.includes(activeFileId) 
+            ? pane.openFiles 
+            : [...pane.openFiles, activeFileId];
+          
+          return { 
+            ...pane, 
+            activeFileId,
+            openFiles 
+          };
+        }
+        return pane;
+      }));
+    }
+  }, [activeFileId]);
+
   // Keyboard shortcuts - simplified
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
