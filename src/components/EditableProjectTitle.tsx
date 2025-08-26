@@ -34,7 +34,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   }, [isEditing]);
 
   const handleSave = () => {
-    console.log('=== HANDLE SAVE CALLED ===');
     const trimmedValue = editValue.trim();
     
     if (!trimmedValue) {
@@ -46,6 +45,7 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
       return;
     }
     
+    // If the name hasn't changed, just exit editing mode
     if (trimmedValue === title) {
       setIsEditing(false);
       return;
@@ -53,30 +53,18 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
 
     // Check if another project already has this name
     const existingProjects = ProjectService.getAllProjects();
-    console.log('Header rename - All projects:', existingProjects.map(p => ({ id: p.id, name: p.name })));
-    console.log('Header rename - Looking for name:', trimmedValue);
-    console.log('Header rename - Current title:', title);
-    console.log('Header rename - Current project ID:', currentProjectId);
     
     // Find if there's a different project with the same name
     const existingProject = existingProjects.find(p => {
       const isDifferentProject = currentProjectId ? p.id !== currentProjectId : p.name !== title;
       const hasSameName = p.name === trimmedValue;
-      console.log(`Checking project ${p.name} (${p.id}): isDifferent=${isDifferentProject}, hasSameName=${hasSameName}`);
       return isDifferentProject && hasSameName;
     });
     
-    console.log('Header rename - Found existing project:', existingProject);
-    
     if (existingProject) {
       // Show confirmation dialog
-      console.log('Header rename - Setting confirm data:', { newName: trimmedValue, existingProject });
       setConfirmData({ newName: trimmedValue, existingProject });
-      // Use setTimeout to ensure state is set before opening dialog
-      setTimeout(() => {
-        setIsConfirmOpen(true);
-        console.log('Header rename dialog opened');
-      }, 10);
+      setIsConfirmOpen(true);
       return;
     }
 
@@ -100,7 +88,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   };
 
   const handleConfirm = () => {
-    console.log('Header rename - Confirm clicked');
     if (confirmData) {
       // Delete the existing project and rename the current one
       ProjectService.deleteProject(confirmData.existingProject.id);
@@ -116,7 +103,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   };
 
   const handleConfirmCancel = () => {
-    console.log('Header rename - Cancel clicked');
     setIsConfirmOpen(false);
     setConfirmData(null);
     setEditValue(title); // Reset to original
@@ -133,7 +119,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
   };
 
   const handleCancel = () => {
-    console.log('=== HANDLE CANCEL CALLED ===');
     setEditValue(title);
     setIsEditing(false);
   };
@@ -195,7 +180,6 @@ export function EditableProjectTitle({ title, onTitleChange, className = "", cur
       <Dialog 
         open={isConfirmOpen} 
         onOpenChange={(open) => {
-          console.log('Header dialog onOpenChange:', open);
           if (!open) {
             handleConfirmCancel();
           }
