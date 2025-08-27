@@ -1,53 +1,28 @@
-# GCP Firecracker VM Deployment Guide
+# 🚀 Tutorials Dojo - GCP Firecracker Deployment Scripts
 
-This directory contains scripts and configuration files to deploy your Tutorials Dojo project to a Google Cloud Platform (GCP) VM instance with Firecracker virtualization.
+Welcome to the deployment directory! This contains everything you need to deploy your Tutorials Dojo application to Google Cloud Platform with Firecracker virtualization support.
 
-## Prerequisites
+## 📋 Quick Start
 
-1. **GCP Account**: You need a GCP account with billing enabled
-2. **gcloud CLI**: Install and authenticate the Google Cloud CLI
-3. **Project Setup**: Create or select a GCP project
-4. **Permissions**: Ensure you have Compute Engine permissions
+### 🎯 Recommended: Simple GCP Deployment with Official Firecracker
 
-### Install gcloud CLI
+Use the streamlined deployment based on the official Firecracker guide:
 
 ```bash
-# macOS
-brew install google-cloud-sdk
+# Windows (PowerShell)
+cd deploy
+./simple-gcp-firecracker-deploy.sh
 
-# Initialize and authenticate
-gcloud init
-gcloud auth login
+# Linux/macOS
+chmod +x simple-gcp-firecracker-deploy.sh
+./simple-gcp-firecracker-deploy.sh
 ```
 
-## Quick Start
-
-1. **Set up GCP CLI** (if not already done):
-   ```bash
-   brew install google-cloud-sdk
-   gcloud init
-   gcloud auth login
-   ```
-
-2. **Configure your project**:
-   ```bash
-   export PROJECT_ID="your-gcp-project-id"
-   gcloud config set project $PROJECT_ID
-   ```
-
-3. **Check zone availability** (optional):
-   ```bash
-   ./deploy/check-zones.sh --project-id your-gcp-project-id
-   ```
-
-4. **Deploy to GCP** (uses us-east1-b and n1-standard-2 by default):
-   ```bash
-   ./deploy/gcp-firecracker-deploy.sh --project-id your-gcp-project-id
-   ```
-
-5. **Manage your deployment**:
-   ```bash
-   ./deploy/gcp-vm-manager.sh status    # Check status
+This creates:
+- GCP VM with nested virtualization enabled
+- Official Firecracker setup (kernel + Ubuntu 24.04 rootfs)
+- Your application deployed and running
+- Ready-to-use Firecracker environment
    ./deploy/gcp-vm-manager.sh logs      # View logs
    ./deploy/gcp-vm-manager.sh deploy    # Deploy updates
    ```
