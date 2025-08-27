@@ -5,10 +5,7 @@ import { useTheme } from "@/components/ui/theme-provider";
 import { useState, useEffect } from "react";
 import { EditableProjectTitle } from '@/components/EditableProjectTitle';
 import { ProjectService } from '@/services/ProjectService';
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ShareDialog } from '@/components/ShareDialog';
 import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
@@ -30,6 +27,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
   const { toast } = useToast();
   
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Get current project ID
   useEffect(() => {
@@ -98,15 +96,7 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           <Play className="w-4 h-4 mr-2" />
           Run
         </Button>
-        <Button variant="outline" size="sm" onClick={() => {
-          const shareUrl = window.location.href;
-          navigator.clipboard.writeText(shareUrl);
-          toast({
-            title: "Success",
-            description: "Project link copied to clipboard!"
-          });
-          onShare();
-        }}>
+        <Button variant="outline" size="sm" onClick={() => setShareDialogOpen(true)}>
           <Share className="w-4 h-4 mr-2" />
           Share
         </Button>
@@ -131,6 +121,12 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
       </div>
+      
+      <ShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        projectName={projectTitle || projectName}
+      />
     </header>
   );
 }
