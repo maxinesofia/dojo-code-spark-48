@@ -100,12 +100,6 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
           <Share className="w-4 h-4 mr-2" />
           Share
         </Button>
-        {onTogglePackageManager && (
-          <Button variant="outline" size="sm" onClick={onTogglePackageManager}>
-            <Package className="w-4 h-4 mr-2" />
-            Packages
-          </Button>
-        )}
         {onToggleTerminal && (
           <Button variant="outline" size="sm" onClick={onToggleTerminal}>
             <TerminalIcon className="w-4 h-4 mr-2" />
