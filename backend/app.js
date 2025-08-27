@@ -11,6 +11,7 @@ const projectRoutes = require('./routes/projects');
 const fileRoutes = require('./routes/files');
 const executionRoutes = require('./routes/execution');
 const terminalRoutes = require('./routes/terminal');
+const firecrackerExecutionRoutes = require('./routes/firecrackerExecution');
 
 // Import database
 const sequelize = require('./config/database');
@@ -74,6 +75,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api', fileRoutes);
 app.use('/api/execution', executionRoutes);
+app.use('/api/execution', firecrackerExecutionRoutes); // Firecracker execution routes
 app.use('/api/terminal', terminalRoutes);
 
 // 404 handler

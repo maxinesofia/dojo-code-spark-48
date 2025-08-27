@@ -3,8 +3,10 @@ import { FileNode } from '@/types/FileTypes';
 export interface ExecutionResult {
   success: boolean;
   html?: string;
+  output?: string;
   error?: string;
   logs?: string[];
+  executionTime?: number;
 }
 
 export interface SandboxGlobals {
@@ -23,8 +25,90 @@ export interface SandboxGlobals {
 export class CodeExecutionService {
   private iframe: HTMLIFrameElement | null = null;
   private executionTimeout = 10000; // 10 seconds
+  private apiBaseUrl = window.location.origin; // Use current origin for API calls
+
+  // Supported server-side languages that need Firecracker execution
+  private serverSideLanguages = ['python', 'py', 'c', 'cpp', 'c++', 'java', 'go', 'rust', 'bash', 'shell'];
 
   async executeCode(files: FileNode[], language: string = 'javascript'): Promise<ExecutionResult> {
+    try {
+      // Determine if this is a server-side language that needs Firecracker execution
+      if (this.serverSideLanguages.includes(language.toLowerCase())) {
+        return await this.executeServerSide(files, language);
+      } else {
+        // Client-side execution for HTML/CSS/JS
+        return await this.executeClientSide(files, language);
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown execution error'
+      };
+    }
+  }
+
+  /**
+   * Execute code on the server using Firecracker microVMs
+   */
+  private async executeServerSide(files: FileNode[], language: string): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    
+    try {
+      // Prepare files for server execution
+      const executionFiles = files
+        .filter(f => f.type === 'file' && f.content)
+        .map(f => ({
+          name: f.name,
+          content: f.content,
+          path: f.name // Use name as path for now
+        }));
+
+      const response = await fetch(`${this.apiBaseUrl}/execution/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: executionFiles,
+          language: language,
+          timeout: this.executionTimeout
+        })
+      });
+
+      const result = await response.json();
+      const executionTime = Date.now() - startTime;
+
+      if (result.success) {
+        return {
+          success: true,
+          output: result.output || result.stdout,
+          error: result.stderr,
+          executionTime,
+          logs: result.logs || []
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Server execution failed',
+          executionTime
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: `Server execution error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        executionTime: Date.now() - startTime
+      };
+    }
+  }
+
+  /**
+   * Execute code on the client side (HTML/CSS/JavaScript)
+   */
+  /**
+   * Execute code on the client side (HTML/CSS/JavaScript)
+   */
+  private async executeClientSide(files: FileNode[], language: string): Promise<ExecutionResult> {
     try {
       const htmlFile = files.find(f => f.name.endsWith('.html') && f.type === 'file');
       const cssFiles = files.filter(f => f.name.endsWith('.css') && f.type === 'file');
