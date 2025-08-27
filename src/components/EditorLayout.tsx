@@ -1345,18 +1345,6 @@ export function EditorLayout() {
                 />
               </div>
               
-              {/* Package Manager Button */}
-              <div className="border-t border-sidebar-border p-2 flex-shrink-0">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full flex items-center gap-2"
-                  onClick={() => setIsPackageManagerOpen(true)}
-                >
-                  <Package className="w-4 h-4" />
-                  Manage Packages
-                </Button>
-              </div>
             </div>
           </ResizablePanel>
           
@@ -1530,10 +1518,6 @@ export function EditorLayout() {
       {/* VS Code Style Status Bar */}
       <div className="h-6 bg-sidebar-accent border-t border-sidebar-border flex items-center justify-between px-2 text-xs">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-5 w-auto px-1 text-xs hover:bg-sidebar-accent/50">
-            <GitBranch className="w-3 h-3 mr-1" />
-            <span className="text-sidebar-foreground">main</span>
-          </Button>
           
         </div>
         
