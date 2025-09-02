@@ -37,8 +37,8 @@ export class TerminalWebSocketService {
     try {
       // In production, this would be your backend WebSocket URL
       const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'wss://your-backend-domain.com/terminal'
-        : 'ws://localhost:5000/terminal';
+        ? 'ws://34.75.249.177/ws/terminal'
+        : 'ws://localhost:8080/terminal';
       
       this.ws = new WebSocket(wsUrl);
       
