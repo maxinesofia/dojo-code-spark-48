@@ -427,7 +427,7 @@ ReactDOM.render(React.createElement(App), document.getElementById('root'));`
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Tutorials Dojo templates</h1>
+              <h1 className="text-3xl font-bold text-foreground">Templates</h1>
               <p className="text-muted-foreground mt-2">Start your new project with one of our official templates.</p>
             </div>
             <Button onClick={handleBackToEditor} variant="outline">
