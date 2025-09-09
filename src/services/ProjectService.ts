@@ -207,6 +207,22 @@ export class ProjectService {
 
   static switchToProject(project: Project): void {
     try {
+      // IMPORTANT: Save current project state before switching
+      const currentState = this.getProjectState();
+      if (currentState && currentState.currentProject) {
+        // Update the current project with any changes made in the editor
+        const updatedCurrentProject = {
+          ...currentState.currentProject,
+          name: currentState.projectName,
+          files: currentState.files,
+          fileCount: currentState.files?.length || 0,
+          lastModified: new Date().toISOString()
+        };
+        
+        // Save the updated current project to the projects list
+        this.saveProject(updatedCurrentProject);
+      }
+      
       // Make sure the project has a proper ID and is saved to the list
       if (project.id === 'current' || !project.id) {
         project.id = `project-${Date.now()}`;
