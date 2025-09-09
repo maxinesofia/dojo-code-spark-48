@@ -417,7 +417,7 @@ ReactDOM.render(React.createElement(App), document.getElementById('root'));`
   };
 
   const handleBackToEditor = () => {
-    navigate(-1); // Go back to previous page instead of fresh editor
+    navigate('/'); // Go to main editor page
   };
 
   return (
