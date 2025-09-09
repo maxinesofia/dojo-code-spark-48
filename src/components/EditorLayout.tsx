@@ -12,6 +12,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Terminal as TerminalIcon, GitBranch, Settings, Package, X, Trash2, SplitSquareVertical } from "lucide-react";
 import { ProjectService } from "@/services/ProjectService";
+import type { Project } from "@/services/ProjectService";
 
 const STORAGE_KEY = 'tutorials-dojo-project-state';
 
@@ -922,13 +923,25 @@ export function EditorLayout() {
   useEffect(() => {
     const saveTimer = setTimeout(() => {
       const currentProject = ProjectService.getCurrentProject();
-      ProjectService.saveCurrentProject(
-        { 
-          name: projectName, 
-          template: currentProject?.template || 'vanilla' 
-        }, 
-        files
-      );
+      const updatedProject = {
+        name: projectName, 
+        template: currentProject?.template || 'vanilla'
+      };
+      
+      // Save current project state
+      ProjectService.saveCurrentProject(updatedProject, files);
+      
+      // Also update the project in the projects list if it has an ID
+      if (currentProject?.id && currentProject.id !== 'current') {
+        const projectToSave: Project = {
+          ...currentProject,
+          name: projectName,
+          files: files,
+          fileCount: files.length,
+          lastModified: new Date().toISOString()
+        };
+        ProjectService.saveProject(projectToSave);
+      }
     }, 1000);
     
     return () => clearTimeout(saveTimer);
@@ -1205,13 +1218,26 @@ export function EditorLayout() {
 
   const handleSave = useCallback(() => {
     const currentProject = ProjectService.getCurrentProject();
-    ProjectService.saveCurrentProject(
-      { 
-        name: projectName, 
-        template: currentProject?.template || 'vanilla' 
-      }, 
-      files
-    );
+    const updatedProject = { 
+      name: projectName, 
+      template: currentProject?.template || 'vanilla' 
+    };
+    
+    // Save current project state
+    ProjectService.saveCurrentProject(updatedProject, files);
+    
+    // Also update the project in the projects list if it has an ID
+    if (currentProject?.id && currentProject.id !== 'current') {
+      const projectToSave: Project = {
+        ...currentProject,
+        name: projectName,
+        files: files,
+        fileCount: files.length,
+        lastModified: new Date().toISOString()
+      };
+      ProjectService.saveProject(projectToSave);
+    }
+    
     toast({
       title: "Project saved",
       description: "Your project has been saved locally.",
