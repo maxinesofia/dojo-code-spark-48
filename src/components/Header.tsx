@@ -47,8 +47,12 @@ export function Header({ projectName, onSave, onRun, onShare, onTogglePackageMan
     <header className="h-14 border-b border-editor-border bg-background flex items-center justify-between px-4">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded flex items-center justify-center">
-            <img src="/tutorialsdojo-icon.png" alt="Tutorials Dojo" className="w-8 h-8 rounded" />
+          <div className="w-8 h-8 rounded flex items-center justify-center overflow-hidden">
+            <img 
+              src="/tutorialsdojo-icon.png" 
+              alt="Tutorials Dojo" 
+              className="w-full h-full object-contain rounded" 
+            />
           </div>
           <EditableProjectTitle 
             title={projectTitle || "TUTORIALS DOJO"}
