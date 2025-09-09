@@ -934,6 +934,20 @@ export function EditorLayout() {
     return () => clearTimeout(saveTimer);
   }, [files, projectName]);
 
+  // Sync project title with project name
+  useEffect(() => {
+    const projectState = ProjectService.getProjectState();
+    const currentProject = ProjectService.getCurrentProject();
+    const name = currentProject?.name || projectState?.projectName || "TUTORIALS DOJO";
+    
+    if (projectTitle !== name) {
+      setProjectTitle(name);
+    }
+    if (projectName !== name && name !== "TUTORIALS DOJO") {
+      setProjectName(name);
+    }
+  }, []);
+
   // Select first file on mount
   useEffect(() => {
     if (files.length > 0 && !selectedFile) {
@@ -1206,8 +1220,17 @@ export function EditorLayout() {
 
   const handleProjectNameChange = useCallback((newName: string) => {
     setProjectName(newName);
-    ProjectService.renameProject('current', newName);
-  }, []);
+    setProjectTitle(newName); // Keep both in sync
+    // Update both current state and projects list
+    const currentProject = ProjectService.getCurrentProject();
+    ProjectService.saveCurrentProject(
+      { 
+        name: newName, 
+        template: currentProject?.template || 'vanilla' 
+      }, 
+      files
+    );
+  }, [files]);
 
   const handleRun = useCallback(() => {
     toast({
@@ -1317,11 +1340,16 @@ export function EditorLayout() {
         projectTitle={projectTitle}
         onProjectTitleChange={(newTitle) => {
           setProjectTitle(newTitle);
-          // Also update the project state to persist the change
-          const currentState = ProjectService.getProjectState();
-          if (currentState) {
-            ProjectService.saveCurrentProject({ ...currentState, name: newTitle }, files);
-          }
+          setProjectName(newTitle); // Keep both in sync
+          // Update both current state and projects list
+          const currentProject = ProjectService.getCurrentProject();
+          ProjectService.saveCurrentProject(
+            { 
+              name: newTitle, 
+              template: currentProject?.template || 'vanilla' 
+            }, 
+            files
+          );
         }}
       />
       
