@@ -1003,7 +1003,7 @@ export function EditorLayout() {
   }, []);
 
   const handleFileChange = useCallback((content: string | undefined) => {
-    if (!selectedFile || !content) return;
+    if (!selectedFile || content === undefined) return;
 
     const updateFileContent = (nodes: FileNode[]): FileNode[] => {
       return nodes.map(node => {
@@ -1017,8 +1017,31 @@ export function EditorLayout() {
       });
     };
 
-    setFiles(updateFileContent(files));
-  }, [selectedFile, files]);
+    const updatedFiles = updateFileContent(files);
+    setFiles(updatedFiles);
+    
+    // Immediately save the changes to ensure they persist when switching projects
+    const currentProject = ProjectService.getCurrentProject();
+    const updatedProject = {
+      name: projectName, 
+      template: currentProject?.template || 'vanilla'
+    };
+    
+    // Save current project state with updated files
+    ProjectService.saveCurrentProject(updatedProject, updatedFiles);
+    
+    // Also update the project in the projects list if it has an ID
+    if (currentProject?.id && currentProject.id !== 'current') {
+      const projectToSave: Project = {
+        ...currentProject,
+        name: projectName,
+        files: updatedFiles,
+        fileCount: updatedFiles.length,
+        lastModified: new Date().toISOString()
+      };
+      ProjectService.saveProject(projectToSave);
+    }
+  }, [selectedFile, files, projectName]);
 
   const handleFileCreate = useCallback((name: string, type: 'file' | 'folder', content?: string, parentId?: string) => {
     const newNode: FileNode = {
