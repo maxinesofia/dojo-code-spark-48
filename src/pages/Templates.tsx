@@ -490,8 +490,8 @@ ReactDOM.render(React.createElement(App), document.getElementById('root'));`
                       {tag}
                     </Badge>
                   ))}
-                  {/* Add beta badge for non-HTML/CSS/JS templates */}
-                  {!['html-css', 'vanilla-js', 'react', 'react-ts', 'vanilla-ts'].includes(template.id) && (
+                  {/* Add beta badge for templates requiring firecracker backend */}
+                  {!['html-css', 'vanilla-js'].includes(template.id) && (
                     <Badge variant="outline" className="text-xs text-orange-500 border-orange-500">
                       Beta
                     </Badge>
