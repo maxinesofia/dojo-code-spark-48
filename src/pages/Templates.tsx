@@ -472,10 +472,6 @@ ReactDOM.render(React.createElement(App), document.getElementById('root'));`
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <template.icon className={`w-8 h-8 ${template.iconColor}`} />
-                  <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                    <Zap className="w-3 h-3" />
-                    {formatUsageCount(template.usageCount)}
-                  </div>
                 </div>
                 <CardTitle className="text-lg">{template.name}</CardTitle>
                 <CardDescription className="line-clamp-2">
