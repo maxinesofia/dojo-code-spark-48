@@ -28,16 +28,19 @@ export class CodeExecutionService {
   private apiBaseUrl = window.location.origin; // Use current origin for API calls
 
   // Supported server-side languages that need Firecracker execution
-  private serverSideLanguages = ['python', 'py', 'c', 'cpp', 'c++', 'java', 'go', 'rust', 'bash', 'shell'];
+  private serverSideLanguages = ['python', 'py', 'c', 'cpp', 'c++', 'java', 'go', 'rust', 'bash', 'shell', 'nodejs', 'node', 'react', 'tsx'];
 
   async executeCode(files: FileNode[], language: string = 'javascript'): Promise<ExecutionResult> {
     try {
+      // Auto-detect language if not specified or if it's generic
+      const detectedLanguage = this.detectLanguage(files, language);
+      
       // Determine if this is a server-side language that needs Firecracker execution
-      if (this.serverSideLanguages.includes(language.toLowerCase())) {
-        return await this.executeServerSide(files, language);
+      if (this.serverSideLanguages.includes(detectedLanguage.toLowerCase())) {
+        return await this.executeServerSide(files, detectedLanguage);
       } else {
         // Client-side execution for HTML/CSS/JS
-        return await this.executeClientSide(files, language);
+        return await this.executeClientSide(files, detectedLanguage);
       }
     } catch (error) {
       return {
@@ -45,6 +48,62 @@ export class CodeExecutionService {
         error: error instanceof Error ? error.message : 'Unknown execution error'
       };
     }
+  }
+
+  /**
+   * Detect the most appropriate language/framework based on file structure and content
+   */
+  private detectLanguage(files: FileNode[], providedLanguage: string): string {
+    // If a specific language was provided and it's not generic, use it
+    if (providedLanguage && !['javascript', 'js'].includes(providedLanguage.toLowerCase())) {
+      return providedLanguage;
+    }
+
+    const fileNames = files.map(f => f.name.toLowerCase());
+    const fileContents = files.map(f => f.content || '').join('\n');
+
+    // Check for React project indicators
+    const hasReactFiles = fileNames.some(name => 
+      name.includes('.jsx') || name.includes('.tsx') || 
+      name === 'app.js' || name === 'app.tsx'
+    );
+    const hasReactContent = fileContents.includes('import React') || 
+                           fileContents.includes('from "react"') || 
+                           fileContents.includes('React.createElement') ||
+                           fileContents.includes('useState') ||
+                           fileContents.includes('useEffect');
+    const hasPackageJsonWithReact = files.some(f => 
+      f.name === 'package.json' && 
+      (f.content?.includes('"react"') || f.content?.includes('react-scripts'))
+    );
+
+    if (hasReactFiles || hasReactContent || hasPackageJsonWithReact) {
+      return 'react';
+    }
+
+    // Check for Node.js server project indicators
+    const hasServerFiles = fileNames.some(name => 
+      name === 'server.js' || name === 'app.js' || name === 'index.js'
+    );
+    const hasNodeContent = fileContents.includes('require(') || 
+                          fileContents.includes('express') ||
+                          fileContents.includes('http.createServer') ||
+                          fileContents.includes('process.env');
+    const hasPackageJson = fileNames.includes('package.json');
+
+    if ((hasServerFiles || hasNodeContent) && hasPackageJson) {
+      return 'nodejs';
+    }
+
+    // Check for other languages based on file extensions
+    if (fileNames.some(name => name.endsWith('.py'))) return 'python';
+    if (fileNames.some(name => name.endsWith('.ts'))) return 'typescript';
+    if (fileNames.some(name => name.endsWith('.c'))) return 'c';
+    if (fileNames.some(name => name.endsWith('.cpp') || name.endsWith('.cc'))) return 'cpp';
+    if (fileNames.some(name => name.endsWith('.sh'))) return 'bash';
+
+    // Default to javascript for client-side execution
+    return 'javascript';
   }
 
   /**

@@ -116,6 +116,14 @@ class FirecrackerService {
             case 'c++':
                 script += this.getCppExecution(files);
                 break;
+            case 'nodejs':
+            case 'node':
+                script += this.getNodeJSExecution(files);
+                break;
+            case 'react':
+            case 'tsx':
+                script += this.getReactExecution(files);
+                break;
             default:
                 throw new Error(`Unsupported language: ${language}`);
         }
@@ -200,6 +208,55 @@ if [ $? -eq 0 ]; then
 else
     echo "Compilation failed"
     exit 1
+fi
+`;
+    }
+
+    /**
+     * Node.js execution logic
+     */
+    getNodeJSExecution(files) {
+        const mainFile = this.findMainFile(files, ['server.js', 'app.js', 'index.js', 'main.js']);
+        return `
+echo "Setting up Node.js environment..."
+# Install dependencies if package.json exists
+if [ -f "package.json" ]; then
+    echo "Installing dependencies..."
+    timeout 60s npm install 2>&1 || echo "Failed to install dependencies, continuing..."
+fi
+
+echo "Executing Node.js application..."
+timeout 30s node '${mainFile}' 2>&1
+`;
+    }
+
+    /**
+     * React execution logic
+     */
+    getReactExecution(files) {
+        const hasPackageJson = Object.keys(files).includes('package.json');
+        return `
+echo "Setting up React environment..."
+# Install dependencies if package.json exists
+if [ -f "package.json" ]; then
+    echo "Installing dependencies..."
+    timeout 120s npm install 2>&1 || echo "Failed to install dependencies, continuing..."
+fi
+
+# Check if this is a Vite project
+if [ -f "vite.config.js" ] || [ -f "vite.config.ts" ]; then
+    echo "Starting Vite development server..."
+    timeout 60s npm run dev -- --host 0.0.0.0 --port 3000 2>&1 &
+    sleep 5
+    echo "React app should be running on http://localhost:3000"
+elif [ -f "package.json" ] && grep -q "react-scripts" package.json; then
+    echo "Starting Create React App development server..."
+    timeout 60s npm start 2>&1 &
+    sleep 5
+    echo "React app should be running on http://localhost:3000"
+else
+    echo "No React build configuration found. Treating as Node.js..."
+    ${this.getNodeJSExecution(files)}
 fi
 `;
     }

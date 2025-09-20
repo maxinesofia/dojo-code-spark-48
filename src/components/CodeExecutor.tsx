@@ -2,18 +2,21 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Play, Square, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Play, Square, RefreshCw, Server, Globe } from 'lucide-react';
 import { FileNode } from '@/types/FileTypes';
 import { CodeExecutionService, ExecutionResult } from '@/services/CodeExecutionService';
+import { LanguageSelector } from './LanguageSelector';
 
 interface CodeExecutorProps {
   files: FileNode[];
-  language: string;
+  language?: string;
 }
 
-export function CodeExecutor({ files, language }: CodeExecutorProps) {
+export function CodeExecutor({ files, language: initialLanguage = 'javascript' }: CodeExecutorProps) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [result, setResult] = useState<ExecutionResult | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage);
   const executionService = new CodeExecutionService();
 
   const getLanguageColor = (lang: string) => {
@@ -28,8 +31,15 @@ export function CodeExecutor({ files, language }: CodeExecutorProps) {
       rust: 'bg-orange-500',
       bash: 'bg-green-500',
       shell: 'bg-green-600',
+      react: 'bg-cyan-500',
+      nodejs: 'bg-green-600',
     };
     return colors[lang.toLowerCase()] || 'bg-gray-400';
+  };
+
+  const isServerSideLanguage = (lang: string) => {
+    const serverLanguages = ['nodejs', 'node', 'react', 'tsx', 'python', 'py', 'c', 'cpp', 'c++', 'bash', 'shell'];
+    return serverLanguages.includes(lang.toLowerCase());
   };
 
   const handleExecute = async () => {
@@ -37,7 +47,7 @@ export function CodeExecutor({ files, language }: CodeExecutorProps) {
 
     setIsExecuting(true);
     try {
-      const executionResult = await executionService.executeCode(files, language);
+      const executionResult = await executionService.executeCode(files, selectedLanguage);
       setResult(executionResult);
     } catch (error) {
       setResult({
@@ -55,19 +65,37 @@ export function CodeExecutor({ files, language }: CodeExecutorProps) {
 
   return (
     <div className="space-y-4">
+      {/* Language Selector */}
+      <LanguageSelector
+        selectedLanguage={selectedLanguage}
+        onLanguageChange={setSelectedLanguage}
+        files={files}
+      />
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Badge className={`${getLanguageColor(language)} text-white`}>
-            {language.toUpperCase()}
+          <Badge className={`${getLanguageColor(selectedLanguage)} text-white`}>
+            {selectedLanguage.toUpperCase()}
           </Badge>
           <span className="text-sm text-gray-600">
             {files.length} file{files.length !== 1 ? 's' : ''}
           </span>
+          {isServerSideLanguage(selectedLanguage) ? (
+            <Badge variant="secondary" className="text-xs">
+              <Server className="w-3 h-3 mr-1" />
+              Firecracker VM
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-xs">
+              <Globe className="w-3 h-3 mr-1" />
+              Browser
+            </Badge>
+          )}
         </div>
         <div className="flex space-x-2">
           <Button
             onClick={handleExecute}
-            disabled={isExecuting}
+            disabled={isExecuting || files.length === 0}
             size="sm"
             className="flex items-center space-x-1"
           >
@@ -86,6 +114,18 @@ export function CodeExecutor({ files, language }: CodeExecutorProps) {
           )}
         </div>
       </div>
+
+      {/* Execution Environment Info */}
+      {isServerSideLanguage(selectedLanguage) && (
+        <Alert>
+          <Server className="h-4 w-4" />
+          <AlertDescription>
+            This code will execute in a secure Firecracker microVM on the server. 
+            {selectedLanguage === 'react' && ' React development server will be started.'}
+            {selectedLanguage === 'nodejs' && ' Node.js application will be executed.'}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {result && (
         <Card>
