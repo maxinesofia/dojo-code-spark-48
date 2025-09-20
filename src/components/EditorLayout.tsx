@@ -1,22 +1,22 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CodeEditor } from "./CodeEditor";
-import { DragDropFileManager } from "./DragDropFileManager";
-import { Terminal } from "./Terminal";
+import { Header } from "./Header";
 import { VSCodeFileExplorer } from "./VSCodeFileExplorer";
-import { Preview } from "./Preview";
-import { DynamicPreview } from "./DynamicPreview";
-import { EditableProjectTitle } from "./EditableProjectTitle";
-import { ShareDialog } from "./ShareDialog";
-import { PackageManager } from "./PackageManager";
-import { Terminal as TerminalIcon, GitBranch, Settings, Package, X, Trash2, SplitSquareVertical } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { ProjectService, Project } from "@/services/ProjectService";
-import { FileNode } from "@/types/FileTypes";
+import { FileNode } from "../types/FileTypes";
 import { SplitEditor } from "./SplitEditor";
+import { DynamicPreview } from "./DynamicPreview";
+import { PackageManager } from "./PackageManager";
+import { Terminal } from "./Terminal";
+import { useToast } from "@/hooks/use-toast";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import { Terminal as TerminalIcon, GitBranch, Settings, Package, X, Trash2, SplitSquareVertical } from "lucide-react";
+import { ProjectService } from "@/services/ProjectService";
+import type { Project } from "@/services/ProjectService";
 
-// Default files
+const STORAGE_KEY = 'tutorials-dojo-project-state';
+
+// Default project files
 const defaultFiles: FileNode[] = [
   {
     id: 'index.html',
@@ -27,84 +27,82 @@ const defaultFiles: FileNode[] = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Firecracker VM</title>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: white;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-            padding: 40px 20px;
-        }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, #fff, #ddd);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .feature-list {
-            text-align: left;
-            display: inline-block;
-            margin: 2rem 0;
-        }
-        .feature-list li {
-            margin: 0.5rem 0;
-            font-size: 1.1rem;
-        }
-        button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-    </style>
+    <title>Tutorials Dojo Project</title>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to Firecracker VM! 🚀</h1>
-        <p>Your secure, fast, and lightweight development environment is ready.</p>
-        
-        <ul class="feature-list">
-            <li>✅ Hardware-level security isolation</li>
-            <li>✅ Fast cold starts and low overhead</li>
-            <li>✅ Multiple programming language support</li>
-            <li>✅ Real-time code execution</li>
-            <li>✅ Interactive development environment</li>
-        </ul>
-        
-        <p>Click the button below to get started!</p>
-        <button onclick="showMessage()">Click Me!</button>
-        
-        <script>
-            let clickCount = 0;
-            function showMessage() {
-                clickCount++;
-                const button = document.querySelector('button');
-                button.textContent = \`Clicked \${clickCount} time\${clickCount !== 1 ? 's' : ''}!\`;
-            }
-        </script>
+        <h1>Welcome to Tutorials Dojo!</h1>
+        <p>Start building your amazing project here.</p>
+        <button id="clickMe">Click me!</button>
     </div>
 </body>
 </html>`
+  },
+  {
+    id: 'styles.css',
+    name: 'styles.css',
+    type: 'file',
+    content: `body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, #fff, #ddd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+button {
+    background: #1e40af;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+}`
+  },
+  {
+    id: 'script.js',
+    name: 'script.js',
+    type: 'file',
+    content: `// Welcome to Tutorials Dojo JavaScript!
+console.log('Welcome to Tutorials Dojo!');
+
+document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('clickMe');
+    let clickCount = 0;
+    
+    if (button) {
+        button.addEventListener('click', function() {
+            clickCount++;
+            button.textContent = \`Clicked \${clickCount} time\${clickCount !== 1 ? 's' : ''}!\`;
+        });
+    }
+});`
   }
 ];
 
@@ -903,38 +901,113 @@ export function EditorLayout() {
     return defaultFiles;
   });
 
-  const [selectedFile, setSelectedFile] = useState<string | null>(() => {
-    if (files.length > 0) {
-      return files.find(f => f.name === 'index.html')?.id || files[0].id;
-    }
-    return null;
+  const [projectName, setProjectName] = useState<string>(() => {
+    const projectState = ProjectService.getProjectState();
+    return projectState?.projectName || 'Untitled Project';
   });
-
-  const [projectName, setProjectName] = useState(() => {
+  
+  const [projectTitle, setProjectTitle] = useState(() => {
+    const projectState = ProjectService.getProjectState();
     const currentProject = ProjectService.getCurrentProject();
-    return currentProject?.name || 'Untitled Project';
+    return currentProject?.name || projectState?.projectName || "TUTORIALS DOJO";
   });
-
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
-  const [packageManagerKey, setPackageManagerKey] = useState(0);
+  
+  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
-  const [terminalSessions, setTerminalSessions] = useState<string[]>([]);
-  const [isSplitEditorOpen, setIsSplitEditorOpen] = useState(false);
+  const [isPackageManagerOpen, setIsPackageManagerOpen] = useState(false);
+  const [packageManagerKey, setPackageManagerKey] = useState(0); // Force re-render of PackageManager
+  const [terminalSessions, setTerminalSessions] = useState<{ id: string; title: string; active: boolean }[]>([]);
+  const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
 
+  // Auto-save functionality with project updates
   useEffect(() => {
-    if (selectedFile && !files.find(f => f.id === selectedFile)) {
-      const firstFile = files.find(f => f.type === 'file');
-      setSelectedFile(firstFile ? firstFile.id : null);
+    const saveTimer = setTimeout(() => {
+      const currentProject = ProjectService.getCurrentProject();
+      const updatedProject = {
+        name: projectName, 
+        template: currentProject?.template || 'vanilla'
+      };
+      
+      // Save current project state
+      ProjectService.saveCurrentProject(updatedProject, files);
+      
+      // Also update the project in the projects list if it has an ID
+      if (currentProject?.id && currentProject.id !== 'current') {
+        const projectToSave: Project = {
+          ...currentProject,
+          name: projectName,
+          files: files,
+          fileCount: files.length,
+          lastModified: new Date().toISOString()
+        };
+        ProjectService.saveProject(projectToSave);
+      }
+    }, 1000);
+    
+    return () => clearTimeout(saveTimer);
+  }, [files, projectName]);
+
+  // Sync project title with project name
+  useEffect(() => {
+    const projectState = ProjectService.getProjectState();
+    const currentProject = ProjectService.getCurrentProject();
+    const name = currentProject?.name || projectState?.projectName || "TUTORIALS DOJO";
+    
+    if (projectTitle !== name) {
+      setProjectTitle(name);
+    }
+    if (projectName !== name && name !== "TUTORIALS DOJO") {
+      setProjectName(name);
+    }
+  }, []);
+
+  // Select first file on mount
+  useEffect(() => {
+    if (files.length > 0 && !selectedFile) {
+      const firstFile = findFirstFile(files);
+      if (firstFile) {
+        setSelectedFile(firstFile);
+      }
     }
   }, [files, selectedFile]);
+
+  // Helper function to find file by ID
+  const findFileById = (files: FileNode[], id: string): FileNode | null => {
+    for (const file of files) {
+      if (file.id === id) return file;
+      if (file.children) {
+        const found = findFileById(file.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const findFirstFile = (nodes: FileNode[]): FileNode | null => {
+    for (const node of nodes) {
+      if (node.type === 'file') {
+        return node;
+      }
+      if (node.children) {
+        const found = findFirstFile(node.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const handleFileSelect = useCallback((file: FileNode) => {
+    if (file.type === 'file') {
+      setSelectedFile(file);
+    }
+  }, []);
 
   const handleFileChange = useCallback((content: string | undefined) => {
     if (!selectedFile || content === undefined) return;
 
     const updateFileContent = (nodes: FileNode[]): FileNode[] => {
       return nodes.map(node => {
-        if (node.id === selectedFile) {
+        if (node.id === selectedFile.id) {
           return { ...node, content };
         }
         if (node.children) {
@@ -972,273 +1045,573 @@ export function EditorLayout() {
 
   const handleFileCreate = useCallback((name: string, type: 'file' | 'folder', content?: string, parentId?: string) => {
     const newNode: FileNode = {
-      id: `${Date.now()}-${Math.random()}`,
+      id: `${Date.now()}-${name}`,
       name,
       type,
-      content: type === 'file' ? (content || '') : undefined,
-      children: type === 'folder' ? [] : undefined
+      content: content || (type === 'file' ? '' : undefined),
+      children: type === 'folder' ? [] : undefined,
     };
 
-    const addToParent = (nodes: FileNode[]): FileNode[] => {
-      if (!parentId) {
-        return [...nodes, newNode];
-      }
-      
-      return nodes.map(node => {
-        if (node.id === parentId && node.type === 'folder') {
-          return {
-            ...node,
-            children: [...(node.children || []), newNode]
-          };
-        }
-        if (node.children) {
-          return { ...node, children: addToParent(node.children) };
-        }
-        return node;
-      });
-    };
+    if (!parentId) {
+      setFiles([...files, newNode]);
+    } else {
+      const addToParent = (nodes: FileNode[]): FileNode[] => {
+        return nodes.map(node => {
+          if (node.id === parentId && node.children) {
+            return { ...node, children: [...node.children, newNode] };
+          }
+          if (node.children) {
+            return { ...node, children: addToParent(node.children) };
+          }
+          return node;
+        });
+      };
+      setFiles(addToParent(files));
+    }
 
-    const updatedFiles = addToParent(files);
-    setFiles(updatedFiles);
-    
-    // Save changes
-    const currentProject = ProjectService.getCurrentProject();
-    const updatedProject = {
-      name: projectName,
-      template: currentProject?.template || 'vanilla'
-    };
-    ProjectService.saveCurrentProject(updatedProject, updatedFiles);
-    
     if (type === 'file') {
-      setSelectedFile(newNode.id);
+      setSelectedFile(newNode);
     }
 
     toast({
-      title: "Success",
-      description: `${type === 'file' ? 'File' : 'Folder'} "${name}" created successfully.`,
+      title: `${type === 'file' ? 'File' : 'Folder'} created`,
+      description: `${name} has been created successfully.`,
     });
-  }, [files, projectName, toast]);
+  }, [files, toast]);
 
   const handleFileDelete = useCallback((fileId: string) => {
-    const deleteFromNodes = (nodes: FileNode[]): FileNode[] => {
+    const deleteNode = (nodes: FileNode[]): FileNode[] => {
       return nodes.filter(node => {
-        if (node.id === fileId) return false;
+        if (node.id === fileId) {
+          return false;
+        }
         if (node.children) {
-          node.children = deleteFromNodes(node.children);
+          node.children = deleteNode(node.children);
         }
         return true;
       });
     };
 
-    const updatedFiles = deleteFromNodes(files);
-    setFiles(updatedFiles);
+    setFiles(deleteNode(files));
     
-    // Save changes
-    const currentProject = ProjectService.getCurrentProject();
-    const updatedProject = {
-      name: projectName,
-      template: currentProject?.template || 'vanilla'
-    };
-    ProjectService.saveCurrentProject(updatedProject, updatedFiles);
-
-    if (selectedFile === fileId) {
-      const remainingFiles = updatedFiles.filter(f => f.type === 'file');
-      setSelectedFile(remainingFiles.length > 0 ? remainingFiles[0].id : null);
+    if (selectedFile?.id === fileId) {
+      const firstFile = findFirstFile(files);
+      setSelectedFile(firstFile);
     }
 
     toast({
-      title: "Success",
-      description: "File deleted successfully.",
+      title: "File deleted",
+      description: "The file has been deleted successfully.",
     });
-  }, [files, selectedFile, projectName, toast]);
+  }, [files, selectedFile, toast]);
 
   const handleFileRename = useCallback((fileId: string, newName: string) => {
-    const renameInNodes = (nodes: FileNode[]): FileNode[] => {
+    const renameNode = (nodes: FileNode[]): FileNode[] => {
       return nodes.map(node => {
         if (node.id === fileId) {
           return { ...node, name: newName };
         }
         if (node.children) {
-          return { ...node, children: renameInNodes(node.children) };
+          return { ...node, children: renameNode(node.children) };
         }
         return node;
       });
     };
 
-    const updatedFiles = renameInNodes(files);
-    setFiles(updatedFiles);
+    setFiles(renameNode(files));
     
-    // Save changes
-    const currentProject = ProjectService.getCurrentProject();
-    const updatedProject = {
-      name: projectName,
-      template: currentProject?.template || 'vanilla'
-    };
-    ProjectService.saveCurrentProject(updatedProject, updatedFiles);
+    if (selectedFile?.id === fileId) {
+      setSelectedFile({ ...selectedFile, name: newName });
+    }
 
     toast({
-      title: "Success",
-      description: `File renamed to "${newName}".`,
+      title: "File renamed",
+      description: `File renamed to ${newName} successfully.`,
     });
-  }, [files, projectName, toast]);
+  }, [files, selectedFile, toast]);
 
-  const handleProjectNameChange = useCallback((newName: string) => {
-    setProjectName(newName);
-    const currentProject = ProjectService.getCurrentProject();
-    const updatedProject = {
-      name: newName,
-      template: currentProject?.template || 'vanilla'
+  const handleFileMove = useCallback((fileId: string, newParentId?: string, targetNodeId?: string, position?: 'above' | 'below') => {
+    console.log('Moving file:', fileId, 'to parent:', newParentId, 'target:', targetNodeId, 'position:', position);
+    
+    // Find and remove the file from its current location
+    let fileToMove: FileNode | null = null;
+    
+    const removeFile = (nodes: FileNode[]): FileNode[] => {
+      const result: FileNode[] = [];
+      
+      for (const node of nodes) {
+        if (node.id === fileId) {
+          fileToMove = node;
+          // Don't add this node to result - effectively removing it
+          continue;
+        }
+        
+        if (node.children && Array.isArray(node.children)) {
+          // Recursively remove from children
+          const updatedChildren = removeFile(node.children);
+          result.push({ ...node, children: updatedChildren });
+        } else {
+          result.push(node);
+        }
+      }
+      
+      return result;
     };
+
+    // Add file to new location (either parent folder or reorder)
+    const addFileToLocation = (nodes: FileNode[]): FileNode[] => {
+      if (targetNodeId && position) {
+        // Reordering - find the target node and insert before/after it
+        return reorderNodes(nodes, targetNodeId, position);
+      } else if (newParentId) {
+        // Moving to a parent folder
+        return addToParentFolder(nodes, newParentId);
+      } else {
+        // Moving to root
+        return [...nodes, fileToMove!];
+      }
+    };
+
+    const addToParentFolder = (nodes: FileNode[], parentId: string): FileNode[] => {
+      return nodes.map(node => {
+        if (node.id === parentId && node.type === 'folder') {
+          // Add to this folder's children
+          const updatedChildren = [...(node.children || []), fileToMove!];
+          return { ...node, children: updatedChildren };
+        }
+        
+        if (node.children && Array.isArray(node.children)) {
+          // Recursively check children
+          const updatedChildren = addToParentFolder(node.children, parentId);
+          return { ...node, children: updatedChildren };
+        }
+        
+        return node;
+      });
+    };
+
+    const reorderNodes = (nodes: FileNode[], targetId: string, insertPosition: 'above' | 'below'): FileNode[] => {
+      const result: FileNode[] = [];
+      
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        
+        if (node.id === targetId) {
+          if (insertPosition === 'above') {
+            // Insert before this node
+            result.push(fileToMove!);
+            result.push(node);
+          } else {
+            // Insert after this node
+            result.push(node);
+            result.push(fileToMove!);
+          }
+        } else {
+          if (node.children && Array.isArray(node.children)) {
+            // Recursively check children for reordering
+            const updatedChildren = reorderNodes(node.children, targetId, insertPosition);
+            result.push({ ...node, children: updatedChildren });
+          } else {
+            result.push(node);
+          }
+        }
+      }
+      
+      return result;
+    };
+
+    console.log('Starting file removal process');
+    const updatedFiles = removeFile([...files]);
+    console.log('File to move:', fileToMove);
+    
+    if (fileToMove) {
+      console.log('Adding file to new location');
+      const finalFiles = addFileToLocation(updatedFiles);
+      setFiles(finalFiles);
+      
+      const action = targetNodeId ? 'reordered' : 'moved';
+      toast({
+        title: `File ${action}`,
+        description: `${fileToMove.name} has been ${action} successfully.`,
+      });
+    } else {
+      console.log('File not found:', fileId);
+    }
+  }, [files, toast]);
+
+  const handleSave = useCallback(() => {
+    const currentProject = ProjectService.getCurrentProject();
+    const updatedProject = { 
+      name: projectName, 
+      template: currentProject?.template || 'vanilla' 
+    };
+    
+    // Save current project state
     ProjectService.saveCurrentProject(updatedProject, files);
     
-    // Update in projects list if it has an ID
+    // Also update the project in the projects list if it has an ID
     if (currentProject?.id && currentProject.id !== 'current') {
       const projectToSave: Project = {
         ...currentProject,
-        name: newName,
-        files,
+        name: projectName,
+        files: files,
         fileCount: files.length,
         lastModified: new Date().toISOString()
       };
       ProjectService.saveProject(projectToSave);
     }
-
+    
     toast({
-      title: "Success", 
-      description: `Project renamed to "${newName}".`,
+      title: "Project saved",
+      description: "Your project has been saved locally.",
     });
-  }, [files, toast]);
+  }, [files, projectName, toast]);
 
-  const selectedFileNode = files.find(f => f.id === selectedFile);
+  const handleProjectNameChange = useCallback((newName: string) => {
+    setProjectName(newName);
+    setProjectTitle(newName); // Keep both in sync
+    // Update both current state and projects list
+    const currentProject = ProjectService.getCurrentProject();
+    ProjectService.saveCurrentProject(
+      { 
+        name: newName, 
+        template: currentProject?.template || 'vanilla' 
+      }, 
+      files
+    );
+  }, [files]);
+
+  const handleRun = useCallback(() => {
+    toast({
+      title: "Running project",
+      description: "Executing code in Firecracker VM...",
+    });
+  }, [toast]);
+
+  const handleShare = useCallback(() => {
+    toast({
+      title: "Share project",
+      description: "Generating shareable link...",
+    });
+  }, [toast]);
+
+  const handleCommandExecute = useCallback((command: string) => {
+    console.log('Executing command:', command);
+    // Check if command affects packages and refresh PackageManager
+    if (command.trim().match(/^(npm|yarn|pnpm)\s+(install|i|uninstall|remove)/)) {
+      setPackageManagerKey(prev => prev + 1);
+    }
+  }, []);
+
+  const handleFileSystemChange = useCallback((newFiles: FileNode[]) => {
+    setFiles(newFiles);
+  }, []);
+
+  // Terminal session management
+  const createNewTerminal = useCallback(() => {
+    const sessionId = `terminal-${Date.now()}`;
+    const newSession = {
+      id: sessionId,
+      title: `Terminal ${terminalSessions.length + 1}`,
+      active: true
+    };
+    
+    setTerminalSessions(prev => [
+      ...prev.map(s => ({ ...s, active: false })),
+      newSession
+    ]);
+    setActiveTerminalId(sessionId);
+    setIsTerminalOpen(true);
+  }, [terminalSessions]);
+
+  const closeTerminal = useCallback((sessionId: string) => {
+    setTerminalSessions(prev => {
+      const filtered = prev.filter(s => s.id !== sessionId);
+      if (filtered.length === 0) {
+        setIsTerminalOpen(false);
+        setActiveTerminalId(null);
+        return [];
+      }
+      // Activate the last terminal if we closed the active one
+      if (sessionId === activeTerminalId) {
+        const lastTerminal = filtered[filtered.length - 1];
+        lastTerminal.active = true;
+        setActiveTerminalId(lastTerminal.id);
+      }
+      return filtered;
+    });
+  }, [activeTerminalId]);
+
+  const switchTerminal = useCallback((sessionId: string) => {
+    setTerminalSessions(prev => prev.map(s => ({
+      ...s,
+      active: s.id === sessionId
+    })));
+    setActiveTerminalId(sessionId);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+` (backtick) - Toggle terminal
+      if (event.ctrlKey && event.key === '`') {
+        event.preventDefault();
+        if (isTerminalOpen) {
+          setIsTerminalOpen(false);
+        } else {
+          if (terminalSessions.length === 0) {
+            createNewTerminal();
+          } else {
+            setIsTerminalOpen(true);
+          }
+        }
+      }
+      
+      // Ctrl+Shift+` - Create new terminal
+      if (event.ctrlKey && event.shiftKey && event.key === '`') {
+        event.preventDefault();
+        createNewTerminal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTerminalOpen, terminalSessions, createNewTerminal]);
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between p-2 border-b bg-card/50">
-        <div className="flex items-center gap-2">
-          <EditableProjectTitle 
-            title={projectName}
-            onTitleChange={handleProjectNameChange}
-          />
+      <Header 
+        projectName={projectName}
+        onSave={handleSave}
+        onRun={handleRun}
+        onShare={handleShare}
+        onProjectNameChange={handleProjectNameChange}
+        projectTitle={projectTitle}
+        onProjectTitleChange={(newTitle) => {
+          setProjectTitle(newTitle);
+          setProjectName(newTitle); // Keep both in sync
+          // Update both current state and projects list
+          const currentProject = ProjectService.getCurrentProject();
+          ProjectService.saveCurrentProject(
+            { 
+              name: newTitle, 
+              template: currentProject?.template || 'vanilla' 
+            }, 
+            files
+          );
+        }}
+      />
+      
+      <div className="flex-1 flex overflow-hidden">
+        <ResizablePanelGroup direction="horizontal">
+          {/* File Explorer - VS Code Style */}
+          <ResizablePanel defaultSize={18} minSize={15} maxSize={25}>
+            <div className="h-full bg-sidebar border-r border-sidebar-border flex flex-col">
+              {/* File Explorer */}
+              <div className="flex-1 min-h-0">
+                <VSCodeFileExplorer 
+                  files={files}
+                  selectedFile={selectedFile}
+                  onFileSelect={handleFileSelect}
+                  onFileCreate={handleFileCreate}
+                  onFileDelete={handleFileDelete}
+                  onFileRename={handleFileRename}
+                  onFileMove={handleFileMove}
+                  projectTitle={projectTitle}
+                  onProjectTitleChange={setProjectTitle}
+                />
+              </div>
+              
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle />
+          
+          {/* Main Editor Area */}
+          <ResizablePanel defaultSize={65}>
+            <ResizablePanelGroup direction="vertical">
+              {/* Code Editor */}
+              <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
+                <div className="h-full bg-background flex flex-col">
+                  {/* Editor Toolbar */}
+                  <div className="h-8 bg-muted/30 border-b border-border flex items-center justify-between px-2 flex-shrink-0">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">Editor</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-auto px-2 text-xs"
+                        onClick={() => {
+                          // Trigger split editor programmatically
+                          const event = new KeyboardEvent('keydown', {
+                            key: '\\',
+                            ctrlKey: true,
+                            bubbles: true
+                          });
+                          window.dispatchEvent(event);
+                        }}
+                        title="Split Editor (Ctrl+\)"
+                      >
+                        <SplitSquareVertical className="w-3 h-3 mr-1" />
+                        Split
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Editor Content */}
+                  <div className="flex-1">
+                    <SplitEditor
+                      files={files}
+                      activeFileId={selectedFile?.id || null}
+                      onFileSelect={(fileId) => {
+                        const file = findFileById(files, fileId);
+                        if (file) {
+                          setSelectedFile(file);
+                        }
+                      }}
+                      onFileChange={(fileId, content) => {
+                        handleFileChange(content);
+                      }}
+                      className="h-full"
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+              
+              {/* Terminal Panel - Always render but hide when closed */}
+              <ResizableHandle style={{ display: isTerminalOpen ? 'flex' : 'none' }} />
+              <ResizablePanel 
+                defaultSize={isTerminalOpen ? 40 : 0} 
+                minSize={isTerminalOpen ? 15 : 0}
+                maxSize={isTerminalOpen ? 70 : 0}
+                style={{ display: isTerminalOpen ? 'block' : 'none' }}
+              >
+                <div className="h-full bg-background flex flex-col">
+                  {/* Terminal Tabs */}
+                  <div className="border-b border-border bg-muted/30 flex items-center justify-between">
+                    <div className="flex items-center">
+                      {terminalSessions.map((session) => (
+                        <div
+                          key={session.id}
+                          className={`
+                            flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-r border-border
+                            ${session.active ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}
+                          `}
+                          onClick={() => switchTerminal(session.id)}
+                        >
+                          <TerminalIcon className="w-3 h-3" />
+                          <span>{session.title}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 hover:bg-muted"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeTerminal(session.id);
+                            }}
+                          >
+                            <X className="h-2 w-2" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center px-2 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          // Clear active terminal
+                          const activeSession = terminalSessions.find(s => s.active);
+                          if (activeSession) {
+                            // Trigger clear for active terminal - we'll need to implement this
+                            const event = new CustomEvent('clearTerminal', { detail: { sessionId: activeSession.id } });
+                            window.dispatchEvent(event);
+                          }
+                        }}
+                        title="Clear Terminal (Ctrl+L)"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={createNewTerminal}
+                        title="New Terminal (Ctrl+Shift+`)"
+                      >
+                        <TerminalIcon className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => setIsTerminalOpen(false)}
+                        title="Close Panel"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* All Terminal Sessions - Render all but only show active */}
+                  <div className="flex-1 relative">
+                    {terminalSessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="absolute inset-0"
+                        style={{ display: session.active ? 'block' : 'none' }}
+                      >
+                        <Terminal
+                          files={files}
+                          onCommandExecuted={handleCommandExecute}
+                          onFileSystemChange={handleFileSystemChange}
+                          onClose={() => closeTerminal(session.id)}
+                          sessionId={session.id}
+                          showHeader={false}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </ResizablePanel>
+          
+          <ResizableHandle />
+          
+          {/* Right Panel - Preview Only */}
+          <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+            <div className="h-full bg-background border-l border-border">
+              <DynamicPreview files={files} />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+      
+      {/* VS Code Style Status Bar */}
+      <div className="h-6 bg-sidebar-accent border-t border-sidebar-border flex items-center justify-between px-2 text-xs">
+        <div className="flex items-center gap-3">
+          
         </div>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => setShowShareDialog(true)}
-            className="text-sidebar-foreground hover:bg-sidebar-accent"
-          >
-            <GitBranch className="w-3 h-3 mr-1" />
-            <span className="hidden sm:inline">Share</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setPackageManagerKey(prev => prev + 1);
-              setIsPackageManagerOpen(true);
-            }}
-            className="text-sidebar-foreground hover:bg-sidebar-accent"
-          >
-            <Package className="w-3 h-3 mr-1" />
-            <span className="hidden sm:inline">Packages</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsSplitEditorOpen(!isSplitEditorOpen)}
-            className="text-sidebar-foreground hover:bg-sidebar-accent"
-            title="Toggle Split Editor"
-          >
-            <SplitSquareVertical className="w-3 h-3 mr-1" />
-            <span className="hidden sm:inline">Split</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* File Explorer */}
-        <div className="w-64 border-r bg-sidebar/50 flex flex-col">
-          <div className="flex-1 overflow-auto">
-            <VSCodeFileExplorer
-              files={files}
-              selectedFile={selectedFile}
-              onFileSelect={setSelectedFile}
-              onFileCreate={handleFileCreate}
-              onFileDelete={handleFileDelete}
-              onFileRename={handleFileRename}
-            />
-          </div>
-        </div>
-
-        {/* Editor and Preview */}
-        <div className="flex-1 flex flex-col">
-          {!isSplitEditorOpen ? (
-            <>
-              {/* Code Editor */}
-              <div className="flex-1 overflow-hidden">
-                {selectedFileNode ? (
-                  <CodeEditor
-                    key={selectedFileNode.id}
-                    language={selectedFileNode.name.split('.').pop() || 'text'}
-                    value={selectedFileNode.content || ''}
-                    onChange={handleFileChange}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">
-                    Select a file to start editing
-                  </div>
-                )}
-              </div>
-
-              {/* Preview */}
-              <div className="h-80 border-t overflow-hidden">
-                <DynamicPreview files={files} />
-              </div>
-            </>
-          ) : (
-            <SplitEditor
-              files={files}
-              onFileSelect={setSelectedFile}
-              onChange={handleFileChange}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Terminal */}
-      {isTerminalOpen && (
-        <div className="h-64 border-t bg-background">
-          <div className="flex items-center justify-between p-2 border-b bg-card/50">
-            <span className="text-sm font-medium text-sidebar-foreground">Terminal</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsTerminalOpen(false)}
-              className="h-6 w-6 p-0"
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-          <Terminal files={files} />
-        </div>
-      )}
-
-      {/* Footer Controls */}
-      <div className="flex items-center justify-between p-2 border-t bg-card/50">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-5 w-auto px-1 text-xs hover:bg-sidebar-accent/50"
             onClick={() => {
               if (isTerminalOpen) {
                 setIsTerminalOpen(false);
               } else {
-                setIsTerminalOpen(true);
+                if (terminalSessions.length === 0) {
+                  createNewTerminal();
+                } else {
+                  setIsTerminalOpen(true);
+                }
               }
             }}
             title="Toggle Terminal (Ctrl+`)"
@@ -1251,16 +1624,6 @@ export function EditorLayout() {
           </Button>
         </div>
       </div>
-      
-      {/* Share Dialog */}
-      {showShareDialog && (
-        <ShareDialog
-          open={showShareDialog}
-          onClose={() => setShowShareDialog(false)}
-          files={files}
-          projectName={projectName}
-        />
-      )}
       
       {/* Package Manager Modal */}
       {isPackageManagerOpen && (

@@ -85,56 +85,6 @@ const templates: Template[] = [
     usageCount: 243200
   },
   {
-    id: "python-flask",
-    name: "Python Flask",
-    description: "Python web application with Flask framework",
-    icon: Code,
-    iconColor: "text-blue-500", // Python blue
-    category: "Backend", 
-    tags: ["Python", "Flask", "Web API"],
-    usageCount: 189300
-  },
-  {
-    id: "python-basic",
-    name: "Python",
-    description: "Basic Python script environment", 
-    icon: FileCode,
-    iconColor: "text-green-600", // Python green
-    category: "Backend",
-    tags: ["Python", "Script", "Backend"],
-    usageCount: 156700
-  },
-  {
-    id: "c-basic",
-    name: "C Programming",
-    description: "Basic C programming environment",
-    icon: Code,
-    iconColor: "text-gray-600", // C gray
-    category: "Backend",
-    tags: ["C", "Compiled", "System"],
-    usageCount: 98400
-  },
-  {
-    id: "cpp-basic", 
-    name: "C++ Programming",
-    description: "Basic C++ programming environment",
-    icon: Box,
-    iconColor: "text-purple-600", // C++ purple
-    category: "Backend",
-    tags: ["C++", "Compiled", "OOP"],
-    usageCount: 87200
-  },
-  {
-    id: "bash-script",
-    name: "Bash Script",
-    description: "Shell scripting environment",
-    icon: FileText,
-    iconColor: "text-orange-600", // Bash orange
-    category: "Backend", 
-    tags: ["Bash", "Shell", "Scripting"],
-    usageCount: 65300
-  },
-  {
     id: "next-js",
     name: "Next.js",
     description: "Full-stack React framework with SSR",
