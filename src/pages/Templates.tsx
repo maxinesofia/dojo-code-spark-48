@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText, Component, Triangle, Box, FileCode, Layers, Star, Settings, Terminal } from "lucide-react";
+import { Search, Code, Zap, Globe, Server, Database, Smartphone, FileText, Component, Triangle, Box, FileCode, Layers, Star, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ProjectService, Project } from "@/services/ProjectService";
@@ -15,8 +15,8 @@ interface Template {
   id: string;
   name: string;
   description: string;
-  icon: any;
-  iconColor: string;
+  icon: any; // Changed to accept Lucide icon components
+  iconColor: string; // Added color for proper branding
   category: string;
   tags: string[];
   usageCount: number;
@@ -29,7 +29,7 @@ const templates: Template[] = [
     name: "React",
     description: "React example starter project",
     icon: Component,
-    iconColor: "text-blue-400",
+    iconColor: "text-blue-400", // React blue
     category: "Frontend",
     tags: ["React", "JavaScript", "SPA"],
     usageCount: 8400000
@@ -39,7 +39,7 @@ const templates: Template[] = [
     name: "JavaScript",
     description: "The JavaScript template",
     icon: FileCode,
-    iconColor: "text-yellow-500",
+    iconColor: "text-yellow-500", // JavaScript yellow
     category: "Frontend",
     tags: ["Vanilla", "JavaScript", "ES6"],
     usageCount: 3400000
@@ -49,77 +49,17 @@ const templates: Template[] = [
     name: "HTML + CSS",
     description: "A template for HTML and CSS",
     icon: Globe,
-    iconColor: "text-orange-500",
+    iconColor: "text-orange-500", // HTML orange
     category: "Frontend",
     tags: ["HTML", "CSS", "Static"],
     usageCount: 2700000
   },
   {
-    id: "python",
-    name: "Python",
-    description: "Python starter project with examples",
-    icon: Code,
-    iconColor: "text-blue-500",
-    category: "Backend",
-    tags: ["Python", "Scripting", "ML"],
-    usageCount: 1850000
-  },
-  {
-    id: "java",
-    name: "Java",
-    description: "Java console application starter",
-    icon: FileCode,
-    iconColor: "text-red-600",
-    category: "Backend",
-    tags: ["Java", "OOP", "Enterprise"],
-    usageCount: 1650000
-  },
-  {
-    id: "cpp",
-    name: "C++",
-    description: "C++ console application starter",
-    icon: Settings,
-    iconColor: "text-blue-600",
-    category: "Backend",
-    tags: ["C++", "System", "Performance"],
-    usageCount: 1420000
-  },
-  {
-    id: "go",
-    name: "Go",
-    description: "Go web server starter project",
-    icon: Server,
-    iconColor: "text-cyan-500",
-    category: "Backend",
-    tags: ["Go", "Concurrency", "Web"],
-    usageCount: 980000
-  },
-  {
-    id: "rust",
-    name: "Rust",
-    description: "Rust system programming starter",
-    icon: Box,
-    iconColor: "text-orange-600",
-    category: "Backend",
-    tags: ["Rust", "System", "Safety"],
-    usageCount: 720000
-  },
-  {
-    id: "bash",
-    name: "Bash",
-    description: "Bash scripting and automation",
-    icon: Terminal,
-    iconColor: "text-green-600",
-    category: "Backend",
-    tags: ["Bash", "Scripting", "DevOps"],
-    usageCount: 560000
-  },
-  {
     id: "react-ts",
     name: "React (TS)",
     description: "React and TypeScript example starter project",
-    icon: Layers,
-    iconColor: "text-blue-500",
+    icon: Layers, // Different from regular React to show TS+React combo
+    iconColor: "text-blue-500", // Slightly different blue
     category: "Frontend",
     tags: ["React", "TypeScript", "SPA"],
     usageCount: 995500
@@ -128,8 +68,8 @@ const templates: Template[] = [
     id: "vanilla-ts",
     name: "Vanilla TypeScript",
     description: "JavaScript and TypeScript example starter project",
-    icon: Code,
-    iconColor: "text-blue-600",
+    icon: Code, // Unique icon for TypeScript
+    iconColor: "text-blue-600", // TypeScript blue
     category: "Frontend",
     tags: ["TypeScript", "Vanilla", "ES6"],
     usageCount: 315900
@@ -139,7 +79,7 @@ const templates: Template[] = [
     name: "Node.js Express",
     description: "Node.js with Express server starter project",
     icon: Server,
-    iconColor: "text-green-500",
+    iconColor: "text-green-500", // Node.js green
     category: "Backend",
     tags: ["Node.js", "Express", "API"],
     usageCount: 243200
@@ -149,7 +89,7 @@ const templates: Template[] = [
     name: "Next.js",
     description: "Full-stack React framework with SSR",
     icon: Triangle,
-    iconColor: "text-gray-900",
+    iconColor: "text-gray-900", // Next.js black/dark
     category: "Full Stack",
     tags: ["Next.js", "React", "SSR"],
     usageCount: 180500
@@ -158,8 +98,8 @@ const templates: Template[] = [
     id: "vue",
     name: "Vue.js",
     description: "Progressive JavaScript framework",
-    icon: Star,
-    iconColor: "text-green-500",
+    icon: Star, // Unique icon for Vue (star shape resembles Vue logo)
+    iconColor: "text-green-500", // Vue green
     category: "Frontend",
     tags: ["Vue", "JavaScript", "SPA"],
     usageCount: 156700
@@ -204,7 +144,7 @@ const Templates = () => {
     return count.toString();
   };
 
-  // Template file generators
+  // Template file generators (copied from Projects.tsx)
   const generateTemplateFiles = (templateId: string, projectName: string): FileNode[] => {
     switch (templateId) {
       case 'vanilla-js':
@@ -352,277 +292,6 @@ document.addEventListener('DOMContentLoaded', function() {
 ReactDOM.render(React.createElement(App), document.getElementById('root'));`
           }
         ];
-
-      case 'python':
-        return [
-          {
-            id: 'main.py',
-            name: 'main.py',
-            type: 'file',
-            content: `#!/usr/bin/env python3
-"""
-${projectName} - Python Application
-A simple Python starter project with examples of basic functionality.
-"""
-
-import math
-import random
-from datetime import datetime
-
-def main():
-    print(f"🐍 Welcome to {projectName.split(' ')[0]}!")
-    print("=" * 50)
-    
-    # Basic calculations
-    print("\\n📊 Calculator Demo:")
-    print(f"5 + 3 = {5 + 3}")
-    print(f"7 * 4 = {7 * 4}")
-    
-    # Random numbers
-    print("\\n🎲 Random numbers:")
-    random_numbers = [random.randint(1, 100) for _ in range(5)]
-    print(f"Five random numbers: {random_numbers}")
-    print(f"Sum: {sum(random_numbers)}")
-    print(f"Average: {sum(random_numbers) / len(random_numbers):.2f}")
-    
-    # Date and time
-    print("\\n⏰ Current date and time:")
-    now = datetime.now()
-    print(f"Current time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    
-    print("\\n✅ Program completed successfully!")
-
-if __name__ == "__main__":
-    main()`
-          }
-        ];
-
-      case 'java':
-        return [
-          {
-            id: 'Main.java',
-            name: 'Main.java',
-            type: 'file',
-            content: `import java.util.*;
-import java.time.LocalDateTime;
-
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("☕ Welcome to ${projectName.split(' ')[0]}!");
-        System.out.println("=".repeat(50));
-        
-        // Basic operations
-        System.out.println("\\n🔢 Basic Operations:");
-        int a = 15, b = 7;
-        System.out.printf("%d + %d = %d%n", a, b, a + b);
-        System.out.printf("%d * %d = %d%n", a, b, a * b);
-        
-        // Collections
-        System.out.println("\\n📚 Collections Demo:");
-        List<String> fruits = Arrays.asList("Apple", "Banana", "Orange");
-        System.out.println("Fruits: " + fruits);
-        
-        System.out.println("\\n✅ Program completed successfully!");
-    }
-}`
-          }
-        ];
-
-      case 'cpp':
-        return [
-          {
-            id: 'main.cpp',
-            name: 'main.cpp',
-            type: 'file',
-            content: `#include <iostream>
-#include <vector>
-#include <string>
-
-int main() {
-    std::cout << "⚙️ Welcome to ${projectName.split(' ')[0]}!" << std::endl;
-    std::cout << std::string(50, '=') << std::endl;
-    
-    // Basic operations
-    std::cout << "\\n🔢 Basic Operations:" << std::endl;
-    int a = 15, b = 7;
-    std::cout << a << " + " << b << " = " << (a + b) << std::endl;
-    std::cout << a << " * " << b << " = " << (a * b) << std::endl;
-    
-    // Vector example
-    std::cout << "\\n📚 Vector Demo:" << std::endl;
-    std::vector<std::string> fruits = {"Apple", "Banana", "Orange"};
-    std::cout << "Fruits: ";
-    for (const auto& fruit : fruits) {
-        std::cout << fruit << " ";
-    }
-    std::cout << std::endl;
-    
-    std::cout << "\\n✅ Program completed successfully!" << std::endl;
-    return 0;
-}`
-          },
-          {
-            id: 'Makefile',
-            name: 'Makefile',
-            type: 'file',
-            content: `CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2
-TARGET = main
-SOURCES = main.cpp
-
-all: $(TARGET)
-
-$(TARGET): $(SOURCES)
-\t$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES)
-
-clean:
-\trm -f $(TARGET)
-
-run: $(TARGET)
-\t./$(TARGET)
-
-.PHONY: all clean run`
-          }
-        ];
-
-      case 'go':
-        return [
-          {
-            id: 'main.go',
-            name: 'main.go',
-            type: 'file',
-            content: `package main
-
-import (
-\t"fmt"
-\t"time"
-)
-
-func main() {
-\tfmt.Println("🐹 Welcome to ${projectName.split(' ')[0]}!")
-\tfmt.Println("==================================================")
-\t
-\t// Basic operations
-\tfmt.Println("\\n🔢 Basic Operations:")
-\ta, b := 15, 7
-\tfmt.Printf("%d + %d = %d\\n", a, b, a+b)
-\tfmt.Printf("%d * %d = %d\\n", a, b, a*b)
-\t
-\t// Slice example
-\tfmt.Println("\\n📚 Slice Demo:")
-\tfruits := []string{"Apple", "Banana", "Orange"}
-\tfmt.Printf("Fruits: %v\\n", fruits)
-\t
-\t// Time example
-\tfmt.Println("\\n⏰ Current time:")
-\tnow := time.Now()
-\tfmt.Printf("Current time: %s\\n", now.Format("2006-01-02 15:04:05"))
-\t
-\tfmt.Println("\\n✅ Program completed successfully!")
-}`
-          },
-          {
-            id: 'go.mod',
-            name: 'go.mod',
-            type: 'file',
-            content: `module ${projectName.toLowerCase().replace(/\s+/g, '-')}
-
-go 1.21`
-          }
-        ];
-
-      case 'rust':
-        return [
-          {
-            id: 'main.rs',
-            name: 'main.rs',
-            type: 'file',
-            content: `use std::time::{SystemTime, UNIX_EPOCH};
-
-fn main() {
-    println!("🦀 Welcome to ${projectName.split(' ')[0]}!");
-    println!("{}", "=".repeat(50));
-    
-    // Basic operations
-    println!("\\n🔢 Basic Operations:");
-    let a = 15;
-    let b = 7;
-    println!("{} + {} = {}", a, b, a + b);
-    println!("{} * {} = {}", a, b, a * b);
-    
-    // Vector example
-    println!("\\n📚 Vector Demo:");
-    let fruits = vec!["Apple", "Banana", "Orange"];
-    println!("Fruits: {:?}", fruits);
-    
-    // Time example
-    println!("\\n⏰ Current timestamp:");
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards")
-        .as_secs();
-    println!("Unix timestamp: {}", timestamp);
-    
-    println!("\\n✅ Program completed successfully!");
-}`
-          },
-          {
-            id: 'Cargo.toml',
-            name: 'Cargo.toml',
-            type: 'file',
-            content: `[package]
-name = "${projectName.toLowerCase().replace(/\s+/g, '-')}"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]`
-          }
-        ];
-
-      case 'bash':
-        return [
-          {
-            id: 'main.sh',
-            name: 'main.sh',
-            type: 'file',
-            content: `#!/bin/bash
-
-echo "🐚 Welcome to ${projectName.split(' ')[0]}!"
-echo "=================================================="
-
-# Basic operations
-echo ""
-echo "🔢 Basic Operations:"
-a=15
-b=7
-echo "$a + $b = $((a + b))"
-echo "$a * $b = $((a * b))"
-
-# Array example
-echo ""
-echo "📚 Array Demo:"
-fruits=("Apple" "Banana" "Orange")
-echo "Fruits: \${fruits[@]}"
-
-# Time example
-echo ""
-echo "⏰ Current date and time:"
-echo "Current time: $(date)"
-
-echo ""
-echo "✅ Program completed successfully!"`
-          },
-          {
-            id: 'run.sh',
-            name: 'run.sh',
-            type: 'file',
-            content: `#!/bin/bash
-echo "🚀 Starting ${projectName}..."
-chmod +x main.sh
-./main.sh
-echo "🏁 Execution completed!"`
-          }
-        ];
       
       default:
         return [
@@ -651,21 +320,25 @@ echo "🏁 Execution completed!"`
     const existingProjects = ProjectService.getAllProjects();
     const baseNameTrimmed = baseName.trim();
     
+    // Get all projects that start with the base name (including numbered ones)
     const existingWithSameName = existingProjects
-      .filter(p => p.id !== 'current')
+      .filter(p => p.id !== 'current') // Exclude temporary 'current' project
       .filter(p => {
+        // Check for exact match or numbered versions like "name (1)", "name (2)"
         return p.name === baseNameTrimmed || 
                p.name.match(new RegExp(`^${baseNameTrimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\(\\d+\\)$`));
       });
     
+    // If no conflicts, use the original name
     if (existingWithSameName.length === 0) {
       return baseNameTrimmed;
     }
     
+    // Find the highest number used
     let maxNumber = 0;
     existingWithSameName.forEach(project => {
       if (project.name === baseNameTrimmed) {
-        maxNumber = Math.max(maxNumber, 0);
+        maxNumber = Math.max(maxNumber, 0); // Original name counts as 0
       } else {
         const match = project.name.match(/\((\d+)\)$/);
         if (match) {
@@ -674,6 +347,7 @@ echo "🏁 Execution completed!"`
       }
     });
     
+    // Return the next available number
     return `${baseNameTrimmed} (${maxNumber + 1})`;
   };
 
@@ -681,6 +355,7 @@ echo "🏁 Execution completed!"`
     const template = templates.find(t => t.id === templateId);
     if (template) {
       setSelectedTemplate(template);
+      // Use a more generic base name that will get auto-numbered
       setProjectName(`${template.name} Project`);
       setIsCreateDialogOpen(true);
     }
@@ -697,9 +372,13 @@ echo "🏁 Execution completed!"`
     }
 
     try {
+      // Generate unique name
       const uniqueName = generateUniqueName(projectName, selectedTemplate.id);
+      
+      // Generate template files
       const templateFiles = generateTemplateFiles(selectedTemplate.id, uniqueName);
       
+      // Create project object
       const newProject: Project = {
         id: `project-${Date.now()}`,
         name: uniqueName,
@@ -712,6 +391,7 @@ echo "🏁 Execution completed!"`
         files: templateFiles
       };
 
+      // Save and switch to project
       ProjectService.saveProject(newProject);
       ProjectService.switchToProject(newProject);
 
@@ -720,7 +400,10 @@ echo "🏁 Execution completed!"`
         description: `Created "${newProject.name}" successfully`,
       });
 
+      // Close dialog first
       setIsCreateDialogOpen(false);
+
+      // Navigate to editor
       navigate('/');
       
     } catch (error) {
@@ -734,7 +417,7 @@ echo "🏁 Execution completed!"`
   };
 
   const handleBackToEditor = () => {
-    navigate('/');
+    navigate('/'); // Go to main editor page
   };
 
   return (
@@ -803,10 +486,10 @@ echo "🏁 Execution completed!"`
                       {tag}
                     </Badge>
                   ))}
-                  {/* Add executable badge for server-side languages */}
-                  {['python', 'java', 'cpp', 'go', 'rust', 'bash', 'node-express'].includes(template.id) && (
-                    <Badge variant="outline" className="text-xs text-green-600 border-green-600">
-                      Executable
+                  {/* Add beta badge for templates requiring firecracker backend */}
+                  {!['html-css', 'vanilla-js'].includes(template.id) && (
+                    <Badge variant="outline" className="text-xs text-orange-500 border-orange-500">
+                      Beta
                     </Badge>
                   )}
                 </div>
