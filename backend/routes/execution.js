@@ -34,10 +34,11 @@ router.put('/:projectId/update',
   executionController.updateExecution
 );
 
-// Direct code execution without project (for quick runs)
+// Direct code execution without project (for quick runs) - no auth required
 router.post('/run',
   body('files').isArray().withMessage('Files must be an array'),
   body('language').optional().isString().withMessage('Language must be a string'),
+  body('timeout').optional().isNumeric().withMessage('Timeout must be a number'),
   executionController.runExecution
 );
 
