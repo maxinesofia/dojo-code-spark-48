@@ -216,6 +216,141 @@ CMD ["http-server", "-p", "8080"]
     });
   }
 
+  async executeCode(executionId, files, language = 'javascript', timeout = 30000) {
+    const sandboxPath = path.join(this.workspaceDir, executionId);
+    
+    try {
+      // Create temporary directory
+      await fs.mkdir(sandboxPath, { recursive: true });
+      
+      // Write files to directory
+      await this.writeProjectFiles(sandboxPath, files);
+      
+      // Execute based on language
+      const result = await this.runCodeExecution(sandboxPath, files, language, timeout);
+      
+      // Clean up
+      await fs.rmdir(sandboxPath, { recursive: true });
+      
+      return result;
+    } catch (error) {
+      console.error('Code execution error:', error);
+      throw error;
+    }
+  }
+
+  async runCodeExecution(sandboxPath, files, language, timeout) {
+    const startTime = Date.now();
+    
+    try {
+      let command;
+      let entryFile = this.detectEntryFile(files, language);
+      
+      switch (language.toLowerCase()) {
+        case 'python':
+        case 'py':
+          command = `cd ${sandboxPath} && timeout ${Math.floor(timeout/1000)} python ${entryFile}`;
+          break;
+        case 'node':
+        case 'nodejs':
+        case 'javascript':
+          command = `cd ${sandboxPath} && timeout ${Math.floor(timeout/1000)} node ${entryFile}`;
+          break;
+        case 'java':
+          const className = entryFile.replace('.java', '');
+          command = `cd ${sandboxPath} && javac ${entryFile} && timeout ${Math.floor(timeout/1000)} java ${className}`;
+          break;
+        case 'c':
+          const execName = entryFile.replace('.c', '');
+          command = `cd ${sandboxPath} && gcc ${entryFile} -o ${execName} && timeout ${Math.floor(timeout/1000)} ./${execName}`;
+          break;
+        case 'cpp':
+        case 'c++':
+          const cppExecName = entryFile.replace(/\.(cpp|cc)/, '');
+          command = `cd ${sandboxPath} && g++ ${entryFile} -o ${cppExecName} && timeout ${Math.floor(timeout/1000)} ./${cppExecName}`;
+          break;
+        case 'go':
+          command = `cd ${sandboxPath} && timeout ${Math.floor(timeout/1000)} go run ${entryFile}`;
+          break;
+        case 'rust':
+          const rustExecName = entryFile.replace('.rs', '');
+          command = `cd ${sandboxPath} && rustc ${entryFile} -o ${rustExecName} && timeout ${Math.floor(timeout/1000)} ./${rustExecName}`;
+          break;
+        case 'bash':
+        case 'shell':
+          command = `cd ${sandboxPath} && timeout ${Math.floor(timeout/1000)} bash ${entryFile}`;
+          break;
+        default:
+          throw new Error(`Unsupported language: ${language}`);
+      }
+      
+      const result = await this.execCommand(command);
+      const executionTime = Date.now() - startTime;
+      
+      return {
+        stdout: result,
+        stderr: '',
+        executionTime,
+        logs: []
+      };
+    } catch (error) {
+      const executionTime = Date.now() - startTime;
+      return {
+        stdout: '',
+        stderr: error.message || 'Execution failed',
+        executionTime,
+        logs: []
+      };
+    }
+  }
+
+  detectEntryFile(files, language) {
+    // Common entry file patterns
+    const entryPatterns = {
+      python: ['main.py', 'app.py', 'index.py'],
+      java: ['Main.java', 'App.java'],
+      javascript: ['index.js', 'main.js', 'app.js'],
+      c: ['main.c', 'app.c'],
+      cpp: ['main.cpp', 'app.cpp', 'main.cc'],
+      go: ['main.go', 'app.go'],
+      rust: ['main.rs', 'app.rs'],
+      bash: ['main.sh', 'app.sh', 'script.sh']
+    };
+    
+    const langKey = language.toLowerCase();
+    const patterns = entryPatterns[langKey] || entryPatterns[langKey.replace(/\+\+/, 'pp')];
+    
+    if (patterns) {
+      for (const pattern of patterns) {
+        const file = files.find(f => f.name === pattern);
+        if (file) return pattern;
+      }
+    }
+    
+    // Fallback: find first file with matching extension
+    const extensions = {
+      python: ['.py'],
+      java: ['.java'],
+      javascript: ['.js'],
+      c: ['.c'],
+      cpp: ['.cpp', '.cc'],
+      go: ['.go'],
+      rust: ['.rs'],
+      bash: ['.sh']
+    };
+    
+    const exts = extensions[langKey] || extensions[langKey.replace(/\+\+/, 'pp')];
+    if (exts) {
+      for (const ext of exts) {
+        const file = files.find(f => f.name.endsWith(ext));
+        if (file) return file.name;
+      }
+    }
+    
+    // Last resort: return first file
+    return files[0]?.name || 'main.js';
+  }
+
   async listActiveSandboxes() {
     try {
       const stdout = await this.execCommand(`docker ps --filter name=${this.containerPrefix} --format "table {{.Names}}\\t{{.Ports}}\\t{{.Status}}"`);

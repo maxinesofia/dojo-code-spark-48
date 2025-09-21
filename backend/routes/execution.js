@@ -34,6 +34,13 @@ router.put('/:projectId/update',
   executionController.updateExecution
 );
 
+// Direct code execution without project (for quick runs)
+router.post('/run',
+  body('files').isArray().withMessage('Files must be an array'),
+  body('language').optional().isString().withMessage('Language must be a string'),
+  executionController.runExecution
+);
+
 // List active executions (admin only)
 router.get('/active',
   authenticateToken,

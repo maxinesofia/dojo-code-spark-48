@@ -158,6 +158,43 @@ class ExecutionController {
     }
   }
 
+  // Direct code execution without project
+  async runExecution(req, res) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { files, language = 'javascript', timeout = 30000 } = req.body;
+
+      if (!files || !Array.isArray(files) || files.length === 0) {
+        return res.status(400).json({ error: 'Files are required' });
+      }
+
+      // Create temporary execution
+      const executionId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Execute code using docker service
+      const result = await dockerService.executeCode(executionId, files, language, timeout);
+
+      res.json({
+        success: true,
+        output: result.stdout,
+        error: result.stderr,
+        logs: result.logs || [],
+        executionTime: result.executionTime
+      });
+    } catch (error) {
+      console.error('Run execution error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to execute code',
+        details: error.message 
+      });
+    }
+  }
+
   // List all active executions (admin)
   async listActiveExecutions(req, res) {
     try {
