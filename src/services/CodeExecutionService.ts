@@ -28,7 +28,7 @@ export class CodeExecutionService {
   private apiBaseUrl = window.location.origin; // Use current origin for API calls
 
   // Supported server-side languages that need Firecracker execution
-  private serverSideLanguages = ['python', 'py', 'c', 'cpp', 'c++', 'java', 'go', 'rust', 'bash', 'shell', 'nodejs', 'node', 'react', 'tsx'];
+  private serverSideLanguages = ['python', 'py', 'c', 'cpp', 'c++', 'java', 'go', 'rust', 'bash', 'shell', 'nodejs', 'node'];
 
   async executeCode(files: FileNode[], language: string = 'javascript'): Promise<ExecutionResult> {
     try {
@@ -77,6 +77,7 @@ export class CodeExecutionService {
       (f.content?.includes('"react"') || f.content?.includes('react-scripts'))
     );
 
+    // Force React projects to run client-side for better reliability
     if (hasReactFiles || hasReactContent || hasPackageJsonWithReact) {
       return 'react';
     }
@@ -102,8 +103,8 @@ export class CodeExecutionService {
     if (fileNames.some(name => name.endsWith('.cpp') || name.endsWith('.cc'))) return 'cpp';
     if (fileNames.some(name => name.endsWith('.sh'))) return 'bash';
 
-    // Default to javascript for client-side execution
-    return 'javascript';
+    // Default to React for client-side execution (more reliable than server-side)
+    return 'react';
   }
 
   /**
