@@ -34,21 +34,28 @@ export class CodeExecutionService {
     try {
       // Auto-detect language if not specified or if it's generic
       const detectedLanguage = this.detectLanguage(files, language);
-      console.log('Detected language:', detectedLanguage, 'for provided language:', language);
+      console.log('🚀 EXECUTION DEBUG - Input language:', language, 'Detected language:', detectedLanguage);
+      console.log('🚀 Server-side languages list:', this.serverSideLanguages);
+      console.log('🚀 Is server-side?', this.serverSideLanguages.includes(detectedLanguage.toLowerCase()));
       
       // Force client-side execution for React and web projects
-      if (['react', 'javascript', 'typescript', 'html', 'css'].includes(detectedLanguage.toLowerCase())) {
+      const clientSideLanguages = ['react', 'javascript', 'typescript', 'html', 'css'];
+      if (clientSideLanguages.includes(detectedLanguage.toLowerCase())) {
+        console.log('🚀 FORCING CLIENT-SIDE EXECUTION for:', detectedLanguage);
         return await this.executeClientSide(files, detectedLanguage);
       }
       
       // Determine if this is a server-side language that needs Firecracker execution
       if (this.serverSideLanguages.includes(detectedLanguage.toLowerCase())) {
+        console.log('🚀 ROUTING TO SERVER-SIDE EXECUTION for:', detectedLanguage);
         return await this.executeServerSide(files, detectedLanguage);
       } else {
+        console.log('🚀 DEFAULTING TO CLIENT-SIDE EXECUTION for:', detectedLanguage);
         // Default to client-side execution for web projects
         return await this.executeClientSide(files, detectedLanguage);
       }
     } catch (error) {
+      console.error('🚀 EXECUTION ERROR:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown execution error'

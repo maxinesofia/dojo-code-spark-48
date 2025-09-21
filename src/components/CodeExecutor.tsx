@@ -38,7 +38,8 @@ export function CodeExecutor({ files, language: initialLanguage = 'javascript' }
   };
 
   const isServerSideLanguage = (lang: string) => {
-    const serverLanguages = ['nodejs', 'node', 'react', 'tsx', 'python', 'py', 'c', 'cpp', 'c++', 'bash', 'shell'];
+    // Only actual server-side languages that need Firecracker VMs
+    const serverLanguages = ['nodejs', 'node', 'python', 'py', 'c', 'cpp', 'c++', 'bash', 'shell', 'java', 'go', 'rust'];
     return serverLanguages.includes(lang.toLowerCase());
   };
 
@@ -120,8 +121,7 @@ export function CodeExecutor({ files, language: initialLanguage = 'javascript' }
         <Alert>
           <Server className="h-4 w-4" />
           <AlertDescription>
-            This code will execute in a secure Firecracker microVM on the server. 
-            {selectedLanguage === 'react' && ' React development server will be started.'}
+            This code will execute in a secure Firecracker microVM on the server.
             {selectedLanguage === 'nodejs' && ' Node.js application will be executed.'}
           </AlertDescription>
         </Alert>
