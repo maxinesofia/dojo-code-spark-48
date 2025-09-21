@@ -1008,7 +1008,39 @@ export class WebTerminalService {
     
     const filePath = this.resolvePath(filename);
     if (this.vfs.files.has(filePath)) {
-      return `Executing ${filename}...\n✓ Python script executed successfully!`;
+      const file = this.vfs.files.get(filePath);
+      if (!file || !file.content.trim()) {
+        return `Executing ${filename}...\nNo output (empty file)`;
+      }
+      
+      try {
+        // Execute the Python code through our backend
+        let output = [`Executing ${filename}...`];
+        output.push(`Content:`);
+        output.push(file.content);
+        output.push(`Output:`);
+        
+        // Here we would normally execute the Python code
+        // For now we'll just show that we tried to execute the content
+        if (file.content.includes('print')) {
+          // Basic simulation of print statements
+          const printStatements = file.content
+            .split('\n')
+            .filter(line => line.trim().startsWith('print'))
+            .map(line => {
+              const match = line.match(/print\((.*)\)/);
+              return match ? eval(match[1]) : '';
+            })
+            .join('\n');
+          output.push(printStatements || 'No output');
+        } else {
+          output.push('No output (no print statements found)');
+        }
+        
+        return output.join('\n');
+      } catch (error) {
+        return `Error executing ${filename}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
     } else {
       return `python: can't open file '${filename}': [Errno 2] No such file or directory`;
     }
