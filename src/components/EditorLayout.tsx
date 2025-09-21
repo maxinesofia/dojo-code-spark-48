@@ -1431,7 +1431,7 @@ export function EditorLayout() {
           <ResizablePanel defaultSize={65}>
             <ResizablePanelGroup direction="vertical">
               {/* Code Editor */}
-              <ResizablePanel defaultSize={isTerminalOpen ? 70 : 100}>
+              <ResizablePanel defaultSize={isTerminalOpen ? 60 : 100}>
                 <div className="h-full bg-background flex flex-col">
                   {/* Editor Toolbar */}
                   <div className="h-8 bg-muted/30 border-b border-border flex items-center justify-between px-2 flex-shrink-0">
@@ -1483,8 +1483,8 @@ export function EditorLayout() {
               {/* Terminal Panel - Always render but hide when closed */}
               <ResizableHandle style={{ display: isTerminalOpen ? 'flex' : 'none' }} />
               <ResizablePanel 
-                defaultSize={isTerminalOpen ? 40 : 0} 
-                minSize={isTerminalOpen ? 15 : 0}
+                defaultSize={isTerminalOpen ? 50 : 0} 
+                minSize={isTerminalOpen ? 20 : 0}
                 maxSize={isTerminalOpen ? 70 : 0}
                 style={{ display: isTerminalOpen ? 'block' : 'none' }}
               >
