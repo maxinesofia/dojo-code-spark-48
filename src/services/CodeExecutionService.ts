@@ -122,7 +122,7 @@ export class CodeExecutionService {
           path: f.name // Use name as path for now
         }));
 
-      const response = await fetch(`${this.apiBaseUrl}/execution/run`, {
+      const response = await fetch(`${this.apiBaseUrl}/api/execution/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
