@@ -415,7 +415,6 @@ Export date: ${new Date().toISOString()}
   // Get package service and analyze dependencies
   const packageService = PackageService.getInstance();
   const detectedPackages = packageService.analyzeProjectDependencies(safeFiles);
-  const installedPackages = packageService.getInstalledPackages();
 
   const toggleFolder = (folderId: string) => {
     const newExpanded = new Set(expandedFolders);
@@ -521,12 +520,12 @@ Export date: ${new Date().toISOString()}
         }}
       />
 
-      {/* Dependencies Section - Fixed at bottom */}
-      {(installedPackages.length > 0 || detectedPackages.filter(pkg => !pkg.installed).length > 0) && (
+      {/* Used Dependencies Section - Fixed at bottom */}
+      {detectedPackages.length > 0 && (
         <div className="border-t border-sidebar-border flex-shrink-0">
           <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <div className="flex items-center justify-between">
-              <span>Dependencies</span>
+              <span>Used Dependencies ({detectedPackages.length})</span>
               <Button variant="ghost" size="icon" className="h-5 w-5 hover:bg-sidebar-accent">
                 <Search className="h-3 w-3" />
               </Button>
@@ -535,33 +534,15 @@ Export date: ${new Date().toISOString()}
           
           <div className="px-2 py-1 max-h-24 overflow-y-auto">
             <div className="text-xs space-y-1">
-              {installedPackages.length > 0 && (
-                installedPackages.map((pkg) => (
-                  <div key={pkg.name} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
-                    <div className="flex items-center min-w-0">
-                      <span className="w-4 h-4 mr-2 text-xs">📦</span>
-                      <span className="truncate">{pkg.name}</span>
-                    </div>
-                    <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">{pkg.version}</span>
+              {detectedPackages.map((pkg) => (
+                <div key={pkg.name} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
+                  <div className="flex items-center min-w-0">
+                    <span className="w-4 h-4 mr-2 text-xs">📦</span>
+                    <span className="truncate">{pkg.name}</span>
                   </div>
-                ))
-              )}
-              
-              {/* Show detected but not installed packages */}
-              {detectedPackages.filter(pkg => !pkg.installed).length > 0 && (
-                <>
-                  {installedPackages.length > 0 && <div className="text-muted-foreground text-xs mt-2 mb-1">Detected in code:</div>}
-                  {detectedPackages.filter(pkg => !pkg.installed).map((pkg) => (
-                    <div key={`detected-${pkg.name}`} className="flex items-center justify-between py-1 hover:bg-sidebar-accent/50 rounded px-1">
-                      <div className="flex items-center min-w-0">
-                        <span className="w-4 h-4 mr-2 text-xs">⚠️</span>
-                        <span className="truncate text-orange-500">{pkg.name}</span>
-                      </div>
-                      <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">missing</span>
-                    </div>
-                  ))}
-                </>
-              )}
+                  <span className="text-muted-foreground text-xs ml-2 flex-shrink-0">{pkg.version}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
