@@ -34,12 +34,18 @@ export class CodeExecutionService {
     try {
       // Auto-detect language if not specified or if it's generic
       const detectedLanguage = this.detectLanguage(files, language);
+      console.log('Detected language:', detectedLanguage, 'for provided language:', language);
+      
+      // Force client-side execution for React and web projects
+      if (['react', 'javascript', 'typescript', 'html', 'css'].includes(detectedLanguage.toLowerCase())) {
+        return await this.executeClientSide(files, detectedLanguage);
+      }
       
       // Determine if this is a server-side language that needs Firecracker execution
       if (this.serverSideLanguages.includes(detectedLanguage.toLowerCase())) {
         return await this.executeServerSide(files, detectedLanguage);
       } else {
-        // Client-side execution for HTML/CSS/JS
+        // Default to client-side execution for web projects
         return await this.executeClientSide(files, detectedLanguage);
       }
     } catch (error) {
